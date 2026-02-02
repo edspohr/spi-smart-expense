@@ -27,16 +27,16 @@ export async function parseReceiptImage(file, availableCategories = []) {
     const categoriesList =
       availableCategories.length > 0
         ? `\n- category: one of the following exact strings: ${availableCategories.join(
-            ", "
+            ", ",
           )}. If unsure, use 'Otros'.`
         : `\n- category: suggest a category if possible, or null.`;
 
     const prompt = `
-      Analyze this document (image or PDF) of a receipt/invoice. 
+      Analyze this document (image or PDF) of a receipt/invoice (Recibo/Factura). 
       Extract the following information in JSON format:
       - date: standardized YYYY-MM-DD format
       - merchant: name of the place
-      - amount: total amount as a number (remove currency symbols, ignore decimals/cents, treat as integer CLP)
+      - amount: total amount as a number (remove currency symbols, ignore cents if COP/CLP, treat as integer)
       - description: a short summary of the items (e.g. "Lunch", "Hardware materials")
       ${categoriesList}
       
@@ -58,10 +58,18 @@ export async function parseReceiptImage(file, availableCategories = []) {
     const text = response.text();
 
     // Clean up markdown code blocks if present
-    const jsonStr = text
+    // Improve JSON parsing to find the first { and last }
+    let jsonStr = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
+    const firstBrace = jsonStr.indexOf("{");
+    const lastBrace = jsonStr.lastIndexOf("}");
+
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+    }
+
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Error parsing receipt with Gemini:", error);

@@ -373,7 +373,7 @@ export default function AdminProjectDetails() {
                                         <p className="font-medium">{e.category}</p>
                                         <p className="text-xs truncate max-w-[150px]">{e.description}</p>
                                         {e.imageUrl && (
-                                            <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs block mt-1">Ver Boleta</a>
+                                            <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs block mt-1">Ver Recibo</a>
                                         )}
                                         {e.rejectionReason && e.status === 'rejected' && (
                                             <p className="text-xs text-red-500 mt-1 italic">"{e.rejectionReason}"</p>

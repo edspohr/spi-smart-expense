@@ -233,7 +233,7 @@ export default function UserDashboard() {
                                                                                 <td className="px-3 py-2">
                                                                                     <p className="font-medium text-gray-700">{e.category}</p>
                                                                                     <p className="text-gray-400 truncate max-w-[150px]">{e.description}</p>
-                                                                                    {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-blue-500 hover:underline">Ver Boleta</a>}
+                                                                                    {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-blue-500 hover:underline">Ver Recibo</a>}
                                                                                 </td>
                                                                                 <td className="px-3 py-2 font-bold text-gray-700 text-right">{formatCurrency(e.amount)}</td>
                                                                                 <td className="px-3 py-2 text-center">

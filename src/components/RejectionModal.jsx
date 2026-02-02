@@ -39,7 +39,7 @@ export default function RejectionModal({ isOpen, onClose, onConfirm, expense }) 
             <textarea 
               className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-red-500 focus:border-red-500"
               rows="3"
-              placeholder="Ej: Boleta ilegible, gasto no corresponde al proyecto..."
+              placeholder="Ej: Recibo ilegible, gasto no corresponde al proyecto..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required

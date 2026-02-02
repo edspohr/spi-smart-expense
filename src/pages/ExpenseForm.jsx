@@ -209,10 +209,7 @@ export default function ExpenseForm() {
     }
 
     // 2. Duplicity Check
-    let targetUidCheck = currentUser.uid;
-    if (userRole === 'admin' && expenseMode === 'other' && selectedUserId) {
-        targetUidCheck = selectedUserId;
-    }
+
 
 
     // ---------------------------------------------------------
@@ -340,7 +337,7 @@ export default function ExpenseForm() {
                         <div className="bg-white p-4 rounded-full shadow-sm mb-4 inline-block">
                             <Camera className="w-12 h-12 text-slate-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-700 mb-2">Subir Boleta</h3>
+                        <h3 className="text-xl font-bold text-slate-700 mb-2">Subir Recibo</h3>
                         <p className="text-slate-500 text-sm">Toca para tomar foto o seleccionar archivo</p>
                     </div>
                 </div>
