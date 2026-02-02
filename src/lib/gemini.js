@@ -16,7 +16,16 @@ export async function parseReceiptImage(file, availableCategories = []) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    console.log(
+      "Processing file:",
+      file.name,
+      "Type:",
+      file.type,
+      "Size:",
+      file.size,
+    );
 
     // Convert file to base64
     const base64Data = await new Promise((resolve, reject) => {
@@ -75,6 +84,10 @@ export async function parseReceiptImage(file, availableCategories = []) {
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Error parsing receipt with Gemini:", error);
+    console.error(
+      "Error details:",
+      error.response ? await error.response.text() : error.message,
+    );
     throw error;
   }
 }
