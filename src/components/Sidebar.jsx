@@ -55,7 +55,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 </Link>
                 <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)}>
                 <FolderOpen className="w-4 h-4 mr-3" />
-                Proyectos
+                Centros de Costo
                 </Link>
                 <Link to="/admin/approvals" className={linkClass('/admin/approvals')} onClick={() => setIsOpen(false)}>
                 <CheckCircle className="w-4 h-4 mr-3" />

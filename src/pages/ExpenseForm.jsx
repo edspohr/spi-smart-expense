@@ -110,6 +110,7 @@ export default function ExpenseForm() {
       }
     } catch (err) {
       console.error("Processing Error:", err);
+      toast.error("No se pudo extraer información automática del recibo.");
       // Fallback: If compression fails
       if (!formData.receiptImage) {
            setFormData(prev => ({ ...prev, receiptImage: originalFile }));
@@ -415,7 +416,7 @@ export default function ExpenseForm() {
                                         onChange={() => setExpenseMode('project')}
                                         className="text-blue-600 focus:ring-blue-500"
                                     />
-                                    <span className="text-gray-900">Empresa / Proyecto</span>
+                                    <span className="text-gray-900">Empresa / Centro de Costo</span>
                                 </label>
 
                                 <label className="flex items-center space-x-2 cursor-pointer">
