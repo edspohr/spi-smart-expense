@@ -110,7 +110,7 @@ export default function ExpenseForm() {
       }
     } catch (err) {
       console.error("Processing Error:", err);
-      toast.error("No se pudo extraer información automática del recibo.");
+      toast.error(err.message || "No se pudo extraer información automática del recibo.");
       // Fallback: If compression fails
       if (!formData.receiptImage) {
            setFormData(prev => ({ ...prev, receiptImage: originalFile }));

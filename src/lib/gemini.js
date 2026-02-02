@@ -10,9 +10,7 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 export async function parseReceiptImage(file, availableCategories = []) {
   if (!API_KEY) {
     console.warn("Gemini API Key is missing.");
-    // We can't toast here easily as this is a lib function, but returning null handles it.
-    // The caller check if (data) will fail silently, but that's "graceful degradation".
-    return null;
+    throw new Error("Falta la API Key de Gemini (VITE_GEMINI_API_KEY).");
   }
 
   try {
