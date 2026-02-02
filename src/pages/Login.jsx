@@ -67,7 +67,7 @@ export default function Login() {
                     className="w-full border border-gray-300 rounded p-2"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="ejemplo@spi.cl"
+                    placeholder="ejemplo@spiamericas.com"
                 />
             </div>
             <div>

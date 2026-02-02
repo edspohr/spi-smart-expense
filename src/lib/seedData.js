@@ -28,7 +28,7 @@ export async function seedDatabase(currentUserId) {
   const users = [
     {
       uid: "user_paula",
-      email: "pmontoya@spi.cl",
+      email: "pmontoya@spiamericas.com",
       displayName: "Paula Montoya",
       role: "professional",
       code: "PMS",
@@ -37,7 +37,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_gonzalo",
-      email: "grivas@spi.cl",
+      email: "grivas@spiamericas.com",
       displayName: "Gonzalo Rivas",
       role: "professional",
       code: "GRM",
@@ -46,7 +46,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_francisco",
-      email: "fgonzalez@spi.cl",
+      email: "fgonzalez@spiamericas.com",
       displayName: "Francisco Gonzalez",
       role: "professional",
       code: "FGG",
@@ -55,7 +55,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_cristobal",
-      email: "craipan@spi.cl",
+      email: "craipan@spiamericas.com",
       displayName: "Cristobal Raipan",
       role: "professional",
       code: "CRR",
@@ -64,7 +64,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_maria",
-      email: "maguirre@spi.cl",
+      email: "maguirre@spiamericas.com",
       displayName: "María Verónica Aguirre",
       role: "admin",
       code: "MAS",
@@ -73,7 +73,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_andres",
-      email: "aguell@spi.cl",
+      email: "aguell@spiamericas.com",
       displayName: "Andrés Güell",
       role: "admin",
       code: "AGS",
@@ -82,7 +82,7 @@ export async function seedDatabase(currentUserId) {
     },
     {
       uid: "user_carlos",
-      email: "cmunoz@spi.cl",
+      email: "cmunoz@spiamericas.com",
       displayName: "Carlos Muñoz",
       role: "admin",
       code: "CML",

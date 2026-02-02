@@ -4,20 +4,20 @@ export const mockUsers = {
   admin: {
     uid: "admin1",
     displayName: "Socio Administrador",
-    email: "admin@spi.cl",
+    email: "admin@spiamericas.com",
     role: "admin",
   },
   user1: {
     uid: "user1",
     displayName: "Ana Contreras",
-    email: "ana@spi.cl",
+    email: "ana@spiamericas.com",
     role: "professional",
     balance: 350000,
   },
   user2: {
     uid: "user2",
     displayName: "Carlos Rojas",
-    email: "carlos@spi.cl",
+    email: "carlos@spiamericas.com",
     role: "professional",
     balance: 200000,
   },
