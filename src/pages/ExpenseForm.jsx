@@ -507,7 +507,7 @@ export default function ExpenseForm() {
                                                 onChange={e => setSelectedUserId(e.target.value)}
                                                 required
                                             >
-                                                <option value="">Seleccionar Profesional...</option>
+                                                <option value="">Seleccionar Usuario...</option>
                                                 {users.map(u => (
                                                     <option key={u.id} value={u.id}>{u.displayName}</option>
                                                 ))}

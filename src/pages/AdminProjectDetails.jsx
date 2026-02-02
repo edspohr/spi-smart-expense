@@ -106,10 +106,10 @@ export default function AdminProjectDetails() {
           }));
 
           setEditingAllocation(null);
-          toast.success("Viático actualizado exitosamente.");
+          toast.success("Asignación actualizada exitosamente.");
       } catch (err) {
           console.error("Error updating allocation:", err);
-          toast.error("Error al actualizar viático.");
+          toast.error("Error al actualizar asignación.");
       }
   };
 
@@ -260,7 +260,7 @@ export default function AdminProjectDetails() {
   };
 
   const handleDeleteAllocation = async (allocation) => {
-      if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar este VIÁTICO?\nSe descontará del saldo del profesional.")) return;
+      if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar esta ASIGNACIÓN?\nSe descontará del saldo del profesional.")) return;
 
       try {
           // 1. Revert User Balance
@@ -283,10 +283,10 @@ export default function AdminProjectDetails() {
           // 3. Update State
           setAllocations(prev => prev.filter(a => a.id !== allocation.id));
           
-          toast.success("Viático eliminado.");
+          toast.success("Asignación eliminada.");
       } catch(e) {
           console.error("Error deleting allocation", e);
-          toast.error("Error al eliminar viático: " + e.message);
+          toast.error("Error al eliminar asignación: " + e.message);
       }
   };
 
@@ -320,14 +320,14 @@ export default function AdminProjectDetails() {
              return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-center">
-                        <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Viático Asignado</h3>
+                        <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Presupuesto Asignado</h3>
                         <p className="text-2xl font-bold text-gray-800">{formatCurrency(totalAllocated)}</p>
-                        <p className="text-xs text-gray-400 mt-1">Fondos entregados a profesionales</p>
+                        <p className="text-xs text-gray-400 mt-1">Fondos entregados a usuarios</p>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Gasto Rendido</h3>
                         <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalRenderedByUsers)}</p>
-                        <p className="text-xs text-gray-400 mt-1">Justificado por profesionales</p>
+                        <p className="text-xs text-gray-400 mt-1">Justificado por usuarios</p>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Gasto Total</h3>
@@ -428,7 +428,7 @@ export default function AdminProjectDetails() {
                 <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                     <h3 className="font-bold text-gray-700 flex items-center">
                         <Calendar className="w-5 h-5 mr-2 text-gray-400" />
-                        Historial de Viáticos Asignados
+                        Historial de Asignaciones
                     </h3>
                      <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-1 rounded-full">{allocations.length}</span>
                 </div>
@@ -457,14 +457,14 @@ export default function AdminProjectDetails() {
                                         <button 
                                             onClick={() => openEditAllocation(a)} 
                                             className="text-gray-400 hover:text-blue-500" 
-                                            title="Editar Viático"
+                                            title="Editar Asignación"
                                         >
                                             <Pencil className="w-5 h-5" />
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteAllocation(a)} 
                                             className="text-gray-400 hover:text-red-500" 
-                                            title="Eliminar Viático"
+                                            title="Eliminar Asignación"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
@@ -473,7 +473,7 @@ export default function AdminProjectDetails() {
                             ))}
                             {allocations.length === 0 && (
                                 <tr>
-                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-500">No hay viáticos asignados.</td>
+                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-500">No hay asignaciones registradas.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -494,10 +494,10 @@ export default function AdminProjectDetails() {
         {editingAllocation && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                    <h3 className="text-lg font-bold mb-4">Editar Viático</h3>
+                    <h3 className="text-lg font-bold mb-4">Editar Asignación</h3>
                     <form onSubmit={handleUpdateAllocation} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Profesional</label>
+                            <label className="block text-sm font-medium text-gray-700">Usuario</label>
                             <select 
                                 className="mt-1 w-full p-2 border rounded"
                                 value={editForm.userId}

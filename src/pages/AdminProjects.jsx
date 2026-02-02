@@ -136,7 +136,7 @@ export default function AdminProjects() {
               createdAt: new Date().toISOString()
           });
 
-          toast.success("Viático asignado exitosamente");
+          toast.success("Presupuesto asignado exitosamente");
           setViaticoAmount('');
           setViaticoUser('');
           setViaticoProject('');
@@ -146,6 +146,46 @@ export default function AdminProjects() {
           toast.error("Error asignando viático");
       } finally {
           setSubmitting(false);
+      }
+  };
+
+  const SPI_CENTERS = [
+    { code: '51', name: 'Administración', client: 'SPI Americas' },
+    { code: '52', name: 'Ventas', client: 'SPI Americas' },
+    { code: '51/52', name: 'Mix (54% Ventas / 46% Admin)', client: 'SPI Americas' },
+    { code: 'PI', name: 'PI - Ventas', client: 'SPI Americas' },
+    { code: 'AR', name: 'AR - Ventas', client: 'SPI Americas' },
+    { code: '6', name: 'Costo', client: 'SPI Americas' },
+    { code: 'SOCIOS', name: 'Socios - Cuenta Exclusiva', client: 'SPI Americas' }
+  ];
+
+  const handleSeedSPI = async () => {
+      if (!confirm("Esto cargará los Centros de Costo por defecto de SPI. ¿Continuar?")) return;
+      setLoading(true);
+      try {
+          let createdCount = 0;
+          for (const center of SPI_CENTERS) {
+              // Check if exists
+              const q = query(collection(db, "projects"), where("code", "==", center.code));
+              const snap = await getDocs(q);
+              if (snap.empty) {
+                  await addDoc(collection(db, "projects"), {
+                      ...center,
+                      budget: 0,
+                      expenses: 0,
+                      status: 'active',
+                      createdAt: new Date().toISOString()
+                  });
+                  createdCount++;
+              }
+          }
+          toast.success(`Proceso completado. ${createdCount} centros creados.`);
+          fetchData();
+      } catch (e) {
+          console.error(e);
+          toast.error("Error al sembrar datos.");
+      } finally {
+          setLoading(false);
       }
   };
   
@@ -167,12 +207,21 @@ export default function AdminProjects() {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Crear Nuevo Centro de Costo</h2>
-                    <button 
-                        onClick={() => setShowProjectForm(!showProjectForm)}
-                        className="text-blue-600 hover:text-blue-800"
-                    >
-                        {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5"/>}
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={handleSeedSPI}
+                            className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1 rounded border border-gray-300"
+                            title="Cargar Centros SPI por defecto"
+                        >
+                            Cargar Defaults SPI
+                        </button>
+                        <button 
+                            onClick={() => setShowProjectForm(!showProjectForm)}
+                            className="text-blue-600 hover:text-blue-800"
+                        >
+                            {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5"/>}
+                        </button>
+                    </div>
                 </div>
                 
                 {showProjectForm && (
@@ -229,7 +278,7 @@ export default function AdminProjects() {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex items-center mb-4 text-green-700">
                     <DollarSign className="w-5 h-5 mr-2" />
-                    <h2 className="text-lg font-bold">Asignar Viático (Saldo)</h2>
+                    <h2 className="text-lg font-bold">Asignar Presupuesto (Saldo)</h2>
                 </div>
                 <form onSubmit={handleAssignViatico} className="space-y-4">
                     <div>
@@ -262,13 +311,13 @@ export default function AdminProjects() {
 
                     {/* Show Professional Select */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Profesional</label>
+                        <label className="block text-sm font-medium text-gray-700">Usuario</label>
                         <select 
                             className="w-full border p-2 rounded"
                             value={viaticoUser}
                             onChange={e => setViaticoUser(e.target.value)}
                         >
-                            <option value="">Seleccionar Profesional...</option>
+                            <option value="">Seleccionar Usuario...</option>
                             {users.map(u => (
                                 <option key={u.id} value={u.id}>
                                     {u.displayName} (Saldo: {formatCurrency(u.balance || 0)})

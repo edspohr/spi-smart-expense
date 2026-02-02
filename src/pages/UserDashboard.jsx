@@ -74,7 +74,7 @@ export default function UserDashboard() {
                     <Wallet className="w-24 h-24" />
                 </div>
                 <div className="relative z-10">
-                    <h3 className="text-blue-100 text-sm font-medium mb-1">Mi Cuenta Corriente (Viáticos)</h3>
+                    <h3 className="text-blue-100 text-sm font-medium mb-1">Mi Saldo (Presupuesto)</h3>
                     <p className="text-4xl font-bold mb-2">
                         {formatCurrency(balance)}
                     </p>
@@ -105,7 +105,7 @@ export default function UserDashboard() {
                       <tr className="border-b">
                           <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
                           <th className="px-6 py-3 font-medium text-gray-500">Recurrencia</th>
-                          <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Viáticos</th>
+                          <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Asignado</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Rendido</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Saldo</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Estado</th>
@@ -192,7 +192,7 @@ export default function UserDashboard() {
                                                     {/* Allocations Detail */}
                                                     <div className="flex-1">
                                                         <h4 className="font-semibold text-gray-600 mb-2 flex items-center text-xs uppercase tracking-wider">
-                                                            <Wallet className="w-4 h-4 mr-2" /> Viáticos Asignados
+                                                            <Wallet className="w-4 h-4 mr-2" /> Fondos Asignados
                                                         </h4>
                                                         {projectAllocations.length === 0 ? <p className="text-xs text-gray-400 italic">Sin registros</p> : (
                                                             <div className="bg-white rounded border border-gray-100 overflow-hidden">

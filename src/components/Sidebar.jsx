@@ -43,7 +43,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <div className="overflow-hidden">
                 <p className="text-sm font-semibold text-zinc-800 truncate">{currentUser?.displayName || 'Usuario'}</p>
                  <p className="text-xs text-zinc-500 truncate">
-                    {userRole === 'admin' ? 'Administrador' : 'Profesional'}
+                    {userRole === 'admin' ? 'Administrador' : 'Usuario'}
                 </p>
             </div>
         </div>

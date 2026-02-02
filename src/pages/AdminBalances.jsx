@@ -71,9 +71,9 @@ export default function AdminBalances() {
             <table className="w-full text-left">
                 <thead>
                     <tr className="bg-white border-b">
-                        <th className="px-6 py-4 font-medium text-gray-500">Profesional</th>
+                        <th className="px-6 py-4 font-medium text-gray-500">Usuario</th>
                         <th className="px-6 py-4 font-medium text-gray-500">Email</th>
-                        <th className="px-6 py-4 font-medium text-gray-500">Saldo Disponible (Viático)</th>
+                        <th className="px-6 py-4 font-medium text-gray-500">Saldo Disponible (Presupuesto)</th>
                         <th className="px-6 py-4 font-medium text-gray-500">Estado</th>
                     </tr>
                 </thead>

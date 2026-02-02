@@ -85,7 +85,7 @@ export default function AdminApprovals() {
           });
 
           // Define CSV Headers
-          const headers = ["Fecha", "Profesional", "Código Proyecto", "Proyecto", "Recurrencia", "Descripción", "Categoría", "Monto", "Estado", "Motivo Rechazo"];
+          const headers = ["Fecha", "Usuario", "Código Proyecto", "Proyecto", "Recurrencia", "Descripción", "Categoría", "Monto", "Estado", "Motivo Rechazo"];
           
           // Map Data to CSV Rows
           const rows = expenses.map(e => {
@@ -274,7 +274,7 @@ export default function AdminApprovals() {
                     <thead>
                         <tr className="bg-gray-50 border-b">
                             <th className="px-6 py-3 font-medium text-gray-500">Fecha</th>
-                            <th className="px-6 py-3 font-medium text-gray-500">Profesional</th>
+                            <th className="px-6 py-3 font-medium text-gray-500">Usuario</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Monto</th>
                             {viewMode === 'history' && <th className="px-6 py-3 font-medium text-gray-500">Estado</th>}

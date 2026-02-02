@@ -11,13 +11,13 @@ export default {
         // or just rely on Slate for the UI structure.
         // Removed manual slate to allow all colors (zinc, etc)
         brand: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          500: "#6366f1", // Indigo 500
-          600: "#4f46e5", // Indigo 600
-          700: "#4338ca", // Indigo 700
-          800: "#3730a3", // Indigo 800
-          900: "#312e81", // Indigo 900
+          50: "#eff6ff",
+          100: "#dbeafe",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
         },
       },
       borderRadius: {

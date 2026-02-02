@@ -251,7 +251,7 @@ export default function AdminUserDetails() {
   };
 
   const handleDeleteAllocation = async (allocation) => {
-      if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar este VIÁTICO?\nSe descontará del saldo del profesional.")) return;
+      if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar esta ASIGNACIÓN?\nSe descontará del saldo del profesional.")) return;
 
       try {
           // 1. Revert User Balance (Allocation adds to balance, so we subtract)
@@ -275,10 +275,10 @@ export default function AdminUserDetails() {
           // 3. Update Allocations State
           setAllocations(prev => prev.filter(a => a.id !== allocation.id));
 
-          toast.success("Viático eliminado.");
+          toast.success("Asignación eliminada.");
       } catch (e) {
           console.error("Error deleting allocation:", e);
-          toast.error("Error al eliminar viático: " + e.message);
+          toast.error("Error al eliminar asignación: " + e.message);
       }
   };
 
@@ -286,7 +286,7 @@ export default function AdminUserDetails() {
   if (!user) return <Layout title="Error">Usuario no encontrado.</Layout>;
 
   return (
-    <Layout title={`Profesional: ${user.displayName}`}>
+    <Layout title={`Usuario: ${user.displayName}`}>
       <div className="mb-6">
         <Link
           to="/admin/balances"
@@ -319,7 +319,7 @@ export default function AdminUserDetails() {
           </div>
           <div className="relative z-10">
             <h3 className="text-blue-100 text-sm font-medium mb-1">
-              Saldo Actual (Viático)
+              Saldo Actual (Presupuesto)
             </h3>
             <p className="text-3xl font-bold">
               {formatCurrency(user.balance || 0)}
@@ -354,7 +354,7 @@ export default function AdminUserDetails() {
                       <tr className="border-b">
                           <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
                           <th className="px-6 py-3 font-medium text-gray-500">Recurrencia</th>
-                          <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Viáticos</th>
+                          <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Asignado</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Rendido</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Saldo</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Estado</th>
@@ -444,7 +444,7 @@ export default function AdminUserDetails() {
                                                     {/* Allocations Detail */}
                                                     <div className="flex-1">
                                                         <h4 className="font-semibold text-gray-600 mb-2 flex items-center text-xs uppercase tracking-wider">
-                                                            <Wallet className="w-4 h-4 mr-2" /> Viáticos Asignados
+                                                            <Wallet className="w-4 h-4 mr-2" /> Asignaciones
                                                         </h4>
                                                         {projectAllocations.length === 0 ? <p className="text-xs text-gray-400 italic">Sin registros</p> : (
                                                             <div className="bg-white rounded border border-gray-100 overflow-hidden">
@@ -458,7 +458,7 @@ export default function AdminUserDetails() {
                                                                                         <button 
                                                                                             onClick={() => handleDeleteAllocation(a)}
                                                                                             className="text-gray-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                                                                                            title="Eliminar Viático"
+                                                                                            title="Eliminar Asignación"
                                                                                         >
                                                                                             <Trash2 className="w-4 h-4" />
                                                                                         </button>
