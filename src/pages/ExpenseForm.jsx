@@ -4,7 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { parseReceiptImage } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
 import { collection, getDocs, query, where, doc, increment, writeBatch } from 'firebase/firestore';
-import { Upload, Loader2, Camera, X, FileText, Plus } from 'lucide-react';
+import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/format'; // Validation aid/display
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
@@ -323,322 +323,366 @@ export default function ExpenseForm() {
 
   return (
     <Layout title="Nueva Rendición">
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-soft border border-slate-100">
+      <div className="max-w-6xl mx-auto">
         
         {/* Step 1: Upload or Manual */}
         {step === 'upload' && (
-            <div className="space-y-6">
-                 <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl p-10 bg-slate-50 hover:bg-slate-100 transition cursor-pointer relative h-72 group">
-                    <input 
-                        type="file" 
-                        accept="image/*,application/pdf" 
-                        onChange={handleFileChange} 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    <div className="text-center group-hover:scale-105 transition duration-300">
-                        <div className="bg-white p-4 rounded-full shadow-sm mb-4 inline-block">
-                            <Camera className="w-12 h-12 text-slate-600" />
+            <div className="max-w-xl mx-auto mt-8 animate-fadeIn">
+                 <div className="bg-white rounded-3xl shadow-xl shadow-zinc-200/50 overflow-hidden border border-zinc-100">
+                     <div className="p-8 pb-0 text-center">
+                        <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand-600">
+                             <Upload className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-700 mb-2">Subir Recibo</h3>
-                        <p className="text-slate-500 text-sm">Toca para tomar foto o seleccionar archivo</p>
-                    </div>
-                </div>
+                        <h2 className="text-2xl font-bold text-zinc-800 mb-2">Sube tu Recibo</h2>
+                        <p className="text-zinc-500 text-sm">Escanea con la cámara o selecciona un archivo (Imagen/PDF) para autocompletar.</p>
+                     </div>
 
-                <div className="text-center">
-                    <span className="text-slate-400 text-sm font-medium">o también puedes</span>
-                    <button 
-                        onClick={() => setStep('review')}
-                        className="block w-full mt-3 bg-white border border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-xl hover:bg-slate-50 transition shadow-sm"
-                    >
-                        Ingresar Manualmente sin Comprobante
-                    </button>
-                </div>
+                     <div className="p-8">
+                        <div className="relative group cursor-pointer">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-500 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                            <div className="relative bg-white border-2 border-dashed border-zinc-200 rounded-xl p-10 flex flex-col items-center justify-center hover:bg-zinc-50/50 transition duration-300 h-64">
+                                <input 
+                                    type="file" 
+                                    accept="image/*,application/pdf" 
+                                    onChange={handleFileChange} 
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                                />
+                                <div className="bg-zinc-100 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <Camera className="w-8 h-8 text-zinc-400 group-hover:text-brand-500 transition-colors" />
+                                </div>
+                                <span className="font-semibold text-zinc-700 group-hover:text-brand-600 transition-colors">Seleccionar Archivo</span>
+                                <span className="text-xs text-zinc-400 mt-1">JPG, PNG, PDF (Máx 5MB)</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex items-center">
+                            <div className="flex-1 h-px bg-zinc-200"></div>
+                            <span className="px-4 text-xs font-semibold text-zinc-400 uppercase tracking-widest">Opción Manual</span>
+                            <div className="flex-1 h-px bg-zinc-200"></div>
+                        </div>
+
+                        <button 
+                            onClick={() => setStep('review')}
+                            className="block w-full mt-6 bg-zinc-50 border border-zinc-200 text-zinc-600 font-semibold py-3.5 px-4 rounded-xl hover:bg-zinc-100 hover:text-zinc-900 transition flex items-center justify-center"
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Ingresar sin Comprobante
+                        </button>
+                     </div>
+                 </div>
             </div>
         )}
 
-        {/* Step 2: Review & Edit */}
+        {/* Step 2: Review & Edit (Split Layout) */}
         {step === 'review' && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* File Preview */}
-                {previewUrl && (
-                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-gray-100 h-48 flex items-center justify-center">
-                         {formData.receiptImage?.type === 'application/pdf' ? (
-                             <div className="text-center text-gray-600">
-                                 <FileText className="w-16 h-16 mx-auto mb-2 text-red-500" />
-                                 <p className="font-medium text-sm">{formData.receiptImage.name}</p>
+            <form onSubmit={handleSubmit} className="animate-fadeIn">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Column: Preview (Sticky) */}
+                    <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+                        <div className="bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl shadow-zinc-900/20 border border-zinc-800 relative group">
+                            <div className="h-[60vh] lg:h-[calc(100vh-12rem)] flex items-center justify-center bg-zinc-950/50 backdrop-blur-3xl relative">
+                                {previewUrl ? (
+                                    formData.receiptImage?.type === 'application/pdf' ? (
+                                        <div className="text-center text-zinc-400 p-8">
+                                            <FileText className="w-20 h-20 mx-auto mb-4 text-red-500 opacity-80" />
+                                            <p className="font-medium text-sm text-zinc-300">{formData.receiptImage.name}</p>
+                                        </div>
+                                    ) : (
+                                        <img src={previewUrl} alt="Receipt Preview" className="max-w-full max-h-full object-contain shadow-lg" />
+                                    )
+                                ) : (
+                                    <div className="text-center text-zinc-500 p-8">
+                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                        <p className="text-sm">Sin comprobante adjunto</p>
+                                    </div>
+                                )}
+                                
+                                {processingAi && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm text-white z-20">
+                                         <Loader2 className="w-10 h-10 animate-spin mb-3 text-brand-400" />
+                                         <span className="font-medium text-lg tracking-tight">Analizando Recibo...</span>
+                                         <span className="text-xs text-zinc-400 mt-1">Extrayendo fecha, monto y comercio</span>
+                                    </div>
+                                )}
+                            </div>
+
+                             {/* Helper Actions for Preview */}
+                             <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button type="button" onClick={() => window.open(previewUrl)} className="bg-black/50 text-white p-2 rounded-full hover:bg-black/80 backdrop-blur-md">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"></path></svg>
+                                </button>
                              </div>
-                         ) : (
-                             <img src={previewUrl} alt="Receipt Preview" className="w-full h-full object-contain" />
-                         )}
-                         
-                         <button 
-                            type="button"
-                            onClick={handleCancel}
-                            className="absolute top-2 right-2 bg-white/90 p-2 rounded-full text-gray-700 hover:bg-white shadow-sm"
-                         >
-                            <X className="w-5 h-5" />
-                         </button>
-                         {processingAi && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white">
-                                 <Loader2 className="w-8 h-8 animate-spin mr-2" />
-                                 <span className="font-medium">Optimizando y Analizando...</span>
-                            </div>
-                         )}
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ADMIN: Expense Mode Selector */}
-                    {userRole === 'admin' && (
-                        <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-                            <label className="block text-sm font-bold text-gray-700">¿A nombre de quién es el gasto?</label>
-                            
-                            <div className="flex flex-wrap gap-4">
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="expenseMode" 
-                                        value="me"
-                                        checked={expenseMode === 'me'}
-                                        onChange={() => setExpenseMode('me')}
-                                        className="text-blue-600 focus:ring-blue-500"
-                                    />
-                                    <span className="text-gray-900">Mí mismo</span>
-                                </label>
-
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="expenseMode" 
-                                        value="project"
-                                        checked={expenseMode === 'project'}
-                                        onChange={() => setExpenseMode('project')}
-                                        className="text-blue-600 focus:ring-blue-500"
-                                    />
-                                    <span className="text-gray-900">Empresa / Centro de Costo</span>
-                                </label>
-
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="expenseMode" 
-                                        value="other"
-                                        checked={expenseMode === 'other'}
-                                        onChange={() => setExpenseMode('other')}
-                                        className="text-blue-600 focus:ring-blue-500"
-                                    />
-                                    <span className="text-gray-900">Otro Profesional</span>
-                                </label>
-                            </div>
-
-                            {/* User Select if Mode is 'other' */}
-                            {expenseMode === 'other' && (
-                                <div className="mt-2 animate-fadeIn">
-                                    <select 
-                                        className="w-full border border-gray-300 rounded p-2 text-sm"
-                                        value={selectedUserId}
-                                        onChange={e => setSelectedUserId(e.target.value)}
-                                        required
-                                    >
-                                        <option value="">Seleccionar Profesional...</option>
-                                        {users.map(u => (
-                                            <option key={u.id} value={u.id}>{u.displayName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            
-                             {expenseMode === 'project' && (
-                                <p className="text-xs text-blue-600 mt-1">Este gasto se cargará al centro de costo pero no afectará saldos de personas.</p>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="md:col-span-2 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <label className="block text-sm font-semibold text-gray-700">Centro de Costo *</label>
-                            {userRole === 'admin' && (
-                                <div className="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        id="splitMode"
-                                        checked={isSplitMode}
-                                        onChange={e => setIsSplitMode(e.target.checked)}
-                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                    />
-                                    <label htmlFor="splitMode" className="ml-2 text-sm text-blue-800 font-bold cursor-pointer">
-                                        Distribuir gasto (Multi-Centro)
-                                    </label>
-                                </div>
-                            )}
                         </div>
                         
-                        {!isSplitMode ? (
-                            <select 
-                                required
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                                value={formData.projectId}
-                                onChange={e => setFormData({...formData, projectId: e.target.value})}
-                            >
-                                <option value="">Selecciona un centro de costo...</option>
-                                {projects.map(p => {
-                                    if (p.status === 'deleted') return null;
-                                    return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
-                                })}
-                            </select>
-                        ) : (
-                            <div className="bg-gray-50 p-4 rounded-lg border border-blue-200">
-                                <p className="text-sm text-gray-600 mb-2">
-                                    Total a distribuir: <span className="font-bold">{formatCurrency(formData.amount || 0)}</span>
-                                </p>
-                                {splitRows.map((row, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-2 items-start">
-                                        <select 
-                                            required
-                                            className="flex-grow border border-gray-300 rounded p-2 text-sm"
-                                            value={row.projectId}
-                                            onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
-                                        >
-                                            <option value="">Centro de Costo...</option>
-                                            {projects.map(p => (
-                                            <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
-                                            ))}
-                                        </select>
-                                        <input 
-                                            type="number"
-                                            placeholder="Monto"
-                                            className="w-24 border border-gray-300 rounded p-2 text-sm"
-                                            value={row.amount}
-                                            onChange={e => handleSplitChange(idx, 'amount', e.target.value)}
-                                            required
-                                        />
-                                        {splitRows.length > 1 && (
-                                            <button type="button" onClick={() => handleRemoveSplitRow(idx)} className="text-red-500 p-2">
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                <button type="button" onClick={handleAddSplitRow} className="text-sm text-blue-600 font-bold hover:underline mt-2 flex items-center">
-                                    <Plus className="w-4 h-4 mr-1" /> Agregar Fila
-                                </button>
-                                {(() => {
-                                    const sum = splitRows.reduce((a,r) => a + (Number(r.amount)||0), 0);
-                                    const diff = (Number(formData.amount)||0) - sum;
-                                    return (
-                                        <p className={`text-xs mt-2 font-bold ${Math.abs(diff) > 1 ? 'text-red-500' : 'text-green-600'}`}>
-                                            {Math.abs(diff) > 1 ? `Faltan asignar: ${formatCurrency(diff)}` : 'Distribución Completa'}
-                                        </p>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Categoría *</label>
-                        <select 
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                            value={formData.category}
-                            onChange={e => setFormData({...formData, category: e.target.value})}
+                        <button 
+                            type="button"
+                            onClick={handleCancel}
+                            className="w-full py-3 rounded-xl border border-zinc-200 text-zinc-500 font-medium hover:bg-zinc-100 transition flex items-center justify-center text-sm"
                         >
-                            <option value="">Seleccionar...</option>
-                            <option value="">Seleccionar...</option>
-                            {CATEGORIES_COMMON.map(c => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
+                            <X className="w-4 h-4 mr-2" /> Cancelar y Volver
+                        </button>
+                    </div>
+
+                    {/* Right Column: Form Fields */}
+                    <div className="lg:col-span-7 space-y-6 pb-20">
+                        
+                        {/* Header Mobile Only */}
+                        <div className="lg:hidden mb-4">
+                            <h2 className="text-xl font-bold text-zinc-800">Detalles del Gasto</h2>
+                        </div>
+
+                        {/* Card: Main Info (Amount & Currency) */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
+                             <div className="grid grid-cols-12 gap-4">
+                                <div className="col-span-4">
+                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Moneda</label>
+                                     <select
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-3 font-semibold text-zinc-700 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                                        value={formData.currency || 'COP'}
+                                        onChange={e => setFormData({...formData, currency: e.target.value})}
+                                     >
+                                        <option value="COP">COP ($)</option>
+                                        <option value="USD">USD (u$s)</option>
+                                     </select>
+                                </div>
+                                <div className="col-span-8">
+                                    <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Monto Total</label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-lg">
+                                            {formData.currency === 'USD' ? '$' : '$'}
+                                        </span>
+                                        <input 
+                                            type="number" 
+                                            required
+                                            placeholder="0"
+                                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-2xl font-bold text-zinc-900 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition placeholder:text-zinc-300"
+                                            value={formData.amount}
+                                            onChange={e => setFormData({...formData, amount: e.target.value})}
+                                            step={formData.currency === 'USD' ? "0.01" : "1"}
+                                        />
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* Card: Context (Who, Where, When) */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-5">
+                            
+                            {/* ADMIN Mode Selector */}
                             {userRole === 'admin' && (
-                                <optgroup label="Solo Admin">
-                                    {CATEGORIES_ADMIN.map(c => (
-                                        <option key={c} value={c}>{c}</option>
-                                    ))}
-                                </optgroup>
+                                <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100">
+                                    <label className="block text-xs font-bold text-brand-600 uppercase tracking-wider mb-3">Asignación del Gasto</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        {[
+                                            { id: 'me', label: 'Mí mismo' },
+                                            { id: 'project', label: 'Empresa / Centro de Costo' },
+                                            { id: 'other', label: 'Otro(a)' }
+                                        ].map(opt => (
+                                            <label key={opt.id} className={`
+                                                flex items-center px-3 py-2 rounded-lg cursor-pointer text-sm font-medium transition border
+                                                ${expenseMode === opt.id 
+                                                    ? 'bg-white border-brand-200 text-brand-700 shadow-sm ring-1 ring-brand-200' 
+                                                    : 'border-transparent text-zinc-500 hover:bg-white hover:text-zinc-700'}
+                                            `}>
+                                                <input 
+                                                    type="radio" 
+                                                    name="expenseMode" 
+                                                    value={opt.id}
+                                                    checked={expenseMode === opt.id}
+                                                    onChange={() => setExpenseMode(opt.id)}
+                                                    className="sr-only"
+                                                />
+                                                <span className={`w-2 h-2 rounded-full mr-2 ${expenseMode === opt.id ? 'bg-brand-500' : 'bg-zinc-300'}`}></span>
+                                                {opt.label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    
+                                     {expenseMode === 'other' && (
+                                        <div className="mt-3 animate-fadeIn">
+                                            <select 
+                                                className="w-full border border-brand-200 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-brand-500/20 outline-none"
+                                                value={selectedUserId}
+                                                onChange={e => setSelectedUserId(e.target.value)}
+                                                required
+                                            >
+                                                <option value="">Seleccionar Profesional...</option>
+                                                {users.map(u => (
+                                                    <option key={u.id} value={u.id}>{u.displayName}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
                             )}
-                        </select>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Fecha</label>
-                        <input 
-                            type="date" 
-                            required
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                            value={formData.date}
-                            onChange={e => setFormData({...formData, date: e.target.value})}
-                        />
-                    </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                 <div className="md:col-span-2">
+                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Comercio / Proveedor</label>
+                                     <input 
+                                         type="text" 
+                                         className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                                         value={formData.merchant}
+                                         onChange={e => setFormData({...formData, merchant: e.target.value})}
+                                         placeholder="Ej: Restaurant El Paso"
+                                     />
+                                 </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="col-span-1">
-                             <label className="block text-sm font-bold text-slate-700 mb-2">Moneda</label>
-                             <select
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                                value={formData.currency || 'COP'}
-                                onChange={e => setFormData({...formData, currency: e.target.value})}
-                             >
-                                <option value="COP">COP ($)</option>
-                                <option value="USD">USD (u$s)</option>
-                             </select>
+                                 <div>
+                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Fecha</label>
+                                     <input 
+                                         type="date" 
+                                         required
+                                         className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                                         value={formData.date}
+                                         onChange={e => setFormData({...formData, date: e.target.value})}
+                                     />
+                                 </div>
+
+                                 <div>
+                                      <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Categoría</label>
+                                      <select 
+                                          required
+                                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                                          value={formData.category}
+                                          onChange={e => setFormData({...formData, category: e.target.value})}
+                                      >
+                                          <option value="">Seleccionar...</option>
+                                          {CATEGORIES_COMMON.map(c => (
+                                              <option key={c} value={c}>{c}</option>
+                                          ))}
+                                          {userRole === 'admin' && (
+                                              <optgroup label="Solo Admin">
+                                                  {CATEGORIES_ADMIN.map(c => (
+                                                      <option key={c} value={c}>{c}</option>
+                                                  ))}
+                                              </optgroup>
+                                          )}
+                                      </select>
+                                 </div>
+                             </div>
                         </div>
-                        <div className="col-span-2">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Monto</label>
-                            <input 
-                                type="number" 
-                                required
-                                placeholder="0"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                                value={formData.amount}
-                                onChange={e => setFormData({...formData, amount: e.target.value})}
-                                step={formData.currency === 'USD' ? "0.01" : "1"}
-                            />
+
+                        {/* Card: Cost Center & Description */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-5">
+                             <div>
+                                <div className="flex justify-between items-center mb-2">
+                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">Centro de Costo *</label>
+                                     {userRole === 'admin' && (
+                                        <label className="inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={isSplitMode}
+                                                onChange={e => setIsSplitMode(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="relative w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                                            <span className="ms-2 text-xs font-bold text-brand-600">Multi-Centro</span>
+                                        </label>
+                                     )}
+                                </div>
+                                
+                                {!isSplitMode ? (
+                                    <select 
+                                        required
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                                        value={formData.projectId}
+                                        onChange={e => setFormData({...formData, projectId: e.target.value})}
+                                    >
+                                        <option value="">Selecciona un centro de costo...</option>
+                                        {projects.map(p => {
+                                            if (p.status === 'deleted') return null;
+                                            return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
+                                        })}
+                                    </select>
+                                ) : (
+                                    <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-200">
+                                        <div className="mb-3 flex justify-between items-center bg-white p-3 rounded-lg border border-zinc-100 shadow-sm">
+                                            <span className="text-xs font-bold text-zinc-500 uppercase">Monto a Distribuir</span>
+                                            <span className="font-mono font-bold text-zinc-800">{formatCurrency(formData.amount || 0)}</span>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            {splitRows.map((row, idx) => (
+                                                <div key={idx} className="flex gap-2 items-center">
+                                                    <select 
+                                                        required
+                                                        className="flex-grow border border-zinc-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
+                                                        value={row.projectId}
+                                                        onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
+                                                    >
+                                                        <option value="">Centro de Costo...</option>
+                                                        {projects.map(p => (
+                                                        <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <input 
+                                                        type="number"
+                                                        placeholder="0"
+                                                        className="w-24 border border-zinc-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
+                                                        value={row.amount}
+                                                        onChange={e => handleSplitChange(idx, 'amount', e.target.value)}
+                                                        required
+                                                    />
+                                                    {splitRows.length > 1 && (
+                                                        <button type="button" onClick={() => handleRemoveSplitRow(idx)} className="text-zinc-400 hover:text-red-500 p-1">
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        <div className="mt-3 flex justify-between items-center">
+                                            <button type="button" onClick={handleAddSplitRow} className="text-xs text-brand-600 font-bold hover:underline flex items-center bg-white px-2 py-1 rounded border border-zinc-200 shadow-sm">
+                                                <Plus className="w-3 h-3 mr-1" /> Agregar Línea
+                                            </button>
+                                            
+                                            {(() => {
+                                                const sum = splitRows.reduce((a,r) => a + (Number(r.amount)||0), 0);
+                                                const diff = (Number(formData.amount)||0) - sum;
+                                                return (
+                                                    <span className={`text-xs font-bold ${Math.abs(diff) > 1 ? 'text-red-500' : 'text-green-600'}`}>
+                                                        {Math.abs(diff) > 1 ? `Faltan: ${formatCurrency(diff)}` : 'Ok'}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+                             </div>
+
+                             <div>
+                                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Descripción</label>
+                                 <textarea 
+                                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"
+                                     rows="3"
+                                     value={formData.description}
+                                     onChange={e => setFormData({...formData, description: e.target.value})}
+                                     placeholder="Detalle o justificación del gasto..."
+                                 ></textarea>
+                             </div>
                         </div>
-                    </div>
 
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Comercio / Lugar</label>
-                        <input 
-                            type="text" 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                            value={formData.merchant}
-                            onChange={e => setFormData({...formData, merchant: e.target.value})}
-                            placeholder="Ej: Restaurant El Paso"
-                        />
-                    </div>
+                        {/* Submit Button Area */}
+                         <button 
+                            type="submit"
+                            disabled={loading || processingAi}
+                            className="w-full bg-zinc-900 text-white font-bold py-4 px-6 rounded-xl hover:bg-zinc-800 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-zinc-900/10 text-lg flex justify-center items-center group relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                                     Procesando...
+                                </>
+                            ) : (
+                                <span className="relative z-10 flex items-center">Confirmar y Enviar Rendición <CheckCircle className="w-5 h-5 ml-2" /></span>
+                            )}
+                        </button>
 
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Descripción</label>
-                        <textarea 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                            rows="3"
-                            value={formData.description}
-                            onChange={e => setFormData({...formData, description: e.target.value})}
-                            placeholder="Detalle del gasto..."
-                        ></textarea>
                     </div>
-                </div>
-
-                <div className="flex gap-4">
-                    <button 
-                         type="button"
-                         onClick={handleCancel}
-                         className="flex-1 bg-slate-100 text-slate-700 font-bold py-4 px-6 rounded-xl hover:bg-slate-200 transition"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        type="submit"
-                        disabled={loading || processingAi}
-                        className="flex-1 bg-slate-900 text-white font-bold py-4 px-6 rounded-xl hover:bg-slate-800 transition disabled:opacity-50 shadow-lg hover:shadow-xl text-lg flex justify-center items-center"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                                 Enviando...
-                            </>
-                        ) : 'Confirmar y Enviar'}
-                    </button>
                 </div>
             </form>
         )}

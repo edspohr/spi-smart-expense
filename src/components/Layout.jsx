@@ -31,25 +31,25 @@ export default function Layout({ children, title }) {
   }, [currentUser]);
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-zinc-50 overflow-hidden font-sans">
       {mustChangePass && currentUser && <ForcePasswordChange user={currentUser} />}
       
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="flex justify-between items-center px-8 py-4 glass-header z-20">
+        <header className="flex justify-between items-center px-8 py-5 glass-header z-20 bg-white/60 backdrop-blur-md sticky top-0 border-b border-zinc-200/50">
             <div className="flex items-center">
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-4 text-slate-500 hover:text-slate-800 transition">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-4 text-zinc-500 hover:text-zinc-800 transition">
                     <Menu className="w-6 h-6" />
                 </button>
-                <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">{title}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-zinc-800 tracking-tight">{title}</h1>
             </div>
             <div>
                 {/* Notification Icon or future user menu */}
             </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-6 md:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-zinc-50/50 p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
                 <PageTransition key={location.pathname}>
                     {children}
@@ -60,7 +60,7 @@ export default function Layout({ children, title }) {
         {/* Mobile Overlay */}
         {sidebarOpen && (
             <div 
-                className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-10 md:hidden transition-opacity" 
+                className="fixed inset-0 bg-zinc-900/20 backdrop-blur-sm z-10 md:hidden transition-opacity" 
                 onClick={() => setSidebarOpen(false)}
             ></div>
         )}
