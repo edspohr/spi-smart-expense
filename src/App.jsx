@@ -14,10 +14,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/useAuth';
 
 import AdminModuleSelector from './pages/AdminModuleSelector';
-import AdminInvoicingDashboard from './pages/AdminInvoicingDashboard';
-import AdminInvoicingGeneration from './pages/AdminInvoicingGeneration';
-import AdminInvoicingHistory from './pages/AdminInvoicingHistory';
-import AdminInvoicingReconciliation from './pages/AdminInvoicingReconciliation';
 
 
 function RootRedirect() {
@@ -45,12 +41,7 @@ function App() {
         <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin"><AdminBalances /></ProtectedRoute>} />
         <Route path="/admin/users-seeder" element={<ProtectedRoute requiredRole="admin"><AdminUserSeeder /></ProtectedRoute>} />
 
-        {/* Invoicing Module */}
-        <Route path="/admin/invoicing" element={<ProtectedRoute requiredRole="admin"><AdminInvoicingDashboard /></ProtectedRoute>} />
-        <Route path="/admin/invoicing/generate" element={<ProtectedRoute requiredRole="admin"><AdminInvoicingGeneration /></ProtectedRoute>} />
-        <Route path="/admin/invoicing/history" element={<ProtectedRoute requiredRole="admin"><AdminInvoicingHistory /></ProtectedRoute>} />
-        <Route path="/admin/invoicing/reconciliation" element={<ProtectedRoute requiredRole="admin"><AdminInvoicingReconciliation /></ProtectedRoute>} />
-        
+
         {/* User Routes */}
         <Route path="/dashboard" element={<ProtectedRoute requiredRole={['professional', 'admin']}><UserDashboard /></ProtectedRoute>} />
         <Route path="/dashboard/expenses" element={<ProtectedRoute requiredRole={['professional', 'admin']}><UserExpenses /></ProtectedRoute>} />

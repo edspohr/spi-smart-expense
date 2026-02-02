@@ -98,16 +98,7 @@ export async function seedDatabase(currentUserId) {
       balance: 0,
       forcePasswordChange: true,
     },
-    // Pseudo-User for Caja Chica Shared Balance
-    {
-      uid: "user_caja_chica",
-      email: "caja-chica@system.local",
-      displayName: "Fondo Caja Chica",
-      role: "admin", // Admin role to be safe, but mostly internal
-      code: "CCH",
-      balance: 0,
-      forcePasswordChange: false,
-    },
+
     {
       uid: "user_demo",
       email: "espohr@gmail.com",
@@ -130,16 +121,7 @@ export async function seedDatabase(currentUserId) {
   }
 
   // 3. Create Default Projects
-  const commonProjects = [
-    {
-      id: "project_caja_chica",
-      name: "Caja Chica",
-      client: "Interno",
-      status: "active",
-      type: "petty_cash", // Marker for logic
-      createdAt: new Date().toISOString(),
-    },
-  ];
+  const commonProjects = [];
 
   for (const p of commonProjects) {
     await seedBatch.set(doc(db, "projects", p.id), p);

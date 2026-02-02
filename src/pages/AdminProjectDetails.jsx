@@ -378,11 +378,7 @@ export default function AdminProjectDetails() {
                                         {e.rejectionReason && e.status === 'rejected' && (
                                             <p className="text-xs text-red-500 mt-1 italic">"{e.rejectionReason}"</p>
                                         )}
-                                        {e.invoiceId && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mt-1">
-                                                Facturado
-                                            </span>
-                                        )}
+
                                     </td>
                                     <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(e.amount)}</td>
                                     <td className="px-4 py-3">
@@ -394,11 +390,6 @@ export default function AdminProjectDetails() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center space-x-2">
-                                            {e.invoiceId ? (
-                                                <span className="text-gray-400 text-xs italic flex items-center gap-1" title="Gasto facturado, no se puede editar/eliminar">
-                                                    <Ban className="w-4 h-4" /> Bloqueado
-                                                </span>
-                                            ) : (
                                                 <>
                                                     {e.status === 'pending' && (
                                                         <>
@@ -418,7 +409,6 @@ export default function AdminProjectDetails() {
                                                         <Trash2 className="w-5 h-5" />
                                                     </button>
                                                 </>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>

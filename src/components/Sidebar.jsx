@@ -45,73 +45,40 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       <nav className="space-y-1">
         {userRole === 'admin' && (
             <>
-                {location.pathname.startsWith('/admin/invoicing') ? (
-                    // Invoicing Sidebar
-                    <>
-                        <div className="flex items-center justify-between px-4 mt-6 mb-2">
-                            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Facturación</p>
-                            <Link to="/admin/select-module" className="text-[10px] text-slate-500 hover:text-white transition-colors">CAMBIAR</Link>
-                        </div>
-                        <Link to="/admin/invoicing" className={linkClass('/admin/invoicing')} onClick={() => setIsOpen(false)}>
-                            <LayoutDashboard className="w-4 h-4 mr-3" />
-                            Dashboard
-                        </Link>
-                        <Link to="/admin/invoicing/generate" className={linkClass('/admin/invoicing/generate')} onClick={() => setIsOpen(false)}>
-                            <FileText className="w-4 h-4 mr-3" />
-                            Generar
-                        </Link>
-                        <Link to="/admin/invoicing/history" className={linkClass('/admin/invoicing/history')} onClick={() => setIsOpen(false)}>
-                            <FolderOpen className="w-4 h-4 mr-3" />
-                            Historial
-                        </Link>
-                        <Link to="/admin/invoicing/reconciliation" className={linkClass('/admin/invoicing/reconciliation')} onClick={() => setIsOpen(false)}>
-                            <Wallet className="w-4 h-4 mr-3" />
-                            Cta Cte (Cartolas)
-                        </Link>
-                    </>
-                ) : (
-                    // Expenses Sidebar
-                    <>
-                        <div className="flex items-center justify-between px-4 mt-6 mb-2">
-                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gestión Gastos</p>
-                             <Link to="/admin/select-module" className="text-[10px] text-slate-500 hover:text-white transition-colors">CAMBIAR</Link>
-                        </div>
-                        
-                        <Link to="/admin" className={linkClass('/admin')} onClick={() => setIsOpen(false)}>
-                        <LayoutDashboard className="w-4 h-4 mr-3" />
-                        Dashboard
-                        </Link>
-                        <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)}>
-                        <FolderOpen className="w-4 h-4 mr-3" />
-                        Proyectos
-                        </Link>
-                        <Link to="/admin/approvals" className={linkClass('/admin/approvals')} onClick={() => setIsOpen(false)}>
-                        <CheckCircle className="w-4 h-4 mr-3" />
-                        Aprobaciones
-                        </Link>
-                        <Link to="/admin/balances" className={linkClass('/admin/balances')} onClick={() => setIsOpen(false)}>
-                        <Wallet className="w-4 h-4 mr-3" />
-                        Finanzas
-                        </Link>
-                    </>
-                )}
+                <div className="flex items-center justify-between px-4 mt-6 mb-2">
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gestión Gastos</p>
+                </div>
+                
+                <Link to="/admin" className={linkClass('/admin')} onClick={() => setIsOpen(false)}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard
+                </Link>
+                <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)}>
+                <FolderOpen className="w-4 h-4 mr-3" />
+                Proyectos
+                </Link>
+                <Link to="/admin/approvals" className={linkClass('/admin/approvals')} onClick={() => setIsOpen(false)}>
+                <CheckCircle className="w-4 h-4 mr-3" />
+                Aprobaciones
+                </Link>
+                <Link to="/admin/balances" className={linkClass('/admin/balances')} onClick={() => setIsOpen(false)}>
+                <Wallet className="w-4 h-4 mr-3" />
+                Finanzas
+                </Link>
             </>
         )}
 
         {/* Only show "Mi Espacio" if NOT in Invoicing Module (to avoid confusion) */}
-        {!location.pathname.startsWith('/admin/invoicing') && (
-            <>
-                <p className={groupTitleClass}>Mi Espacio</p>
-                <Link to="/dashboard" className={linkClass('/dashboard')} onClick={() => setIsOpen(false)}>
-                    <UserCircle className="w-4 h-4 mr-3" />
-                    Mi Resumen
-                </Link>
-                <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
-                    <Receipt className="w-4 h-4 mr-3" />
-                    Mis Rendiciones
-                </Link>
-            </>
-        )}
+        {/* Mi Espacio */}
+        <p className={groupTitleClass}>Mi Espacio</p>
+        <Link to="/dashboard" className={linkClass('/dashboard')} onClick={() => setIsOpen(false)}>
+            <UserCircle className="w-4 h-4 mr-3" />
+            Mi Resumen
+        </Link>
+        <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
+            <Receipt className="w-4 h-4 mr-3" />
+            Mis Rendiciones
+        </Link>
 
         
         <div className="mt-auto pt-10">

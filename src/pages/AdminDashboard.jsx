@@ -18,7 +18,6 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
   // (caja state removed)
-  const [cajaChicaSpent, setCajaChicaSpent] = useState(0);
   const [loading, setLoading] = useState(true);
   // const [seeding, setSeeding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,18 +56,7 @@ export default function AdminDashboard() {
                 // (Caja Chica calculation moved to optimization block below)
             });
             
-            // Optimization: Find Caja Chica ID first
-            const cajaProject = projectsData.find(p => p.type === 'petty_cash' || p.name.toLowerCase().includes('caja chica'));
-            let ccSpent = 0;
-            if (cajaProject) {
-                // Sum expenses for this project
-                expensesDocs.forEach(e => {
-                     if ((e.status === 'approved' || e.status === 'pending') && e.projectId === cajaProject.id) {
-                         ccSpent += (Number(e.amount) || 0);
-                     }
-                });
-            }
-            setCajaChicaSpent(ccSpent);
+
 
             // Sum Allocations (Assigned Budget)
             allocationsDocs.forEach(alloc => {
@@ -140,30 +128,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-             {/* Caja Chica Card */}
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 relative overflow-hidden group hover:shadow-lg transition duration-300">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                    <Wallet className="w-16 h-16 text-teal-600" />
-                </div>
-                <h3 className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-2">Fondo Caja Chica</h3>
-                <div className="flex flex-col items-center justify-center mb-4">
-                    <p className="text-xs text-orange-500 font-bold mb-1 uppercase tracking-wider">Total Gastado</p>
-                    <p className="text-4xl font-extrabold text-orange-600">{formatCurrency(cajaChicaSpent)}</p>
-                </div>
-                <button 
-                    onClick={() => {
-                        const cajaProject = projects.find(p => p.name?.toLowerCase().includes("caja chica") || p.type === 'petty_cash');
-                        if (cajaProject) {
-                            navigate(`/admin/projects/${cajaProject.id}`);
-                        } else {
-                            navigate('/admin/balances');
-                        }
-                    }} 
-                    className="w-full text-xs font-bold text-white bg-slate-800 px-3 py-2 rounded hover:bg-slate-700 transition"
-                >
-                    VER DETALLE
-                </button>
-            </div>
+
 
 
 
@@ -197,8 +162,7 @@ export default function AdminDashboard() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.filter(p => {
-                        const isNotCaja = !p.name.toLowerCase().includes('caja chica') && p.type !== 'petty_cash';
-                        if (!isNotCaja) return false;
+                        if (p.status === 'deleted') return false;
                         if (!searchTerm) return true;
                         const lower = searchTerm.toLowerCase();
                         return p.name.toLowerCase().includes(lower) || 

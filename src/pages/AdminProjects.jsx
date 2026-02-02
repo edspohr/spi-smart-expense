@@ -342,30 +342,9 @@ export default function AdminProjects() {
                                 );
                             });
 
-                            const cajaChica = filtered.find(p => p.type === 'petty_cash' || p.name.toLowerCase().includes('caja chica'));
-                            const otherProjects = filtered.filter(p => p !== cajaChica);
-
                             return (
                                 <>
-                                    {cajaChica && (
-                                        <tr key={cajaChica.id} className="border-b bg-amber-50 hover:bg-amber-100/50 border-l-4 border-l-amber-400">
-                                            <td className="px-6 py-4 font-medium">
-                                                <Link to={`/admin/projects/${cajaChica.id}`} className="text-amber-800 hover:text-amber-900 hover:underline font-bold flex items-center">
-                                                    {formatProjectName(cajaChica)}
-                                                    <span className="ml-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] uppercase rounded-full">Especial</span>
-                                                </Link>
-                                            </td>
-                                            <td className="px-6 py-4 text-amber-800 font-medium">{cajaChica.client}</td>
-                                            <td className="px-6 py-4 text-amber-800 font-mono font-bold">{formatCurrency(cajaChica.expenses || 0)}</td>
-                                            <td className="px-6 py-4"><span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-semibold">Fondo Fijo</span></td>
-                                            <td className="px-6 py-4">
-                                                 {/* Prevent deletion of Caja Chica easily */}
-                                                 <span className="text-xs text-gray-400 italic">Sistema</span>
-                                            </td>
-                                        </tr>
-                                    )}
-
-                                    {otherProjects.map(p => (
+                                    {filtered.map(p => (
                                         <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                                             <td className="px-6 py-4 font-medium">
                                                 <Link to={`/admin/projects/${p.id}`} className="text-blue-600 hover:text-blue-800 hover:underline">

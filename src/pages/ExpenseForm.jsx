@@ -186,16 +186,7 @@ export default function ExpenseForm() {
         }
     }
         
-    if (!isSplitMode) {
-        const selectedProject = projects.find(p => p.id === formData.projectId);
-        // RELIABLE CHECK: Use 'type' property first
-        const isCajaChica = selectedProject?.type === 'petty_cash';
-        
-        if (isCajaChica && userRole !== 'admin') {
-            toast.error("No tienes permisos para rendir en 'Caja Chica'.");
-            return;
-        }
-    }
+
 
     // ---------------------------------------------------------
     // VALIDATIONS
@@ -223,21 +214,7 @@ export default function ExpenseForm() {
         targetUidCheck = selectedUserId;
     }
 
-    if (!isSplitMode) {
-        const dupQuery = query(
-            collection(db, "expenses"),
-            where("userId", "==", targetUidCheck),
-            where("date", "==", formData.date),
-            where("amount", "==", totalAmount)
-        );
-        
-        const dupSnap = await getDocs(dupQuery);
-        if (!dupSnap.empty) {
-            if (!confirm("Parece que ya existe un gasto con esta fecha y monto para este usuario. ¿Estás seguro de que no es un duplicado?")) {
-                return;
-            }
-        }
-    }
+
     // ---------------------------------------------------------
 
     try {
@@ -508,8 +485,6 @@ export default function ExpenseForm() {
                                 <option value="">Selecciona un proyecto...</option>
                                 {projects.map(p => {
                                     if (p.status === 'deleted') return null;
-                                    const isCajaChica = (p.name.toLowerCase().includes("caja chica") || p.type === 'petty_cash');
-                                    if (isCajaChica && userRole !== 'admin') return null;
                                     return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.recurrence ? `(${p.recurrence}) ` : ''}{p.name}</option>
                                 })}
                             </select>
