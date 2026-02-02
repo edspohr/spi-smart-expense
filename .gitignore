@@ -28,3 +28,4 @@ dist-ssr
 
 # Backup
 _backup/
+vercel_env.txt
