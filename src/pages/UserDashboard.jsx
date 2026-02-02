@@ -235,7 +235,7 @@ export default function UserDashboard() {
                                                                                     <p className="text-gray-400 truncate max-w-[150px]">{e.description}</p>
                                                                                     {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-blue-500 hover:underline">Ver Recibo</a>}
                                                                                 </td>
-                                                                                <td className="px-3 py-2 font-bold text-gray-700 text-right">{formatCurrency(e.amount)}</td>
+                                                                                <td className="px-3 py-2 font-bold text-gray-700 text-right">{formatCurrency(e.amount, e.currency)}</td>
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold
                                                                                         ${e.status === 'approved' ? 'bg-green-100 text-green-700' : 

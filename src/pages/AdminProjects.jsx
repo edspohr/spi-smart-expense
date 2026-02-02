@@ -17,7 +17,7 @@ export default function AdminProjects() {
 
   // Form States
   const [showProjectForm, setShowProjectForm] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', client: '', code: '', recurrence: '' });
+  const [newProject, setNewProject] = useState({ name: '', client: '', code: '' });
   
   const [viaticoUser, setViaticoUser] = useState('');
   const [viaticoProject, setViaticoProject] = useState('');
@@ -62,14 +62,14 @@ export default function AdminProjects() {
         await addDoc(collection(db, "projects"), {
             name: newProject.name,
             code: newProject.code || '',
-            recurrence: newProject.recurrence || '',
-            client: newProject.client,
-            expenses: 0,
+            client: newProject.client || '',
             status: 'active',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            budget: 0,
+            expenses: 0
         });
-        toast.success("Proyecto creado exitosamente");
-        setNewProject({ name: '', client: '', code: '', recurrence: '' });
+        toast.success("Centro de Costo creado exitosamente");
+        setNewProject({ name: '', client: '', code: '' });
         setShowProjectForm(false);
         fetchData();
     } catch (err) {
@@ -79,19 +79,19 @@ export default function AdminProjects() {
   };
 
   const handleDeleteProject = async (projectId) => {
-      const pin = prompt("Ingrese clave maestra para ELIMINAR este proyecto:");
+      const pin = prompt("Ingrese clave maestra para ELIMINAR este centro de costo:");
       if (pin !== "1234") {
           alert("Clave incorrecta.");
           return;
       }
 
-      if (!confirm("El proyecto se ocultará pero los datos se conservan. ¿Confirmar?")) return;
+      if (!confirm("El centro de costo se ocultará pero los datos se conservan. ¿Confirmar?")) return;
 
       try {
           await updateDoc(doc(db, "projects", projectId), {
               status: 'deleted'
           });
-          alert("Proyecto eliminado.");
+          alert("Centro de Costo eliminado.");
           fetchData();
       } catch (e) {
           console.error(e);
@@ -152,7 +152,6 @@ export default function AdminProjects() {
   const formatProjectName = (p) => {
       let parts = [];
       if (p.code) parts.push(`[${p.code}]`);
-      if (p.recurrence) parts.push(`(${p.recurrence})`);
       parts.push(p.name);
       return parts.join(' ');
   };
@@ -160,14 +159,14 @@ export default function AdminProjects() {
   if (loading) return <Layout title="Gestión de Proyectos">Cargando...</Layout>;
 
   return (
-    <Layout title="Gestión de Proyectos y Viáticos">
+    <Layout title="Gestión de Centros de Costo">
         {/* Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             
             {/* Create Project Section */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-gray-800">Crear Nuevo Proyecto</h2>
+                    <h2 className="text-lg font-bold text-gray-800">Crear Nuevo Centro de Costo</h2>
                     <button 
                         onClick={() => setShowProjectForm(!showProjectForm)}
                         className="text-blue-600 hover:text-blue-800"
@@ -178,52 +177,46 @@ export default function AdminProjects() {
                 
                 {showProjectForm && (
                     <form onSubmit={handleCreateProject} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Nombre del Proyecto</label>
-                            <input 
-                                type="text" 
-                                className="mt-1 w-full p-2 border rounded"
-                                value={newProject.name}
-                                onChange={e => setNewProject({...newProject, name: e.target.value})}
-                                required 
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Nombre del Centro de Costo</label>
+                                <input 
+                                    type="text"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    value={newProject.name}
+                                    onChange={e => setNewProject({...newProject, name: e.target.value})}
+                                    placeholder="Ej: Operaciones"
+                                    required 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Código</label>
+                                <input 
+                                    type="text"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    value={newProject.code}
+                                    onChange={e => setNewProject({...newProject, code: e.target.value})}
+                                    placeholder="Ej: CC-001"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Cliente / Entidad</label>
+                                <input 
+                                    type="text" 
+                                    list="client-suggestions" // [NEW] Link to datalist
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    value={newProject.client}
+                                    onChange={e => setNewProject({...newProject, client: e.target.value})}
+                                    placeholder="Ej: SPI Americas"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Código de Proyecto</label>
-                            <input 
-                                type="text" 
-                                className="mt-1 w-full p-2 border rounded"
-                                value={newProject.code}
-                                onChange={e => setNewProject({...newProject, code: e.target.value})}
-                                placeholder="Ej: PRJ-001"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Recurrencia</label>
-                            <input 
-                                type="text" 
-                                className="mt-1 w-full p-2 border rounded"
-                                value={newProject.recurrence}
-                                onChange={e => setNewProject({...newProject, recurrence: e.target.value})}
-                                placeholder="Ej: A, B, C..."
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Cliente</label>
-                            <input 
-                                type="text" 
-                                list="client-suggestions" // [NEW] Link to datalist
-                                className="mt-1 w-full p-2 border rounded"
-                                value={newProject.client}
-                                onChange={e => setNewProject({...newProject, client: e.target.value})}
-                            />
-                            {/* [NEW] Dynamic Client List */}
-                            <datalist id="client-suggestions">
-                                {[...new Set(projects.map(p => p.client).filter(Boolean))].map((c, i) => (
-                                    <option key={i} value={c} />
-                                ))}
-                            </datalist>
-                        </div>
+                        {/* [NEW] Dynamic Client List */}
+                        <datalist id="client-suggestions">
+                            {[...new Set(projects.map(p => p.client).filter(Boolean))].map((c, i) => (
+                                <option key={i} value={c} />
+                            ))}
+                        </datalist>
                         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
                             Guardar Proyecto
                         </button>
@@ -240,11 +233,11 @@ export default function AdminProjects() {
                 </div>
                 <form onSubmit={handleAssignViatico} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Proyecto</label>
+                        <label className="block text-sm font-medium text-gray-700">Centro de Costo</label>
                         <input 
                             type="text"
-                            placeholder="Buscar proyecto..."
-                            className="mt-1 w-full p-2 border rounded text-xs mb-2"
+                            placeholder="Buscar centro de costo..."
+                            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64 mb-2"
                             value={allocationSearch}
                             onChange={e => setAllocationSearch(e.target.value)}
                         />
@@ -254,7 +247,7 @@ export default function AdminProjects() {
                             onChange={e => setViaticoProject(e.target.value)}
                             required
                         >
-                            <option value="">Seleccionar Proyecto...</option>
+                            <option value="">Seleccionar Centro de Costo...</option>
                             {projects.filter(p => {
                                 if (!allocationSearch) return true;
                                 const term = allocationSearch.toLowerCase();
@@ -267,14 +260,13 @@ export default function AdminProjects() {
                         </select>
                     </div>
 
-                    {/* Show Professional Select ONLY if NOT Caja Chica */}
+                    {/* Show Professional Select */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Profesional</label>
                         <select 
-                            className="mt-1 w-full p-2 border rounded"
+                            className="w-full border p-2 rounded"
                             value={viaticoUser}
                             onChange={e => setViaticoUser(e.target.value)}
-                            required
                         >
                             <option value="">Seleccionar Profesional...</option>
                             {users.map(u => (
@@ -309,7 +301,7 @@ export default function AdminProjects() {
         {/* Projects List */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h3 className="font-bold text-gray-700">Listado de Proyectos</h3>
+                <h3 className="font-bold text-gray-700">Listado de Centros de Costo</h3>
                 <input 
                     type="text"
                     placeholder="Buscar por nombre, código o cliente..."
@@ -322,7 +314,7 @@ export default function AdminProjects() {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50 border-b">
-                            <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
+                            <th className="px-6 py-3 font-medium text-gray-500">Centro de Costo</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Cliente</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Gastado</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Estado</th>
@@ -348,7 +340,10 @@ export default function AdminProjects() {
                                         <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                                             <td className="px-6 py-4 font-medium">
                                                 <Link to={`/admin/projects/${p.id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
-                                                    {formatProjectName(p)}
+                                                   <div className="font-medium text-gray-900">
+                                                {p.code ? `[${p.code}] ` : ''}{p.name}
+                                            </div>
+                                            <div className="text-sm text-gray-500">{p.client}</div>
                                                 </Link>
                                             </td>
                                             <td className="px-6 py-4 text-gray-600">{p.client}</td>
@@ -358,7 +353,7 @@ export default function AdminProjects() {
                                                 <button 
                                                     onClick={() => handleDeleteProject(p.id)}
                                                     className="text-red-500 hover:text-red-700 p-1"
-                                                    title="Eliminar Proyecto"
+                                                    title="Eliminar Centro de Costo"
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -370,7 +365,7 @@ export default function AdminProjects() {
                         })()}
                         {projects.length === 0 && (
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No hay proyectos registrados.</td>
+                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No hay centros de costo registrados.</td>
                             </tr>
                         )}
                     </tbody>

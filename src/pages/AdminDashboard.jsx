@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -14,7 +14,7 @@ import { Skeleton } from '../components/Skeleton';
 
 export default function AdminDashboard() {
   // const { currentUser } = useAuth();
-  const navigate = useNavigate();
+  /* const navigate = useNavigate(); */
   const [projects, setProjects] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
   // (caja state removed)
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
 
 
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-center">
-                <h3 className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Proyectos Activos</h3>
+                <h3 className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Centros de Costo Activos</h3>
                 <p className="text-3xl font-extrabold text-slate-800 mt-2">{projects.length}</p>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-center">
@@ -148,17 +148,17 @@ export default function AdminDashboard() {
 
         <div className="mt-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Resumen de Proyectos</h2>
+                <h2 className="text-xl font-bold text-gray-800">Resumen de Centros de Costo</h2>
                 <input 
                     type="text" 
-                    placeholder="Buscar proyecto..." 
+                    placeholder="Buscar centro de costo..." 
                     className="mt-2 md:mt-0 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                 />
             </div>
             {projects.length === 0 ? (
-                <p className="text-gray-500">No hay proyectos activos.</p>
+                <p className="text-gray-500">No hay centros de costo activos.</p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.filter(p => {
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
                             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-between h-full hover:shadow-xl hover:-translate-y-1 transition duration-300">
                                 <div>
                                     <h3 className="font-bold text-lg text-slate-800 mb-1 leading-tight">
-                                        {p.code ? `[${p.code}] ` : ''}{p.recurrence ? `(${p.recurrence}) ` : ''}{p.name}
+                                        {p.code ? `[${p.code}] ` : ''}{p.name}
                                     </h3>
                                     <p className="text-sm text-slate-500 mb-6 font-medium">{p.client}</p>
                                     

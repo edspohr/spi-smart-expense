@@ -290,14 +290,14 @@ export default function AdminProjectDetails() {
       }
   };
 
-  if (loading) return <Layout title="Detalles del Proyecto">Cargando...</Layout>;
-  if (!project) return <Layout title="Error">Proyecto no encontrado.</Layout>;
+  if (loading) return <Layout title="Detalles del Centro de Costo">Cargando...</Layout>;
+  if (!project) return <Layout title="Error">Centro de Costo no encontrado.</Layout>;
 
   return (
-    <Layout title={`Acciones: ${project.code ? `[${project.code}] ` : ''}${project.recurrence ? `(${project.recurrence}) ` : ''}${project.name}`}>
+    <Layout title={`Acciones: ${project.code ? `[${project.code}] ` : ''}${project.name}`}>
         <div className="mb-6">
             <Link to="/admin/projects" className="text-blue-600 hover:text-blue-800 flex items-center">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Proyectos
+                <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Centros de Costo
             </Link>
         </div>
 
@@ -380,7 +380,7 @@ export default function AdminProjectDetails() {
                                         )}
 
                                     </td>
-                                    <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(e.amount)}</td>
+                                    <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(e.amount, e.currency)}</td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold
                                             ${e.status === 'approved' ? 'bg-green-100 text-green-800' : 

@@ -176,12 +176,12 @@ export default function ExpenseForm() {
             return;
         }
         if (splitRows.some(r => !r.projectId)) {
-            toast.error("Seleccione proyecto para todas las filas.");
+            toast.error("Seleccione centro de costo para todas las filas.");
             return;
         }
     } else {
         if (!formData.projectId) {
-            toast.error("Por favor selecciona un proyecto.");
+            toast.error("Por favor selecciona un centro de costo.");
             return;
         }
     }
@@ -281,6 +281,7 @@ export default function ExpenseForm() {
                 merchant: formData.merchant,
                 description: formData.description + (isSplitMode ? ' [Distribución]' : ''),
                 amount: item.amount,
+                currency: formData.currency || 'COP',
                 imageUrl: imageUrl,
                 status: initialStatus,
                 createdAt: new Date().toISOString(),
@@ -448,14 +449,14 @@ export default function ExpenseForm() {
                             )}
                             
                              {expenseMode === 'project' && (
-                                <p className="text-xs text-blue-600 mt-1">Este gasto se cargará al proyecto pero no afectará saldos de personas.</p>
+                                <p className="text-xs text-blue-600 mt-1">Este gasto se cargará al centro de costo pero no afectará saldos de personas.</p>
                             )}
                         </div>
                     )}
 
                     <div className="md:col-span-2 space-y-4">
                         <div className="flex justify-between items-center">
-                            <label className="block text-sm font-semibold text-gray-700">Proyecto *</label>
+                            <label className="block text-sm font-semibold text-gray-700">Centro de Costo *</label>
                             {userRole === 'admin' && (
                                 <div className="flex items-center">
                                     <input 
@@ -466,7 +467,7 @@ export default function ExpenseForm() {
                                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                     <label htmlFor="splitMode" className="ml-2 text-sm text-blue-800 font-bold cursor-pointer">
-                                        Distribuir gasto (Multi-Proyecto)
+                                        Distribuir gasto (Multi-Centro)
                                     </label>
                                 </div>
                             )}
@@ -479,10 +480,10 @@ export default function ExpenseForm() {
                                 value={formData.projectId}
                                 onChange={e => setFormData({...formData, projectId: e.target.value})}
                             >
-                                <option value="">Selecciona un proyecto...</option>
+                                <option value="">Selecciona un centro de costo...</option>
                                 {projects.map(p => {
                                     if (p.status === 'deleted') return null;
-                                    return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.recurrence ? `(${p.recurrence}) ` : ''}{p.name}</option>
+                                    return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
                                 })}
                             </select>
                         ) : (
@@ -498,9 +499,9 @@ export default function ExpenseForm() {
                                             value={row.projectId}
                                             onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
                                         >
-                                            <option value="">Proyecto...</option>
+                                            <option value="">Centro de Costo...</option>
                                             {projects.map(p => (
-                                                <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.recurrence ? `(${p.recurrence}) ` : ''}{p.name}</option>
+                                            <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
                                             ))}
                                         </select>
                                         <input 
@@ -568,16 +569,30 @@ export default function ExpenseForm() {
                         />
                     </div>
 
-                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Monto (CLP)</label>
-                        <input 
-                            type="number" 
-                            required
-                            placeholder="0"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
-                            value={formData.amount}
-                            onChange={e => setFormData({...formData, amount: e.target.value})}
-                        />
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-1">
+                             <label className="block text-sm font-bold text-slate-700 mb-2">Moneda</label>
+                             <select
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
+                                value={formData.currency || 'COP'}
+                                onChange={e => setFormData({...formData, currency: e.target.value})}
+                             >
+                                <option value="COP">COP ($)</option>
+                                <option value="USD">USD (u$s)</option>
+                             </select>
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Monto</label>
+                            <input 
+                                type="number" 
+                                required
+                                placeholder="0"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none transition"
+                                value={formData.amount}
+                                onChange={e => setFormData({...formData, amount: e.target.value})}
+                                step={formData.currency === 'USD' ? "0.01" : "1"}
+                            />
+                        </div>
                     </div>
 
                     <div className="md:col-span-2">
