@@ -36,8 +36,9 @@ export async function uploadReceiptImage(file, userId) {
 
   // Create a unique filename
   const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
   const extension = file.name.split(".").pop();
-  const filename = `${timestamp}.${extension}`;
+  const filename = `${timestamp}_${random}.${extension}`;
   const path = `receipts/${userId}/${filename}`;
 
   const storageRef = ref(storage, path);

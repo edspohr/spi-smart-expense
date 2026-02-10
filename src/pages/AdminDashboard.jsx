@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
-// import { seedDatabase } from '../lib/seedData';
 import { formatCurrency } from '../utils/format';
 // import { useAuth } from '../context/useAuth';
 import { Database, Wallet } from 'lucide-react';

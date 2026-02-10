@@ -11,10 +11,20 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Users: Read/Write own only OR Admin OR if migrating/claiming by email
+    // Users: 
+    // - Read: Authenticated users (to find others for 'on behalf' logic if needed, or profile).
+    // - Create: User can create own doc, but role defaults to professional/cannot be admin.
+    // - Update: User can update own doc but CANNOT change role. Admin can update everything.
     match /users/{userId} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid == userId || 
+      allow read: if request.auth != null;
+      
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'professional');
+        
+      allow update: if request.auth != null && (
+        (request.auth.uid == userId && (
+           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+        )) || 
         isAdmin()
       );
     }
@@ -29,12 +39,13 @@ service cloud.firestore {
     match /expenses/{expenseId} {
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if request.auth != null && (request.resource.data.userId == request.auth.uid || isAdmin());
+      // Only Admin can update (approve/reject) or delete
       allow update, delete: if isAdmin();
     }
 
-    // Allocations: Read own, Write Admin only
+    // Allocations: Read own (or associated project?), Write Admin only
     match /allocations/{allocationId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if request.auth != null;
       allow write: if isAdmin();
     }
 

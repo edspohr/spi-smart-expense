@@ -3,8 +3,9 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, increment, writeBatch, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { CheckCircle, XCircle, Download, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, Download, FileText, Eye } from 'lucide-react';
 import RejectionModal from '../components/RejectionModal';
+import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import { toast } from 'sonner';
 import { motion as Motion } from 'framer-motion';
 
@@ -17,6 +18,9 @@ export default function AdminApprovals() {
   // Rejection Modal State
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [selectedExpenseToReject, setSelectedExpenseToReject] = useState(null);
+  
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState(null);
   // Date Range State for Export
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -85,7 +89,7 @@ export default function AdminApprovals() {
           });
 
           // Define CSV Headers
-          const headers = ["Fecha", "Usuario", "Código Proyecto", "Proyecto", "Recurrencia", "Descripción", "Categoría", "Monto", "Estado", "Motivo Rechazo"];
+          const headers = ["Fecha", "Hora", "Usuario", "Código Proyecto", "Proyecto", "Evento", "Proveedor", "NIT", "No. Factura", "Dirección", "Ciudad", "Teléfono", "Forma Pago", "Tarjeta Last4", "Descripción", "Categoría", "Monto", "Moneda", "Estado", "Motivo Rechazo"];
           
           // Map Data to CSV Rows
           const rows = expenses.map(e => {
@@ -99,13 +103,23 @@ export default function AdminApprovals() {
 
               return [
                 e.date || "",
+                e.time || "",
                 e.userName || "",
                 project?.code || "",
                 e.projectName || "",
-                project?.recurrence || "",
+                e.eventName || "",
+                `"${(e.merchant || "").replace(/"/g, '""')}"`,
+                e.taxId || "",
+                e.invoiceNumber || "",
+                `"${(e.address || "").replace(/"/g, '""')}"`,
+                e.city || "",
+                e.phone || "",
+                e.paymentMethod || "",
+                e.cardLast4 || "",
                 `"${(e.description || "").replace(/"/g, '""')}"`, // Escape quotes
                 e.category || "",
                 e.amount || 0,
+                e.currency || "COP",
                 e.status === 'approved' ? 'Aprobado' : e.status === 'rejected' ? 'Rechazado' : 'Pendiente',
                 `"${(e.rejectionReason || "").replace(/"/g, '""')}"`
               ];
@@ -308,8 +322,15 @@ export default function AdminApprovals() {
                                     </td>
                                 )}
                                 <td className="px-6 py-4 flex space-x-2">
+                                    <button 
+                                        onClick={() => { setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }}
+                                        className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-100 rounded"
+                                        title="Ver Detalles Completos"
+                                    >
+                                        <Eye className="w-6 h-6" />
+                                    </button>
                                      <button 
-                                        onClick={() => handleViewReceipt(e.imageUrl)}
+                                        onClick={() => handleViewReceipt(e.receiptUrl || e.imageUrl)}
                                         className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded"
                                         title="Ver Comprobante"
                                     >
@@ -347,6 +368,11 @@ export default function AdminApprovals() {
           onClose={() => setRejectionModalOpen(false)}
           onConfirm={handleConfirmRejection}
           expense={selectedExpenseToReject}
+      />
+      <ExpenseDetailsModal
+          isOpen={detailsModalOpen}
+          onClose={() => setDetailsModalOpen(false)}
+          expense={selectedExpenseForDetails}
       />
     </Layout>
   );

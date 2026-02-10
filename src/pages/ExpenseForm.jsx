@@ -1,30 +1,26 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
-import { parseReceiptImage } from '../lib/gemini';
+import { parseExpenseDocuments } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
 import { collection, getDocs, query, where, doc, increment, writeBatch } from 'firebase/firestore';
-import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle } from 'lucide-react';
-import { formatCurrency } from '../utils/format'; // Validation aid/display
+import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle, CreditCard, Calendar, MousePointer2 } from 'lucide-react';
+import { formatCurrency } from '../utils/format'; 
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
 import { toast } from 'sonner';
 
 const CATEGORIES_COMMON = [
-  "Alimentación",
-  "Snacks",
-  "Combustible", 
-  "Traslados", 
-  "Materiales", 
-  "Otros"
+  "RESTAURANTE - ALIMENTACION",
+  "HOTEL",
+  "ROOMING",
+  "TRANSPORTE TERRESTRE",
+  "TRANSPORTE AEREO",
+  "VARIOS"
 ];
 
-const CATEGORIES_ADMIN = [
-  "Pasajes Aéreo",
-  "Arriendo de Autos",
-  "Arriendo de Equipamiento"
-];
+const CATEGORIES_ADMIN = [];
 
 export default function ExpenseForm() {
   const { currentUser, userRole } = useAuth();
@@ -32,6 +28,7 @@ export default function ExpenseForm() {
   const [loading, setLoading] = useState(false);
   const [processingAi, setProcessingAi] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [existingEvents, setExistingEvents] = useState([]);
   
   const [step, setStep] = useState('upload'); // 'upload' | 'review'
   
@@ -40,16 +37,31 @@ export default function ExpenseForm() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
 
+  // Split Logic
+  const [isSplitMode, setIsSplitMode] = useState(false);
+  const [splitRows, setSplitRows] = useState([{ projectId: '', amount: '' }]);
+
+  const [files, setFiles] = useState({ receipt: null, voucher: null });
+  const [previews, setPreviews] = useState({ receipt: null, voucher: null });
+
   const [formData, setFormData] = useState({
     projectId: '',
+    eventName: '',
     date: '',
+    time: '',
     merchant: '',
+    taxId: '',
+    invoiceNumber: '',
+    city: '',
+    address: '',
+    phone: '',
     description: '',
     category: '',
     amount: '',
-    receiptImage: null
+    currency: 'COP',
+    paymentMethod: '',
+    cardLast4: ''
   });
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
       async function fetchData() {
@@ -59,6 +71,16 @@ export default function ExpenseForm() {
           const data = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
           setProjects(sortProjects(data));
 
+          // Fetch Events (Unique) from Expenses
+          const qExp = query(collection(db, "expenses"));
+          const snapExp = await getDocs(qExp);
+          const events = new Set();
+          snapExp.docs.forEach(d => {
+              const evt = d.data().eventName;
+              if (evt) events.add(evt);
+          });
+          setExistingEvents(Array.from(events).sort());
+
           // Fetch Users (If Admin)
           if (userRole === 'admin') {
               const uQuery = query(collection(db, "users"), where("role", "==", "professional"));
@@ -67,78 +89,78 @@ export default function ExpenseForm() {
               setUsers(uData);
           }
       }
-      if (userRole !== null) { // Wait for role to be known
+      if (userRole !== null) { 
           fetchData();
       }
   }, [userRole]);
 
-  const handleFileChange = async (e) => {
-    const originalFile = e.target.files[0];
-    if (!originalFile) return;
+  const handleFileSelect = async (type, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    setStep('review');
-
-    // AI Processing & Compression
     try {
-      setProcessingAi(true);
-      
-      // 1. Compress Image (if it's an image)
-      const compressedFile = await compressImage(originalFile);
+        let processedFile = file;
+        if (file.type.startsWith('image/')) {
+            processedFile = await compressImage(file);
+        }
 
-      // 2. Set Preview & Data with Compressed File
-      const url = URL.createObjectURL(compressedFile);
-      setPreviewUrl(url);
-      setFormData(prev => ({ ...prev, receiptImage: compressedFile }));
+        const url = URL.createObjectURL(processedFile);
+        
+        setFiles(prev => ({ ...prev, [type]: processedFile }));
+        setPreviews(prev => ({ ...prev, [type]: url }));
 
-      // 3. Determine available categories based on role
-      let availableCats = [...CATEGORIES_COMMON];
-      if (userRole === 'admin') {
-          availableCats = [...availableCats, ...CATEGORIES_ADMIN];
-      }
-
-      // 4. AI Analysis (using compressed file)
-      const data = await parseReceiptImage(compressedFile, availableCats);
-      if (data) {
-        setFormData(prev => ({
-          ...prev,
-          date: data.date || prev.date,
-          merchant: data.merchant || prev.merchant,
-          amount: data.amount || prev.amount,
-          description: data.description || prev.description,
-          category: data.category || prev.category,
-        }));
-      }
     } catch (err) {
-      console.error("Processing Error:", err);
-      toast.error(err.message || "No se pudo extraer información automática del recibo.");
-      // Fallback: If compression fails
-      if (!formData.receiptImage) {
-           setFormData(prev => ({ ...prev, receiptImage: originalFile }));
-           setPreviewUrl(URL.createObjectURL(originalFile));
-      }
-    } finally {
-      setProcessingAi(false);
+        console.error("Error processing file:", err);
+        toast.error("Error al procesar el archivo.");
     }
   };
 
-  // Split Logic
-  const [isSplitMode, setIsSplitMode] = useState(false);
-  const [splitRows, setSplitRows] = useState([{ projectId: '', amount: '' }]);
+  const handleAnalyze = async () => {
+      if (!files.receipt) {
+          toast.error("Debes subir al menos el Recibo/Factura.");
+          return;
+      }
 
-  // ... (Existing useEffects)
+      setProcessingAi(true);
+      try {
+          const data = await parseExpenseDocuments(files.receipt, files.voucher, CATEGORIES_COMMON);
+          
+          if (data) {
+             setFormData(prev => ({
+                 ...prev,
+                 date: data.date || prev.date,
+                 time: data.time || prev.time,
+                 merchant: data.merchant || prev.merchant,
+                 taxId: data.taxId || prev.taxId,
+                 invoiceNumber: data.invoiceNumber || prev.invoiceNumber,
+                 city: data.city || prev.city,
+                 address: data.address || prev.address,
+                 phone: data.phone || prev.phone,
+                 amount: data.amount || prev.amount,
+                 description: data.description || prev.description,
+                 category: data.category || prev.category,
+                 currency: data.currency || prev.currency,
+                 paymentMethod: data.paymentMethod || prev.paymentMethod,
+                 cardLast4: data.cardLast4 || prev.cardLast4
+             }));
+             toast.success("Información extraída con éxito.");
+             setStep('review');
+          }
+      } catch (e) {
+          console.error(e);
+          toast.error("Error al analizar documentos: " + e.message);
+      } finally {
+          setProcessingAi(false);
+      }
+  };
 
   const handleCancel = () => {
       setStep('upload');
+      setFiles({ receipt: null, voucher: null });
+      setPreviews({ receipt: null, voucher: null });
       setFormData({
-        projectId: '',
-        date: '',
-        merchant: '',
-        description: '',
-        category: '',
-        amount: '',
-        receiptImage: null
+        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: ''
       });
-      setPreviewUrl(null);
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
   };
@@ -163,16 +185,20 @@ export default function ExpenseForm() {
     e.preventDefault();
     if (!currentUser || loading) return;
 
-    // Common Validation
+    // Validation
+    if (!files.receipt) { toast.error("Falta el comprobante (Recibo)."); return; }
+    if (!files.voucher) { toast.error("Falta el Voucher de pago (Requerido)."); return; }
+    if (!formData.eventName) { toast.error("El nombre del evento es obligatorio."); return; }
+    
     const totalAmount = Number(formData.amount);
     if (isNaN(totalAmount) || totalAmount === 0) {
-        toast.error("Ingrese un monto válido (puede ser negativo para devoluciones/correcciones).");
+        toast.error("Ingrese un monto válido.");
         return;
     }
 
     if (isSplitMode) {
         const sumSplits = splitRows.reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
-        if (Math.abs(sumSplits - totalAmount) > 1) { // 1 peso tolerance
+        if (Math.abs(sumSplits - totalAmount) > 1) { // 1 peso/unit tolerance
             toast.error(`La suma de la distribución (${sumSplits}) no coincide con el total (${totalAmount}). Diferencia: ${totalAmount - sumSplits}`);
             return;
         }
@@ -180,59 +206,19 @@ export default function ExpenseForm() {
             toast.error("Seleccione centro de costo para todas las filas.");
             return;
         }
-    } else {
-        if (!formData.projectId) {
-            toast.error("Por favor selecciona un centro de costo.");
-            return;
-        }
     }
-        
-
-
-    // ---------------------------------------------------------
-    // VALIDATIONS
-    // ---------------------------------------------------------
-
-    // 1. Date Restriction (Max 60 days old)
-    const MAX_DAYS_OLD = 60;
-    // Standardize: create date to midnight local (YYYY-MM-DD + T00...)
-    const expenseDate = new Date(formData.date + 'T00:00:00'); 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    // Calculate difference in days
-    const diffTime = Math.abs(today - expenseDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (expenseDate < today && diffDays > MAX_DAYS_OLD) {
-        toast.error(`La fecha del gasto no puede tener más de ${MAX_DAYS_OLD} días de antigüedad.`);
-        return;
-    }
-
-    // 2. Duplicity Check
-
-
-
-    // ---------------------------------------------------------
 
     try {
         setLoading(true);
         
-        let imageUrl = '';
-        // 1. Upload Image
-        if (formData.receiptImage) {
-            imageUrl = await uploadReceiptImage(formData.receiptImage, currentUser.uid);
-        }
+        const receiptUrl = await uploadReceiptImage(files.receipt, currentUser.uid);
+        const voucherUrl = await uploadReceiptImage(files.voucher, currentUser.uid);
 
-        // Prepare Common Data
         let targetUid = currentUser.uid;
         let targetName = currentUser.displayName;
         let isProjectExpense = false;
 
-        // Determine Logic based on Mode
         if (userRole === 'admin') {
-
-
             if (expenseMode === 'project') {
                 targetUid = 'company_expense';
                 targetName = 'Gasto Empresa';
@@ -245,12 +231,9 @@ export default function ExpenseForm() {
             }
         }
 
-        // All expenses start as pending, even for admins (Cross-check requirement)
         const initialStatus = 'pending';
-
         const splitGroupId = isSplitMode ? crypto.randomUUID() : null;
-        
-        // Define items to save
+
         let itemsToSave = [];
         if (isSplitMode) {
             itemsToSave = splitRows.map(row => ({
@@ -259,48 +242,53 @@ export default function ExpenseForm() {
             }));
         } else {
              itemsToSave = [{
-                 projectId: formData.projectId,
+                 projectId: formData.projectId || null,
                  amount: totalAmount
              }];
         }
 
-        // START BATCH
         const batch = writeBatch(db);
 
         for (const item of itemsToSave) {
             const projectObj = projects.find(p => p.id === item.projectId);
-            const expenseRef = doc(collection(db, "expenses")); // Auto ID
+            const expenseRef = doc(collection(db, "expenses"));
 
-            // 1. Create Expense
             batch.set(expenseRef, {
                 userId: targetUid,
                 userName: targetName,
                 projectId: item.projectId,
-                projectName: projectObj?.name || 'Unknown',
+                projectName: projectObj?.name || 'Sin Asignar',
+                eventName: formData.eventName.toUpperCase(),
                 category: formData.category,
                 date: formData.date,
+                time: formData.time || null,
                 merchant: formData.merchant,
+                taxId: formData.taxId || null,
+                invoiceNumber: formData.invoiceNumber || null,
+                city: formData.city || null,
+                address: formData.address || null,
+                phone: formData.phone || null,
+                paymentMethod: formData.paymentMethod || null,
                 description: formData.description + (isSplitMode ? ' [Distribución]' : ''),
                 amount: item.amount,
                 currency: formData.currency || 'COP',
-                imageUrl: imageUrl,
+                cardLast4: formData.cardLast4 || null,
+                
+                receiptUrl: receiptUrl,
+                voucherUrl: voucherUrl,
+                
                 status: initialStatus,
                 createdAt: new Date().toISOString(),
                 isCompanyExpense: isProjectExpense,
-                splitGroupId: splitGroupId // Link them
+                splitGroupId: splitGroupId
             });
 
-            // 2. Update Project Total (Only if approved immediately, kept for consistency)
-            if (initialStatus === 'approved') {
-                 const projectRef = doc(db, "projects", item.projectId);
-                 batch.update(projectRef, {
-                     expenses: increment(item.amount)
-                 });
-            }
-
-            // 3. Update User Balance (Credit) only if personal/other expense
             if (!isProjectExpense) {
                 const userRef = doc(db, "users", targetUid);
+                // For pending expenses, we typically DO NOT credit balance immediately, 
+                // but if the architecture credits upon CLAIM (not approval), then assume yes.
+                // However, user usually wants balance = "amount waiting to be reimbursed".
+                // If the app credits balance upon submission:
                 batch.set(userRef, {
                     balance: increment(item.amount)
                 }, { merge: true });
@@ -308,9 +296,8 @@ export default function ExpenseForm() {
         }
 
         await batch.commit();
-        // END BATCH
 
-        toast.success(initialStatus === 'approved' ? "Gasto registrado y aprobado." : "Rendición enviada exitosamente.");
+        toast.success("Rendición enviada exitosamente.");
         navigate('/dashboard');
 
     } catch (e) {
@@ -321,371 +308,450 @@ export default function ExpenseForm() {
     }
   };
 
+  const stepsClass = (isActive) => `w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isActive ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-400'}`;
+
   return (
     <Layout title="Nueva Rendición">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         
-        {/* Step 1: Upload or Manual */}
+        {/* Progress */}
+        <div className="flex justify-center mb-8 gap-4">
+            <div className="flex items-center gap-2">
+                <div className={stepsClass(step === 'upload')}>1</div>
+                <span className={step === 'upload' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Documentos</span>
+            </div>
+            <div className="w-12 h-px bg-gray-200 self-center"></div>
+            <div className="flex items-center gap-2">
+                <div className={stepsClass(step === 'review')}>2</div>
+                <span className={step === 'review' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Detalles</span>
+            </div>
+        </div>
+
+        {/* Step 1: Upload */}
         {step === 'upload' && (
-            <div className="max-w-xl mx-auto mt-8 animate-fadeIn">
-                 <div className="bg-white rounded-3xl shadow-xl shadow-zinc-200/50 overflow-hidden border border-zinc-100">
-                     <div className="p-8 pb-0 text-center">
-                        <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand-600">
-                             <Upload className="w-8 h-8" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-zinc-800 mb-2">Sube tu Recibo</h2>
-                        <p className="text-zinc-500 text-sm">Escanea con la cámara o selecciona un archivo (Imagen/PDF) para autocompletar.</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 animate-fadeIn">
+                 <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">Sube tus Comprobantes</h2>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     
+                     {/* Receipt Upload */}
+                     <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center relative hover:bg-slate-100 transition h-64">
+                         <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileSelect('receipt', e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                         {previews.receipt ? (
+                             <div className="flex flex-col items-center">
+                                 <FileText className="w-12 h-12 text-green-500 mb-2" />
+                                 <span className="text-green-600 font-medium">Recibo Cargado</span>
+                                 <p className="text-xs text-slate-400 mt-1">{files.receipt?.name}</p>
+                             </div>
+                         ) : (
+                             <>
+                                <div className="bg-white p-3 rounded-full shadow-sm mb-4"><Upload className="w-6 h-6 text-blue-500" /></div>
+                                <span className="font-semibold text-slate-700">1. Factura / Recibo</span>
+                                <span className="text-xs text-slate-400 mt-1">(Obligatorio)</span>
+                             </>
+                         )}
                      </div>
 
-                     <div className="p-8">
-                        <div className="relative group cursor-pointer">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-500 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                            <div className="relative bg-white border-2 border-dashed border-zinc-200 rounded-xl p-10 flex flex-col items-center justify-center hover:bg-zinc-50/50 transition duration-300 h-64">
-                                <input 
-                                    type="file" 
-                                    accept="image/*,application/pdf" 
-                                    onChange={handleFileChange} 
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                                />
-                                <div className="bg-zinc-100 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
-                                    <Camera className="w-8 h-8 text-zinc-400 group-hover:text-brand-500 transition-colors" />
-                                </div>
-                                <span className="font-semibold text-zinc-700 group-hover:text-brand-600 transition-colors">Seleccionar Archivo</span>
-                                <span className="text-xs text-zinc-400 mt-1">JPG, PNG, PDF (Máx 5MB)</span>
-                            </div>
-                        </div>
-
-                        <div className="mt-8 flex items-center">
-                            <div className="flex-1 h-px bg-zinc-200"></div>
-                            <span className="px-4 text-xs font-semibold text-zinc-400 uppercase tracking-widest">Opción Manual</span>
-                            <div className="flex-1 h-px bg-zinc-200"></div>
-                        </div>
-
-                        <button 
-                            onClick={() => setStep('review')}
-                            className="block w-full mt-6 bg-zinc-50 border border-zinc-200 text-zinc-600 font-semibold py-3.5 px-4 rounded-xl hover:bg-zinc-100 hover:text-zinc-900 transition flex items-center justify-center"
-                        >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Ingresar sin Comprobante
-                        </button>
+                     {/* Voucher Upload */}
+                     <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center relative hover:bg-slate-100 transition h-64">
+                         <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileSelect('voucher', e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                         {previews.voucher ? (
+                             <div className="flex flex-col items-center">
+                                 <CreditCard className="w-12 h-12 text-green-500 mb-2" />
+                                 <span className="text-green-600 font-medium">Voucher Cargado</span>
+                                 <p className="text-xs text-slate-400 mt-1">{files.voucher?.name}</p>
+                             </div>
+                         ) : (
+                             <>
+                                <div className="bg-white p-3 rounded-full shadow-sm mb-4"><CreditCard className="w-6 h-6 text-purple-500" /></div>
+                                <span className="font-semibold text-slate-700">2. Voucher Pago</span>
+                                <span className="text-xs text-slate-400 mt-1">(Requerido)</span>
+                             </>
+                         )}
                      </div>
                  </div>
+
+                 <div className="mt-8 flex justify-center">
+                     <button 
+                        onClick={handleAnalyze}
+                        disabled={!files.receipt || !files.voucher || processingAi}
+                        className="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {processingAi ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <MousePointer2 className="w-5 h-5 mr-2" />}
+                        {processingAi ? 'Analizando...' : 'Analizar Documentos'}
+                     </button>
+                 </div>
+                 
+                 <p className="text-center text-xs text-gray-400 mt-4">
+                     Nuestra IA extraerá los datos automáticamente de ambos archivos.
+                 </p>
             </div>
         )}
 
-        {/* Step 2: Review & Edit (Split Layout) */}
+        {/* Step 2: Review */}
         {step === 'review' && (
-            <form onSubmit={handleSubmit} className="animate-fadeIn">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <form onSubmit={handleSubmit} className="animate-fadeIn grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                {/* Left: Previews */}
+                <div className="lg:col-span-1 space-y-4">
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Recibo</h4>
+                        {previews.receipt && (
+                            files.receipt?.type === 'application/pdf' 
+                            ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
+                            : <img src={previews.receipt} className="rounded-lg w-full max-h-64 object-contain" />
+                        )}
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Voucher</h4>
+                        {previews.voucher && (
+                            files.voucher?.type === 'application/pdf'
+                            ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
+                            : <img src={previews.voucher} className="rounded-lg w-full max-h-64 object-contain" />
+                        )}
+                    </div>
+                    <button type="button" onClick={handleCancel} className="w-full py-2 text-red-500 text-sm hover:bg-red-50 rounded-lg">
+                        Cancelar / Cambiar Archivos
+                    </button>
                     
-                    {/* Left Column: Preview (Sticky) */}
-                    <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
-                        <div className="bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl shadow-zinc-900/20 border border-zinc-800 relative group">
-                            <div className="h-[60vh] lg:h-[calc(100vh-12rem)] flex items-center justify-center bg-zinc-950/50 backdrop-blur-3xl relative">
-                                {previewUrl ? (
-                                    formData.receiptImage?.type === 'application/pdf' ? (
-                                        <div className="text-center text-zinc-400 p-8">
-                                            <FileText className="w-20 h-20 mx-auto mb-4 text-red-500 opacity-80" />
-                                            <p className="font-medium text-sm text-zinc-300">{formData.receiptImage.name}</p>
-                                        </div>
-                                    ) : (
-                                        <img src={previewUrl} alt="Receipt Preview" className="max-w-full max-h-full object-contain shadow-lg" />
-                                    )
-                                ) : (
-                                    <div className="text-center text-zinc-500 p-8">
-                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                        <p className="text-sm">Sin comprobante adjunto</p>
-                                    </div>
-                                )}
-                                
-                                {processingAi && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm text-white z-20">
-                                         <Loader2 className="w-10 h-10 animate-spin mb-3 text-brand-400" />
-                                         <span className="font-medium text-lg tracking-tight">Analizando Recibo...</span>
-                                         <span className="text-xs text-zinc-400 mt-1">Extrayendo fecha, monto y comercio</span>
-                                    </div>
+                    {/* Admin Mode Selector (Moved Here for Layout) */}
+                     {userRole === 'admin' && (
+                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
+                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Asignación del Gasto</label>
+                            
+                            <div className="space-y-2">
+                                {[
+                                    { id: 'me', label: 'Mí mismo' },
+                                    { id: 'project', label: 'Empresa / Centro de Costo' },
+                                    { id: 'other', label: 'Otro(a)' }
+                                ].map(opt => (
+                                    <label key={opt.id} className={`
+                                        flex items-center px-3 py-2 rounded-lg cursor-pointer text-sm font-medium transition border w-full
+                                        ${expenseMode === opt.id 
+                                            ? 'bg-white border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-300' 
+                                            : 'border-transparent text-gray-500 hover:bg-white hover:text-gray-700'}
+                                    `}>
+                                        <input 
+                                            type="radio" 
+                                            name="expenseMode" 
+                                            value={opt.id}
+                                            checked={expenseMode === opt.id}
+                                            onChange={() => setExpenseMode(opt.id)}
+                                            className="sr-only"
+                                        />
+                                        <span className={`w-2 h-2 rounded-full mr-2 ${expenseMode === opt.id ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                                        {opt.label}
+                                    </label>
+                                ))}
+                            </div>
+                            
+                                {expenseMode === 'other' && (
+                                <div className="mt-3 animate-fadeIn">
+                                    <select 
+                                        className="w-full border border-blue-200 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={selectedUserId}
+                                        onChange={e => setSelectedUserId(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">Seleccionar Usuario...</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>{u.displayName}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Right: Form */}
+                <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                    
+                    {/* Event & Project */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
+                            <input 
+                                type="text" 
+                                required
+                                list="events-list"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                                placeholder="Ej: FERIA CHICAGO 2026"
+                                value={formData.eventName}
+                                onChange={e => setFormData({...formData, eventName: e.target.value.toUpperCase()})}
+                            />
+                            <datalist id="events-list">
+                                {existingEvents.map((evt, i) => <option key={i} value={evt} />)}
+                            </datalist>
+                        </div>
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-gray-700">Centro de Costo <span className="text-gray-400 font-normal">(Opcional)</span></label>
+                                {userRole === 'admin' && (
+                                    <label className="inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={isSplitMode}
+                                            onChange={e => setIsSplitMode(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span className="ms-2 text-xs font-bold text-blue-600">Multi</span>
+                                    </label>
                                 )}
                             </div>
-
-                             {/* Helper Actions for Preview */}
-                             <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button type="button" onClick={() => window.open(previewUrl)} className="bg-black/50 text-white p-2 rounded-full hover:bg-black/80 backdrop-blur-md">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"></path></svg>
-                                </button>
-                             </div>
-                        </div>
-                        
-                        <button 
-                            type="button"
-                            onClick={handleCancel}
-                            className="w-full py-3 rounded-xl border border-zinc-200 text-zinc-500 font-medium hover:bg-zinc-100 transition flex items-center justify-center text-sm"
-                        >
-                            <X className="w-4 h-4 mr-2" /> Cancelar y Volver
-                        </button>
-                    </div>
-
-                    {/* Right Column: Form Fields */}
-                    <div className="lg:col-span-7 space-y-6 pb-20">
-                        
-                        {/* Header Mobile Only */}
-                        <div className="lg:hidden mb-4">
-                            <h2 className="text-xl font-bold text-zinc-800">Detalles del Gasto</h2>
-                        </div>
-
-                        {/* Card: Main Info (Amount & Currency) */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
-                             <div className="grid grid-cols-12 gap-4">
-                                <div className="col-span-4">
-                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Moneda</label>
-                                     <select
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-3 font-semibold text-zinc-700 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                                        value={formData.currency || 'COP'}
-                                        onChange={e => setFormData({...formData, currency: e.target.value})}
-                                     >
-                                        <option value="COP">COP ($)</option>
-                                        <option value="USD">USD (u$s)</option>
-                                     </select>
-                                </div>
-                                <div className="col-span-8">
-                                    <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Monto Total</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-lg">
-                                            {formData.currency === 'USD' ? '$' : '$'}
-                                        </span>
-                                        <input 
-                                            type="number" 
-                                            required
-                                            placeholder="0"
-                                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-2xl font-bold text-zinc-900 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition placeholder:text-zinc-300"
-                                            value={formData.amount}
-                                            onChange={e => setFormData({...formData, amount: e.target.value})}
-                                            step={formData.currency === 'USD' ? "0.01" : "1"}
-                                        />
-                                    </div>
-                                </div>
-                             </div>
-                        </div>
-
-                        {/* Card: Context (Who, Where, When) */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-5">
                             
-                            {/* ADMIN Mode Selector */}
-                            {userRole === 'admin' && (
-                                <div className="p-4 bg-brand-50/50 rounded-xl border border-brand-100">
-                                    <label className="block text-xs font-bold text-brand-600 uppercase tracking-wider mb-3">Asignación del Gasto</label>
-                                    <div className="flex flex-wrap gap-3">
-                                        {[
-                                            { id: 'me', label: 'Mí mismo' },
-                                            { id: 'project', label: 'Empresa / Centro de Costo' },
-                                            { id: 'other', label: 'Otro(a)' }
-                                        ].map(opt => (
-                                            <label key={opt.id} className={`
-                                                flex items-center px-3 py-2 rounded-lg cursor-pointer text-sm font-medium transition border
-                                                ${expenseMode === opt.id 
-                                                    ? 'bg-white border-brand-200 text-brand-700 shadow-sm ring-1 ring-brand-200' 
-                                                    : 'border-transparent text-zinc-500 hover:bg-white hover:text-zinc-700'}
-                                            `}>
+                            {!isSplitMode ? (
+                                <select 
+                                    className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.projectId}
+                                    onChange={e => setFormData({...formData, projectId: e.target.value})}
+                                >
+                                    <option value="">-- Sin Asignar --</option>
+                                    {projects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <div className="mb-3 flex justify-between items-center bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                        <span className="text-xs font-bold text-gray-500 uppercase">Monto a Distribuir</span>
+                                        <span className="font-mono font-bold text-gray-800">{formatCurrency(formData.amount || 0)}</span>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        {splitRows.map((row, idx) => (
+                                            <div key={idx} className="flex gap-2 items-center">
+                                                <select 
+                                                    required
+                                                    className="flex-grow border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
+                                                    value={row.projectId}
+                                                    onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
+                                                >
+                                                    <option value="">Centro...</option>
+                                                    {projects.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
+                                                    ))}
+                                                </select>
                                                 <input 
-                                                    type="radio" 
-                                                    name="expenseMode" 
-                                                    value={opt.id}
-                                                    checked={expenseMode === opt.id}
-                                                    onChange={() => setExpenseMode(opt.id)}
-                                                    className="sr-only"
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="w-24 border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
+                                                    value={row.amount}
+                                                    onChange={e => handleSplitChange(idx, 'amount', e.target.value)}
+                                                    required
                                                 />
-                                                <span className={`w-2 h-2 rounded-full mr-2 ${expenseMode === opt.id ? 'bg-brand-500' : 'bg-zinc-300'}`}></span>
-                                                {opt.label}
-                                            </label>
+                                                {splitRows.length > 1 && (
+                                                    <button type="button" onClick={() => handleRemoveSplitRow(idx)} className="text-gray-400 hover:text-red-500 p-1">
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                     
-                                     {expenseMode === 'other' && (
-                                        <div className="mt-3 animate-fadeIn">
-                                            <select 
-                                                className="w-full border border-brand-200 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-brand-500/20 outline-none"
-                                                value={selectedUserId}
-                                                onChange={e => setSelectedUserId(e.target.value)}
-                                                required
-                                            >
-                                                <option value="">Seleccionar Usuario...</option>
-                                                {users.map(u => (
-                                                    <option key={u.id} value={u.id}>{u.displayName}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                 <div className="md:col-span-2">
-                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Comercio / Proveedor</label>
-                                     <input 
-                                         type="text" 
-                                         className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                                         value={formData.merchant}
-                                         onChange={e => setFormData({...formData, merchant: e.target.value})}
-                                         placeholder="Ej: Restaurant El Paso"
-                                     />
-                                 </div>
-
-                                 <div>
-                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Fecha</label>
-                                     <input 
-                                         type="date" 
-                                         required
-                                         className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                                         value={formData.date}
-                                         onChange={e => setFormData({...formData, date: e.target.value})}
-                                     />
-                                 </div>
-
-                                 <div>
-                                      <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Categoría</label>
-                                      <select 
-                                          required
-                                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                                          value={formData.category}
-                                          onChange={e => setFormData({...formData, category: e.target.value})}
-                                      >
-                                          <option value="">Seleccionar...</option>
-                                          {CATEGORIES_COMMON.map(c => (
-                                              <option key={c} value={c}>{c}</option>
-                                          ))}
-                                          {userRole === 'admin' && (
-                                              <optgroup label="Solo Admin">
-                                                  {CATEGORIES_ADMIN.map(c => (
-                                                      <option key={c} value={c}>{c}</option>
-                                                  ))}
-                                              </optgroup>
-                                          )}
-                                      </select>
-                                 </div>
-                             </div>
-                        </div>
-
-                        {/* Card: Cost Center & Description */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100 space-y-5">
-                             <div>
-                                <div className="flex justify-between items-center mb-2">
-                                     <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider">Centro de Costo *</label>
-                                     {userRole === 'admin' && (
-                                        <label className="inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={isSplitMode}
-                                                onChange={e => setIsSplitMode(e.target.checked)}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="relative w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
-                                            <span className="ms-2 text-xs font-bold text-brand-600">Multi-Centro</span>
-                                        </label>
-                                     )}
-                                </div>
-                                
-                                {!isSplitMode ? (
-                                    <select 
-                                        required
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                                        value={formData.projectId}
-                                        onChange={e => setFormData({...formData, projectId: e.target.value})}
-                                    >
-                                        <option value="">Selecciona un centro de costo...</option>
-                                        {projects.map(p => {
-                                            if (p.status === 'deleted') return null;
-                                            return <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
-                                        })}
-                                    </select>
-                                ) : (
-                                    <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-200">
-                                        <div className="mb-3 flex justify-between items-center bg-white p-3 rounded-lg border border-zinc-100 shadow-sm">
-                                            <span className="text-xs font-bold text-zinc-500 uppercase">Monto a Distribuir</span>
-                                            <span className="font-mono font-bold text-zinc-800">{formatCurrency(formData.amount || 0)}</span>
-                                        </div>
+                                    <div className="mt-3 flex justify-between items-center">
+                                        <button type="button" onClick={handleAddSplitRow} className="text-xs text-blue-600 font-bold hover:underline flex items-center bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
+                                            <Plus className="w-3 h-3 mr-1" /> Agregar Línea
+                                        </button>
                                         
-                                        <div className="space-y-2">
-                                            {splitRows.map((row, idx) => (
-                                                <div key={idx} className="flex gap-2 items-center">
-                                                    <select 
-                                                        required
-                                                        className="flex-grow border border-zinc-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
-                                                        value={row.projectId}
-                                                        onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
-                                                    >
-                                                        <option value="">Centro de Costo...</option>
-                                                        {projects.map(p => (
-                                                        <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ` : ''}{p.name}</option>
-                                                        ))}
-                                                    </select>
-                                                    <input 
-                                                        type="number"
-                                                        placeholder="0"
-                                                        className="w-24 border border-zinc-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
-                                                        value={row.amount}
-                                                        onChange={e => handleSplitChange(idx, 'amount', e.target.value)}
-                                                        required
-                                                    />
-                                                    {splitRows.length > 1 && (
-                                                        <button type="button" onClick={() => handleRemoveSplitRow(idx)} className="text-zinc-400 hover:text-red-500 p-1">
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        
-                                        <div className="mt-3 flex justify-between items-center">
-                                            <button type="button" onClick={handleAddSplitRow} className="text-xs text-brand-600 font-bold hover:underline flex items-center bg-white px-2 py-1 rounded border border-zinc-200 shadow-sm">
-                                                <Plus className="w-3 h-3 mr-1" /> Agregar Línea
-                                            </button>
-                                            
-                                            {(() => {
-                                                const sum = splitRows.reduce((a,r) => a + (Number(r.amount)||0), 0);
-                                                const diff = (Number(formData.amount)||0) - sum;
-                                                return (
-                                                    <span className={`text-xs font-bold ${Math.abs(diff) > 1 ? 'text-red-500' : 'text-green-600'}`}>
-                                                        {Math.abs(diff) > 1 ? `Faltan: ${formatCurrency(diff)}` : 'Ok'}
-                                                    </span>
-                                                );
-                                            })()}
-                                        </div>
+                                        {(() => {
+                                            const sum = splitRows.reduce((a,r) => a + (Number(r.amount)||0), 0);
+                                            const diff = (Number(formData.amount)||0) - sum;
+                                            return (
+                                                <span className={`text-xs font-bold ${Math.abs(diff) > 1 ? 'text-red-500' : 'text-green-600'}`}>
+                                                    {Math.abs(diff) > 1 ? `Faltan: ${formatCurrency(diff)}` : 'Ok'}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
-                                )}
-                             </div>
-
-                             <div>
-                                 <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Descripción</label>
-                                 <textarea 
-                                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-base text-zinc-800 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"
-                                     rows="3"
-                                     value={formData.description}
-                                     onChange={e => setFormData({...formData, description: e.target.value})}
-                                     placeholder="Detalle o justificación del gasto..."
-                                 ></textarea>
-                             </div>
-                        </div>
-
-                        {/* Submit Button Area */}
-                         <button 
-                            type="submit"
-                            disabled={loading || processingAi}
-                            className="w-full bg-zinc-900 text-white font-bold py-4 px-6 rounded-xl hover:bg-zinc-800 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-zinc-900/10 text-lg flex justify-center items-center group relative overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                                     Procesando...
-                                </>
-                            ) : (
-                                <span className="relative z-10 flex items-center">Confirmar y Enviar Rendición <CheckCircle className="w-5 h-5 ml-2" /></span>
+                                </div>
                             )}
-                        </button>
-
+                        </div>
                     </div>
+
+                    {/* Supplier & Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Comercio / Proveedor</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.merchant}
+                                onChange={e => setFormData({...formData, merchant: e.target.value})}
+                                placeholder="Ej: Restaurante El Buen Sabor"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">NIT / Identificación Fiscal</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.taxId}
+                                onChange={e => setFormData({...formData, taxId: e.target.value})}
+                                placeholder="Ej: 900.123.456-7"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.address}
+                                onChange={e => setFormData({...formData, address: e.target.value})}
+                                placeholder="Ej: Calle 123 # 45-67"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.city}
+                                onChange={e => setFormData({...formData, city: e.target.value})}
+                                placeholder="Ej: Bogotá"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.phone}
+                                onChange={e => setFormData({...formData, phone: e.target.value})}
+                                placeholder="Ej: 300 123 4567"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Factura</label>
+                            <input 
+                                type="date" 
+                                required
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.date}
+                                onChange={e => setFormData({...formData, date: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                            <input 
+                                type="time" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.time}
+                                onChange={e => setFormData({...formData, time: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
+                            <input 
+                                type="text" 
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                value={formData.invoiceNumber}
+                                onChange={e => setFormData({...formData, invoiceNumber: e.target.value})}
+                                placeholder="Ej: A-123456"
+                            />
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
+                             <select 
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                 value={formData.paymentMethod}
+                                 onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
+                             >
+                                 <option value="">Seleccionar...</option>
+                                 <option value="Credit Card">Tarjeta de Crédito</option>
+                                 <option value="Debit Card">Tarjeta Débito</option>
+                                 <option value="Cash">Efectivo</option>
+                                 <option value="Transfer">Transferencia</option>
+                                 <option value="Wallet">Billetera Digital (Nequi/Daviplata)</option>
+                                 <option value="Other">Otro</option>
+                             </select>
+                        </div>
+                    </div>
+
+                    {/* Amount & Currency */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-1">
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                             <select 
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                 value={formData.currency}
+                                 onChange={e => setFormData({...formData, currency: e.target.value})}
+                             >
+                                 <option value="COP">COP ($)</option>
+                                 <option value="USD">USD (u$s)</option>
+                                 <option value="CLP">CLP ($)</option>
+                             </select>
+                        </div>
+                        <div className="md:col-span-2">
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
+                             <input 
+                                 type="number" 
+                                 required
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 font-mono text-lg font-bold"
+                                 value={formData.amount}
+                                 onChange={e => setFormData({...formData, amount: e.target.value})}
+                             />
+                        </div>
+                    </div>
+                    
+                    {/* AI Extracted Details */}
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                             <label className="block text-xs font-bold text-blue-800 uppercase mb-1">Categoría Sugerida</label>
+                             <select
+                                 required
+                                 className="w-full border border-blue-200 rounded p-2 text-sm bg-white"
+                                 value={formData.category}
+                                 onChange={e => setFormData({...formData, category: e.target.value})}
+                             >
+                                 <option value="">Seleccionar...</option>
+                                 {CATEGORIES_COMMON.map(c => <option key={c} value={c}>{c}</option>)}
+                             </select>
+                        </div>
+                        <div>
+                             <label className="block text-xs font-bold text-blue-800 uppercase mb-1">Tarjeta (Últimos 4)</label>
+                             <input 
+                                 type="text" 
+                                 className="w-full border border-blue-200 rounded p-2 text-sm bg-white"
+                                 placeholder="**** 1234"
+                                 maxLength={4}
+                                 value={formData.cardLast4}
+                                 onChange={e => setFormData({...formData, cardLast4: e.target.value})}
+                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea 
+                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                            placeholder="Detalle del gasto..."
+                            value={formData.description}
+                            onChange={e => setFormData({...formData, description: e.target.value})}
+                        ></textarea>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition flex items-center justify-center text-lg shadow-lg hover:shadow-xl transform active:scale-[0.99]"
+                    >
+                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Confirmar Rendición <CheckCircle className="w-6 h-6 ml-2" /></>}
+                    </button>
+
                 </div>
             </form>
         )}
+
       </div>
     </Layout>
   );
