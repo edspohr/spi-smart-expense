@@ -90,10 +90,10 @@ export async function parseExpenseDocuments(
         error.message.includes("Resource has been exhausted");
       if (isQuotaError) {
         console.warn(
-          "Gemini 2.0 quota exceeded, falling back to gemini-1.5-flash",
+          "Gemini 2.0 quota exceeded, falling back to gemini-1.5-pro",
         );
         const modelFallback = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
+          model: "gemini-1.5-pro",
         });
         result = await modelFallback.generateContent([prompt, ...parts]);
       } else {
