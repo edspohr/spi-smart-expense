@@ -61,15 +61,15 @@ export async function parseExpenseDocuments(
       - time: HH:MM format (24h) if available.
       - invoiceNumber: Invoice / Receipt number (Nro Factura / Comprobante).
       - merchant: name of the place/vendor.
-      - taxId: Tax Identification Number (NIT / RUT / RUC).
+      - taxId: Tax Identification Number (NIT / RUT / RUC). Look for "NIT", "RUT", "RUC" followed by numbers.
       - address: Physical address of the merchant.
       - phone: Phone number of the merchant.
       - city: City of the transaction.
       - amount: total amount as a number (remove currency symbols).
       - currency: 'COP' or 'USD' or 'CLP'.
       - paymentMethod: 'Credit Card', 'Debit Card', 'Cash', 'Transfer', 'Wallet' (Nequi/Daviplata), or 'Other'.
-      - description: a short summary of the items (e.g. "Lunch", "Hardware materials").
-      - cardLast4: Look specifically in the VOUCHER for the last 4 digits of the card (e.g. **** 1234 -> "1234"). If not found, null.
+      - description: a short summary of the items (Concepto / Detalle). E.g. "Lunch with client", "Hardware materials", "Taxi to airport".
+      - cardLast4: Look specifically in the VOUCHER or RECEIPT for the last 4 digits of the card (e.g. **** 1234 -> "1234"). If not found, null.
       ${categoriesList}
       
       CRITICAL CATEGORIZATION RULES:

@@ -41,6 +41,9 @@ export default function ExpenseForm() {
   const [isSplitMode, setIsSplitMode] = useState(false);
   const [splitRows, setSplitRows] = useState([{ projectId: '', amount: '' }]);
 
+  // Manual Entry State
+  const [isManual, setIsManual] = useState(false);
+
   const [files, setFiles] = useState({ receipt: null, voucher: null });
   const [previews, setPreviews] = useState({ receipt: null, voucher: null });
 
@@ -163,6 +166,7 @@ export default function ExpenseForm() {
       });
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
+      setIsManual(false);
   };
 
   const handleAddSplitRow = () => {
@@ -186,9 +190,12 @@ export default function ExpenseForm() {
     if (!currentUser || loading) return;
 
     // Validation
-    if (!files.receipt) { toast.error("Falta el comprobante (Recibo)."); return; }
-    if (!files.voucher) { toast.error("Falta el Voucher de pago (Requerido)."); return; }
-    if (!formData.eventName) { toast.error("El nombre del evento es obligatorio."); return; }
+    if (!isManual && !files.receipt) { toast.error("Falta el comprobante (Recibo)."); return; }
+    // Voucher is now optional
+    // if (!files.voucher) { toast.error("Falta el Voucher de pago (Requerido)."); return; }
+    // if (!files.voucher) { toast.error("Falta el Voucher de pago (Requerido)."); return; }
+    // Event is now optional
+    // if (!formData.eventName) { toast.error("El nombre del evento es obligatorio."); return; }
     
     const totalAmount = Number(formData.amount);
     if (isNaN(totalAmount) || totalAmount === 0) {
@@ -202,17 +209,25 @@ export default function ExpenseForm() {
             toast.error(`La suma de la distribución (${sumSplits}) no coincide con el total (${totalAmount}). Diferencia: ${totalAmount - sumSplits}`);
             return;
         }
-        if (splitRows.some(r => !r.projectId)) {
-            toast.error("Seleccione centro de costo para todas las filas.");
-            return;
-        }
+        // Cost Center is now optional
+        // if (splitRows.some(r => !r.projectId)) {
+        //    toast.error("Seleccione centro de costo para todas las filas.");
+        //    return;
+        // }
     }
 
     try {
         setLoading(true);
         
-        const receiptUrl = await uploadReceiptImage(files.receipt, currentUser.uid);
-        const voucherUrl = await uploadReceiptImage(files.voucher, currentUser.uid);
+        let receiptUrl = null;
+        let voucherUrl = null;
+
+        if (files.receipt) {
+             receiptUrl = await uploadReceiptImage(files.receipt, currentUser.uid);
+        }
+        if (files.voucher) {
+             voucherUrl = await uploadReceiptImage(files.voucher, currentUser.uid);
+        }
 
         let targetUid = currentUser.uid;
         let targetName = currentUser.displayName;
@@ -315,16 +330,27 @@ export default function ExpenseForm() {
       <div className="max-w-5xl mx-auto">
         
         {/* Progress */}
-        <div className="flex justify-center mb-8 gap-4">
-            <div className="flex items-center gap-2">
-                <div className={stepsClass(step === 'upload')}>1</div>
-                <span className={step === 'upload' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Documentos</span>
+        <div className="flex justify-between items-center mb-8">
+            <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                    <div className={stepsClass(step === 'upload')}>1</div>
+                    <span className={step === 'upload' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Documentos</span>
+                </div>
+                <div className="w-12 h-px bg-gray-200 self-center"></div>
+                <div className="flex items-center gap-2">
+                    <div className={stepsClass(step === 'review')}>2</div>
+                    <span className={step === 'review' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Detalles</span>
+                </div>
             </div>
-            <div className="w-12 h-px bg-gray-200 self-center"></div>
-            <div className="flex items-center gap-2">
-                <div className={stepsClass(step === 'review')}>2</div>
-                <span className={step === 'review' ? 'text-gray-900 font-medium' : 'text-gray-400'}>Detalles</span>
-            </div>
+            
+            {step === 'upload' && (
+                <button 
+                    onClick={() => { setIsManual(true); setStep('review'); }}
+                    className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition"
+                >
+                    Ingresar Manualmente &rarr;
+                </button>
+            )}
         </div>
 
         {/* Step 1: Upload */}
@@ -364,7 +390,7 @@ export default function ExpenseForm() {
                              <>
                                 <div className="bg-white p-3 rounded-full shadow-sm mb-4"><CreditCard className="w-6 h-6 text-purple-500" /></div>
                                 <span className="font-semibold text-slate-700">2. Voucher Pago</span>
-                                <span className="text-xs text-slate-400 mt-1">(Requerido)</span>
+                                <span className="text-xs text-slate-400 mt-1">(Opcional)</span>
                              </>
                          )}
                      </div>
@@ -373,7 +399,7 @@ export default function ExpenseForm() {
                  <div className="mt-8 flex justify-center">
                      <button 
                         onClick={handleAnalyze}
-                        disabled={!files.receipt || !files.voucher || processingAi}
+                        disabled={!files.receipt || processingAi}
                         className="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {processingAi ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <MousePointer2 className="w-5 h-5 mr-2" />}
@@ -382,7 +408,7 @@ export default function ExpenseForm() {
                  </div>
                  
                  <p className="text-center text-xs text-gray-400 mt-4">
-                     Nuestra IA extraerá los datos automáticamente de ambos archivos.
+                     Nuestra IA extraerá los datos automáticamente. Puedes subir solo el recibo si no tienes voucher.
                  </p>
             </div>
         )}
@@ -395,18 +421,26 @@ export default function ExpenseForm() {
                 <div className="lg:col-span-1 space-y-4">
                     <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Recibo</h4>
-                        {previews.receipt && (
+                        {previews.receipt ? (
                             files.receipt?.type === 'application/pdf' 
                             ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
                             : <img src={previews.receipt} className="rounded-lg w-full max-h-64 object-contain" />
+                        ) : (
+                            <div className="h-32 bg-gray-50 flex items-center justify-center rounded text-xs text-gray-400 italic border border-dashed border-gray-200">
+                                Sin Recibo
+                            </div>
                         )}
                     </div>
                     <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Voucher</h4>
-                        {previews.voucher && (
+                        {previews.voucher ? (
                             files.voucher?.type === 'application/pdf'
                             ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
                             : <img src={previews.voucher} className="rounded-lg w-full max-h-64 object-contain" />
+                        ) : (
+                            <div className="h-32 bg-gray-50 flex items-center justify-center rounded text-xs text-gray-400 italic border border-dashed border-gray-200">
+                                Sin Voucher
+                            </div>
                         )}
                     </div>
                     <button type="button" onClick={handleCancel} className="w-full py-2 text-red-500 text-sm hover:bg-red-50 rounded-lg">
@@ -472,7 +506,6 @@ export default function ExpenseForm() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
                             <input 
                                 type="text" 
-                                required
                                 list="events-list"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                                 placeholder="Ej: FERIA CHICAGO 2026"
@@ -522,7 +555,7 @@ export default function ExpenseForm() {
                                         {splitRows.map((row, idx) => (
                                             <div key={idx} className="flex gap-2 items-center">
                                                 <select 
-                                                    required
+                                                    <select 
                                                     className="flex-grow border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
                                                     value={row.projectId}
                                                     onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
