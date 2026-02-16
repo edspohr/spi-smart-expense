@@ -555,7 +555,6 @@ export default function ExpenseForm() {
                                         {splitRows.map((row, idx) => (
                                             <div key={idx} className="flex gap-2 items-center">
                                                 <select 
-                                                    <select 
                                                     className="flex-grow border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
                                                     value={row.projectId}
                                                     onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
