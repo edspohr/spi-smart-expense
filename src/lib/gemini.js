@@ -18,8 +18,6 @@ export async function parseExpenseDocuments(
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Upgrading if available, else fallback to 1.5
-
     // Helper to convert to base64
     const fileToPart = async (file) => {
       if (!file) return null;
@@ -81,7 +79,28 @@ export async function parseExpenseDocuments(
       JSON:
     `;
 
-    const result = await model.generateContent([prompt, ...parts]);
+    let result;
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      result = await model.generateContent([prompt, ...parts]);
+    } catch (error) {
+      const isQuotaError =
+        error.message.includes("429") ||
+        error.message.includes("Quota exceeded") ||
+        error.message.includes("Resource has been exhausted");
+      if (isQuotaError) {
+        console.warn(
+          "Gemini 2.0 quota exceeded, falling back to gemini-1.5-flash",
+        );
+        const modelFallback = genAI.getGenerativeModel({
+          model: "gemini-1.5-flash",
+        });
+        result = await modelFallback.generateContent([prompt, ...parts]);
+      } else {
+        throw error;
+      }
+    }
+
     const response = await result.response;
     const text = response.text();
 
@@ -100,6 +119,15 @@ export async function parseExpenseDocuments(
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("Error parsing documents with Gemini:", error);
+    // Provide a more user-friendly error if it's still quota issues
+    if (
+      error.message.includes("429") ||
+      error.message.includes("Quota exceeded")
+    ) {
+      throw new Error(
+        "El sistema de IA está saturado momentáneamente. Por favor intente en 1 minuto o ingrese el gasto manualmente.",
+      );
+    }
     throw error;
   }
 }
