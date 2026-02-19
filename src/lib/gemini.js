@@ -52,31 +52,45 @@ export async function parseExpenseDocuments(
         : `\n- category: suggest a category if possible, or null.`;
 
     const prompt = `
-      Analyze the provided document(s). Image 1 is likely the Receipt/Invoice (Comprobante). Image 2 (if present) is likely the Payment Voucher (Voucher Transbank).
+      Act as an expert accounting data extractor for receipts from Colombia and the USA.
+      Analyze Image 1 (Receipt/Invoice) and Image 2 (Voucher if available).
       
-      Extract the following information in JSON format:
-      - date: standardized YYYY-MM-DD format (prefer date from Receipt, fallback to Voucher).
-      - time: HH:MM format (24h) if available.
-      - invoiceNumber: Invoice / Receipt number (Nro Factura / Comprobante).
-      - merchant: name of the place/vendor.
-      - taxId: Tax Identification Number (NIT / RUT / RUC). Look for "NIT", "RUT", "RUC" followed by numbers.
-      - address: Physical address of the merchant.
-      - phone: Phone number of the merchant.
-      - city: City of the transaction.
-      - amount: total amount as a number (remove currency symbols).
-      - currency: 'COP' or 'USD' or 'CLP'.
-      - paymentMethod: 'Credit Card', 'Debit Card', 'Cash', 'Transfer', 'Wallet' (Nequi/Daviplata), or 'Other'.
-      - description: a short summary of the items (Concepto / Detalle). E.g. "Lunch with client", "Hardware materials", "Taxi to airport".
-      - cardLast4: Look specifically in the VOUCHER or RECEIPT for the last 4 digits of the card (e.g. **** 1234 -> "1234"). If not found, null.
+      CRITICAL EXTRACTION RULES:
+      1. Tax ID (taxId): 
+         - For Colombia: Look for "NIT". Include the verification digit (e.g., 900.123.456-7).
+         - For USA: Look for "Tax ID", "EIN", or "Business ID".
+      2. Amount (amount): Extract ONLY the final total. Ignore sub-totals or tips unless they are part of the final balance.
+      3. Currency & Location: 
+         - Set currency to 'COP' if you find "NIT", "RUT", "COP", or Colombian addresses.
+         - Set currency to 'USD' if you find US addresses, "USD", or "$".
+         - Infer the City from the merchant's address or Tax ID region.
+      4. Language: The "description" field MUST be written in Spanish.
+      
+      Return a JSON with these fields:
+      - date: YYYY-MM-DD
+      - time: HH:MM (24h)
+      - invoiceNumber: The invoice or ticket number.
+      - merchant: Name of the vendor.
+      - taxId: NIT, EIN, or equivalent Tax ID.
+      - address: Full address.
+      - phone: Vendor phone.
+      - city: City of transaction.
+      - amount: Total amount as a number.
+      - currency: 'COP' or 'USD'.
+      - paymentMethod: 'Credit Card', 'Debit Card', 'Cash', 'Transfer', 'Wallet', or 'Other'.
+      - description: Brief summary in SPANISH (e.g., "Almuerzo de trabajo").
+      - cardLast4: Last 4 digits of the card used.
       ${categoriesList}
       
-      CRITICAL CATEGORIZATION RULES:
-      - If the document contains a list of names (guests) or references multiple rooms, strictly classify as 'ROOMING'.
-      - If it is a standard individual lodging/stay, classify as 'HOTEL'.
-      - For food/meals, use 'RESTAURANTE - ALIMENTACION'.
+      CATEGORY AFFINITY:
+      - 'RESTAURANTE - ALIMENTACION': Food, drinks, cafes.
+      - 'HOTEL': Individual lodging.
+      - 'ROOMING': Multiple guests/rooms mentioned.
+      - 'TRANSPORTE TERRESTRE': Taxis, Uber, gas.
+      - 'TRANSPORTE AEREO': Flights.
       
-      If you cannot find a field, return null for it.
-      JSON:
+      If a field is not found, return null. 
+      JSON output only:
     `;
 
     let result;

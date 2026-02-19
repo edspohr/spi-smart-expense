@@ -71,7 +71,8 @@ export default function ExpenseForm() {
           // Fetch Projects
           const q = query(collection(db, "projects"), where("status", "!=", "deleted"));
           const snapshot = await getDocs(q);
-          const data = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+          const data = snapshot.docs.map(d => ({id: d.id, ...d.data()}))
+              .filter(p => !p.name.toLowerCase().includes('test'));
           setProjects(sortProjects(data));
 
           // Fetch Events (Unique) from Expenses
@@ -272,7 +273,7 @@ export default function ExpenseForm() {
                 userId: targetUid,
                 userName: targetName,
                 projectId: item.projectId,
-                projectName: projectObj?.name || 'Sin Asignar',
+                projectName: projectObj?.name || 'Sin proyecto asignado',
                 eventName: formData.eventName.toUpperCase(),
                 category: formData.category,
                 date: formData.date,
@@ -500,8 +501,8 @@ export default function ExpenseForm() {
                 {/* Right: Form */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                     
-                    {/* Event & Project */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Cost Center (Hidden as per requirement) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
                             <input 
@@ -599,6 +600,22 @@ export default function ExpenseForm() {
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Event Field (Moved out of hidden block) */}
+                    <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
+                         <input 
+                             type="text" 
+                             list="events-list"
+                             className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                             placeholder="Ej: FERIA CHICAGO 2026"
+                             value={formData.eventName}
+                             onChange={e => setFormData({...formData, eventName: e.target.value.toUpperCase()})}
+                         />
+                         <datalist id="events-list">
+                             {existingEvents.map((evt, i) => <option key={i} value={evt} />)}
+                         </datalist>
                     </div>
 
                     {/* Supplier & Details */}
