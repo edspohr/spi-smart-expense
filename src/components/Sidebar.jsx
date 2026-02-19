@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <LayoutDashboard className={`w-4 h-4 mr-3 ${isActive('/admin') ? 'text-brand-500' : 'text-zinc-400'}`} />
                 Dashboard
                 </Link>
-                <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)}>
+                <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)} style={{display: 'none'}}>
                 <FolderOpen className={`w-4 h-4 mr-3 ${isActive('/admin/projects') ? 'text-brand-500' : 'text-zinc-400'}`} />
                 Centros de Costo
                 </Link>
