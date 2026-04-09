@@ -111,8 +111,15 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                         <label className="text-xs text-gray-500 block mb-1">Medio de Pago</label>
                         <div className="flex items-center gap-2 text-gray-700">
                              <CreditCard className="w-4 h-4 text-gray-400" />
-                             {expense.paymentMethod || 'N/A'} 
+                             {expense.paymentMethod || 'N/A'}
                              {expense.cardLast4 && <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-2">**** {expense.cardLast4}</span>}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-500 block mb-1">Empresa Tarjeta</label>
+                        <div className="flex items-center gap-2 text-gray-700">
+                             <CreditCard className="w-4 h-4 text-gray-400" />
+                             {expense.cardCompany || 'N/A'}
                         </div>
                     </div>
                </div>
@@ -124,6 +131,25 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <p className="text-sm text-gray-700 italic">"{expense.description}"</p>
            </div>
            
+           {/* TRM Info (USD expenses only) */}
+           {expense.currency === 'USD' && expense.trm && (
+             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+               <h4 className="text-xs font-bold text-blue-800 uppercase mb-2">Conversión USD → COP</h4>
+               <div className="grid grid-cols-2 gap-2 text-sm">
+                 <div>
+                   <label className="text-xs text-blue-600 block mb-0.5">TRM Aplicada</label>
+                   <span className="font-mono font-medium text-blue-800">{formatCurrency(expense.trm, 'COP')} COP/USD</span>
+                 </div>
+                 {expense.amountCOP && (
+                   <div>
+                     <label className="text-xs text-blue-600 block mb-0.5">Equivalente COP</label>
+                     <span className="font-mono font-bold text-blue-900">{formatCurrency(expense.amountCOP)}</span>
+                   </div>
+                 )}
+               </div>
+             </div>
+           )}
+
            {/* Files Links */}
            <div className="flex gap-4 pt-2">
                {expense.receiptUrl && (

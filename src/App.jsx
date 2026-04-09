@@ -7,6 +7,7 @@ import AdminBalances from './pages/AdminBalances';
 import AdminProjectDetails from './pages/AdminProjectDetails';
 import AdminUserDetails from './pages/AdminUserDetails';
 import AdminUserSeeder from './pages/AdminUserSeeder';
+import AdminReports from './pages/AdminReports';
 import UserDashboard from './pages/UserDashboard';
 import UserExpenses from './pages/UserExpenses';
 import ExpenseForm from './pages/ExpenseForm';
@@ -20,6 +21,7 @@ function RootRedirect() {
   const { currentUser, userRole } = useAuth();
   if (!currentUser) return <Navigate to="/login" />;
   if (userRole === 'admin') return <Navigate to="/admin/select-module" />;
+  if (userRole === 'assistant' || userRole === 'professional') return <Navigate to="/dashboard" />;
   return <Navigate to="/dashboard" />;
 }
 
@@ -40,12 +42,13 @@ function App() {
         <Route path="/admin/approvals" element={<ProtectedRoute requiredRole="admin"><AdminApprovals /></ProtectedRoute>} />
         <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin"><AdminBalances /></ProtectedRoute>} />
         <Route path="/admin/users-seeder" element={<ProtectedRoute requiredRole="admin"><AdminUserSeeder /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
 
 
         {/* User Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute requiredRole={['professional', 'admin']}><UserDashboard /></ProtectedRoute>} />
-        <Route path="/dashboard/expenses" element={<ProtectedRoute requiredRole={['professional', 'admin']}><UserExpenses /></ProtectedRoute>} />
-        <Route path="/dashboard/new-expense" element={<ProtectedRoute requiredRole={['professional', 'admin']}><ExpenseForm /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><UserDashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/expenses" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><UserExpenses /></ProtectedRoute>} />
+        <Route path="/dashboard/new-expense" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><ExpenseForm /></ProtectedRoute>} />
 
         <Route path="/" element={<RootRedirect />} />
       </Routes>

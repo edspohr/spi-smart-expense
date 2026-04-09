@@ -220,6 +220,7 @@ export default function AdminUserSeeder() {
                         >
                             <option value="professional">Profesional</option>
                             <option value="admin">Administrador</option>
+                            <option value="assistant">Asistente</option>
                         </select>
                     </div>
                     <button 

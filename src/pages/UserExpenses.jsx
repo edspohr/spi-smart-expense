@@ -4,13 +4,17 @@ import { useAuth } from '../context/useAuth';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { Trash2, AlertCircle, Eye, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
+import EditExpenseModal from '../components/EditExpenseModal';
 
 export default function UserExpenses() {
   const { currentUser } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [editExpense, setEditExpense] = useState(null);
 
   useEffect(() => {
     async function fetchExpenses() {
@@ -74,6 +78,7 @@ export default function UserExpenses() {
                 <tr className="bg-gray-50 border-b">
                      <th className="px-6 py-3 font-medium text-gray-500">Fecha</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
+                     <th className="px-6 py-3 font-medium text-gray-500">Empresa</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Monto</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Estado</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Acciones</th>
@@ -84,6 +89,7 @@ export default function UserExpenses() {
                     <tr key={e.id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="px-6 py-4 text-gray-600">{e.date}</td>
                         <td className="px-6 py-4 text-gray-800 font-medium">{e.projectName || 'Sin Proyecto'}</td>
+                        <td className="px-6 py-4 text-gray-500 text-sm">{e.cardCompany || '-'}</td>
                         <td className="px-6 py-4 font-medium">{formatCurrency(e.amount)}</td>
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -104,26 +110,60 @@ export default function UserExpenses() {
                             </div>
                         </td>
                         <td className="px-6 py-4">
-                            {e.status === 'pending' && (
-                                <button 
-                                    onClick={() => handleDelete(e)}
-                                    className="p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-red-50"
-                                    title="Eliminar Rendición"
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => setSelectedExpense(e)}
+                                    className="p-2 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50"
+                                    title="Ver detalles"
                                 >
-                                    <Trash2 className="w-5 h-5" />
+                                    <Eye className="w-5 h-5" />
                                 </button>
-                            )}
+                                {e.status === 'pending' && (
+                                    <>
+                                        <button
+                                            onClick={() => setEditExpense(e)}
+                                            className="p-2 text-gray-400 hover:text-amber-600 transition rounded-full hover:bg-amber-50"
+                                            title="Editar Rendición"
+                                        >
+                                            <Pencil className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(e)}
+                                            className="p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-red-50"
+                                            title="Eliminar Rendición"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </td>
                     </tr>
                 ))}
                 {expenses.length === 0 && (
                     <tr>
-                        <td colSpan="5" className="text-center py-8 text-gray-500">No tienes rendiciones registradas.</td>
+                        <td colSpan="6" className="text-center py-8 text-gray-500">No tienes rendiciones registradas.</td>
                     </tr>
                 )}
             </tbody>
         </table>
        </div>
+      <ExpenseDetailsModal
+        isOpen={!!selectedExpense}
+        onClose={() => setSelectedExpense(null)}
+        expense={selectedExpense}
+      />
+      {editExpense && (
+        <EditExpenseModal
+          isOpen={true}
+          onClose={() => setEditExpense(null)}
+          expense={editExpense}
+          onSave={(updated) => {
+            setExpenses(prev => prev.map(e => e.id === updated.id ? updated : e));
+            setEditExpense(null);
+          }}
+        />
+      )}
     </Layout>
   );
 }

@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { 
-  PieChart, LayoutDashboard, FolderOpen, CheckCircle, 
-  FileText, UserCircle, Receipt, LogOut, Wallet 
+import {
+  PieChart, LayoutDashboard, FolderOpen, CheckCircle,
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -43,7 +43,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <div className="overflow-hidden">
                 <p className="text-sm font-semibold text-zinc-800 truncate">{currentUser?.displayName || 'Usuario'}</p>
                  <p className="text-xs text-zinc-500 truncate">
-                    {userRole === 'admin' ? 'Administrador' : 'Usuario'}
+                    {userRole === 'admin' ? 'Administrador' : userRole === 'assistant' ? 'Asistente' : 'Usuario'}
                 </p>
             </div>
         </div>
@@ -69,6 +69,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <Link to="/admin/balances" className={linkClass('/admin/balances')} onClick={() => setIsOpen(false)}>
                 <Wallet className={`w-4 h-4 mr-3 ${isActive('/admin/balances') ? 'text-brand-500' : 'text-zinc-400'}`} />
                 Finanzas
+                </Link>
+                <Link to="/admin/reports" className={linkClass('/admin/reports')} onClick={() => setIsOpen(false)}>
+                <Download className={`w-4 h-4 mr-3 ${isActive('/admin/reports') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                Reportes
                 </Link>
             </>
         )}

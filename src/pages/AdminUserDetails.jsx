@@ -366,20 +366,20 @@ export default function AdminUserDetails() {
                            // Aggregate Data
                            const projectStats = {};
 
-                           // Initialize with expenses
+                           // Initialize with expenses, grouped by currency
                            expenses.forEach(e => {
                                if (e.status === 'rejected') return; // Exclude rejected
                                const pid = e.projectId || 'unknown';
-                               if (!projectStats[pid]) projectStats[pid] = { totalExp: 0, totalAlloc: 0, name: e.projectName || 'Sin Proyecto' };
-                               projectStats[pid].totalExp += (Number(e.amount) || 0);
-                               // Update name from latest expense if available
-                               if (e.projectName) projectStats[pid].name = e.projectName; 
+                               if (!projectStats[pid]) projectStats[pid] = { expByCurrency: {}, totalAlloc: 0, name: e.projectName || 'Sin Proyecto' };
+                               const currency = e.currency || 'COP';
+                               projectStats[pid].expByCurrency[currency] = (projectStats[pid].expByCurrency[currency] || 0) + (Number(e.amount) || 0);
+                               if (e.projectName) projectStats[pid].name = e.projectName;
                            });
 
                            // Add allocations
                            allocations.forEach(a => {
                                const pid = a.projectId || 'unknown';
-                               if (!projectStats[pid]) projectStats[pid] = { totalExp: 0, totalAlloc: 0, name: a.projectName || 'Sin Proyecto' };
+                               if (!projectStats[pid]) projectStats[pid] = { expByCurrency: {}, totalAlloc: 0, name: a.projectName || 'Sin Proyecto' };
                                projectStats[pid].totalAlloc += (Number(a.amount) || 0);
                            });
 
@@ -395,13 +395,20 @@ export default function AdminUserDetails() {
                                };
                            });
 
+                           const currencyOrder = ['COP', 'USD', 'CLP'];
+
                            if (rows.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-gray-400">No hay actividad registrada.</td></tr>;
 
                            return rows.map(row => {
                                const isExpanded = expandedProject === row.id;
-                               // Filter details for this project
                                const projectExpenses = expenses.filter(e => e.projectId === row.id || (!e.projectId && row.id === 'unknown'));
                                const projectAllocations = allocations.filter(a => a.projectId === row.id || (!a.projectId && row.id === 'unknown'));
+                               const byCurrency = row.expByCurrency || {};
+                               const activeCurrencies = currencyOrder.filter(c => byCurrency[c]);
+                               const copTotal = byCurrency['COP'] || 0;
+                               const copSaldo = copTotal - row.totalAlloc;
+                               const totalExpAll = Object.values(byCurrency).reduce((s, v) => s + v, 0);
+                               const hasUsd = byCurrency['USD'] > 0;
 
                                return (
                                    <>
@@ -417,17 +424,32 @@ export default function AdminUserDetails() {
                                        <td className="px-6 py-4 text-right font-medium text-green-600">
                                            {formatCurrency(row.totalAlloc)}
                                        </td>
-                                       <td className="px-6 py-4 text-right font-medium text-blue-600">
-                                           {formatCurrency(row.totalExp)}
-                                       </td>
-
-                                       <td className={`px-6 py-4 text-right font-bold ${row.totalExp - row.totalAlloc >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                                           {formatCurrency(row.totalExp - row.totalAlloc)}
+                                       <td className="px-6 py-4 text-right">
+                                           {activeCurrencies.length === 0 ? (
+                                               <span className="font-medium text-blue-600">{formatCurrency(0)}</span>
+                                           ) : activeCurrencies.map((c, i) => (
+                                               <div key={c} className={i === 0 ? 'font-bold text-blue-600' : 'text-sm text-gray-400'}>
+                                                   {formatCurrency(byCurrency[c], c)}
+                                                   <span className="text-xs font-normal ml-1">{c}</span>
+                                               </div>
+                                           ))}
                                        </td>
                                        <td className="px-6 py-4 text-right">
-                                           {row.totalAlloc > row.totalExp ? (
+                                           <div className={`font-bold ${copSaldo >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                                               {formatCurrency(copSaldo)}
+                                               <span className="text-xs font-normal ml-1">COP</span>
+                                           </div>
+                                           {hasUsd && (
+                                               <div className="text-sm text-gray-400 mt-0.5">
+                                                   {formatCurrency(byCurrency['USD'], 'USD')}
+                                                   <span className="text-xs font-normal ml-1">USD</span>
+                                               </div>
+                                           )}
+                                       </td>
+                                       <td className="px-6 py-4 text-right">
+                                           {row.totalAlloc > totalExpAll ? (
                                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">En Rango</span>
-                                           ) : row.totalExp > row.totalAlloc ? (
+                                           ) : totalExpAll > row.totalAlloc ? (
                                                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">⚠️ Excedido</span>
                                            ) : (
                                                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">-</span>
@@ -484,6 +506,7 @@ export default function AdminUserDetails() {
                                                                             <th className="px-3 py-2 text-left">Fecha</th>
                                                                             <th className="px-3 py-2 text-left">Detalle</th>
                                                                             <th className="px-3 py-2 text-right">Monto</th>
+                                                                            <th className="px-3 py-2 text-center">Emp.</th>
                                                                             <th className="px-3 py-2 text-center">Estado</th>
                                                                             <th className="px-3 py-2 text-center">Acción</th>
                                                                         </tr>
@@ -498,9 +521,12 @@ export default function AdminUserDetails() {
                                                                                     {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-blue-500 hover:underline">Ver Recibo</a>}
                                                                                 </td>
                                                                                 <td className="px-3 py-2 font-bold text-gray-700 text-right">{formatCurrency(e.amount, e.currency)}</td>
+                                                                                <td className="px-3 py-2 text-center text-[10px] text-gray-500">
+                                                                                    {e.cardCompany ? e.cardCompany.split(' ')[1] || e.cardCompany : '-'}
+                                                                                </td>
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold
-                                                                                        ${e.status === 'approved' ? 'bg-green-100 text-green-700' : 
+                                                                                        ${e.status === 'approved' ? 'bg-green-100 text-green-700' :
                                                                                           e.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                                                                         {e.status === 'approved' ? 'OK' : e.status === 'rejected' ? 'RECH' : 'PEND'}
                                                                                     </span>

@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
+import { groupByCurrency } from '../utils/currencyHelpers';
 import { Database, Wallet, UserCircle } from 'lucide-react';
 import { Skeleton } from '../components/Skeleton';
 
@@ -27,20 +28,23 @@ export default function AdminDashboard() {
             // 3. Aggregate Data per User
             const expensesByUser = {};
             let pending = 0;
+            const allExpenses = [];
 
             expensesDocs.forEach(exp => {
                 if (exp.status === 'pending') pending++;
-                
+
                 // Track user expenses (group by person who renders)
                 if ((exp.status === 'approved' || exp.status === 'pending') && exp.userId) {
-                    expensesByUser[exp.userId] = (expensesByUser[exp.userId] || 0) + (Number(exp.amount) || 0);
+                    if (!expensesByUser[exp.userId]) expensesByUser[exp.userId] = [];
+                    expensesByUser[exp.userId].push(exp);
+                    allExpenses.push(exp);
                 }
             });
 
             // 4. Merge into Users
             const finalUsers = usersData.map(u => ({
                 ...u,
-                expenses: expensesByUser[u.id] || 0
+                expensesByCurrency: groupByCurrency(expensesByUser[u.id] || [])
             }));
 
             // Sort alphabetically
@@ -55,7 +59,14 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  const totalRendered = users.reduce((acc, u) => acc + (u.expenses || 0), 0);
+  // Aggregate total rendered across all users, by currency
+  const totalRenderedByCurrency = {};
+  users.forEach(u => {
+    Object.entries(u.expensesByCurrency || {}).forEach(([currency, { total }]) => {
+      if (!totalRenderedByCurrency[currency]) totalRenderedByCurrency[currency] = 0;
+      totalRenderedByCurrency[currency] += total;
+    });
+  });
 
   if (loading) return (
       <Layout title="Dashboard General">
@@ -102,7 +113,17 @@ export default function AdminDashboard() {
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-center">
                 <h3 className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Total Rendido Histórico</h3>
-                <p className="text-3xl font-extrabold text-blue-600 mt-2">{formatCurrency(totalRendered)}</p>
+                <div className="mt-2 flex flex-col">
+                    {['COP', 'USD', 'CLP'].filter(c => totalRenderedByCurrency[c]).map((c, i) => (
+                        <span key={c} className={i === 0 ? 'text-3xl font-extrabold text-blue-600' : 'text-base font-semibold text-slate-400 mt-1'}>
+                            {formatCurrency(totalRenderedByCurrency[c], c)}
+                            <span className="text-xs font-normal ml-1">{c}</span>
+                        </span>
+                    ))}
+                    {Object.keys(totalRenderedByCurrency).length === 0 && (
+                        <span className="text-3xl font-extrabold text-blue-600">{formatCurrency(0)}</span>
+                    )}
+                </div>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-center">
                 <h3 className="text-slate-500 text-sm font-semibold uppercase tracking-wide">Rendiciones Pendientes</h3>
@@ -128,11 +149,12 @@ export default function AdminDashboard() {
                     {users.filter(u => {
                         if (!searchTerm) return true;
                         const lower = searchTerm.toLowerCase();
-                        return (u.displayName && u.displayName.toLowerCase().includes(lower)) || 
+                        return (u.displayName && u.displayName.toLowerCase().includes(lower)) ||
                                (u.email && u.email.toLowerCase().includes(lower));
                     }).map(u => {
-                        const expenses = u.expenses || 0;
-                        
+                        const byCurrency = u.expensesByCurrency || {};
+                        const currencies = ['COP', 'USD', 'CLP'].filter(c => byCurrency[c]);
+
                         return (
                             <Link to={`/admin/users/${u.id}`} key={u.id} className="block transition hover:scale-105 duration-200">
                             <div className="bg-white p-6 rounded-2xl shadow-soft border border-slate-100 flex flex-col justify-between h-full hover:shadow-xl hover:-translate-y-1 transition duration-300">
@@ -142,7 +164,14 @@ export default function AdminDashboard() {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Rendido</p>
-                                        <p className="text-lg font-bold text-slate-700">{formatCurrency(expenses)}</p>
+                                        {currencies.length === 0 ? (
+                                            <p className="text-lg font-bold text-slate-700">{formatCurrency(0)}</p>
+                                        ) : currencies.map((c, i) => (
+                                            <p key={c} className={i === 0 ? 'text-lg font-bold text-slate-700' : 'text-sm font-semibold text-slate-400'}>
+                                                {formatCurrency(byCurrency[c].total, c)}
+                                                <span className="text-xs font-normal ml-1">{c}</span>
+                                            </p>
+                                        ))}
                                     </div>
                                 </div>
 

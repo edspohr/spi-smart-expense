@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
+import { groupByCurrency } from '../utils/currencyHelpers';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Calendar, User, Trash2, Pencil, Ban } from 'lucide-react';
 import RejectionModal from '../components/RejectionModal';
 import { toast } from 'sonner';
@@ -305,17 +306,12 @@ export default function AdminProjectDetails() {
         {(() => {
              // Calculate Total Assigned dynamically from allocations
              const totalAllocated = allocations.reduce((acc, a) => acc + (Number(a.amount) || 0), 0);
-             
-             // Calculate specific totals from expenses (Approved + Pending)
-             // Consistent with AdminDashboard and User Balance (Pending counts as justified until rejected)
-             const approvedExpenses = expenses.filter(e => e.status === 'approved' || e.status === 'pending');
-             
-             const totalRenderedByUsers = approvedExpenses
-                 .filter(e => !e.isCompanyExpense)
-                 .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
-                 
-             const totalSpent = approvedExpenses
-                 .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+
+             // Group non-rejected expenses by currency
+             const activeExpenses = expenses.filter(e => e.status !== 'rejected');
+             const renderedByCurrency = groupByCurrency(activeExpenses.filter(e => !e.isCompanyExpense));
+             const totalByCurrency = groupByCurrency(activeExpenses);
+             const currencies = ['COP', 'USD', 'CLP'];
 
              return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -326,12 +322,28 @@ export default function AdminProjectDetails() {
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Gasto Rendido</h3>
-                        <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalRenderedByUsers)}</p>
+                        <div className="flex flex-col mt-1">
+                            {currencies.filter(c => renderedByCurrency[c]).map((c, i) => (
+                                <span key={c} className={i === 0 ? 'text-2xl font-bold text-blue-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}>
+                                    {formatCurrency(renderedByCurrency[c].total, c)}
+                                    <span className="text-xs font-normal ml-1">{c}</span>
+                                </span>
+                            ))}
+                            {Object.keys(renderedByCurrency).length === 0 && <span className="text-2xl font-bold text-blue-600">{formatCurrency(0)}</span>}
+                        </div>
                         <p className="text-xs text-gray-400 mt-1">Justificado por usuarios</p>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-center">
                         <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Gasto Total</h3>
-                        <p className="text-2xl font-bold text-indigo-600">{formatCurrency(totalSpent)}</p>
+                        <div className="flex flex-col mt-1">
+                            {currencies.filter(c => totalByCurrency[c]).map((c, i) => (
+                                <span key={c} className={i === 0 ? 'text-2xl font-bold text-indigo-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}>
+                                    {formatCurrency(totalByCurrency[c].total, c)}
+                                    <span className="text-xs font-normal ml-1">{c}</span>
+                                </span>
+                            ))}
+                            {Object.keys(totalByCurrency).length === 0 && <span className="text-2xl font-bold text-indigo-600">{formatCurrency(0)}</span>}
+                        </div>
                         <p className="text-xs text-gray-400 mt-1">Incluye gastos directos empresa</p>
                     </div>
                 </div>

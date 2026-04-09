@@ -3,9 +3,10 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, increment, writeBatch, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { CheckCircle, XCircle, Download, FileText, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Download, FileText, Eye, Pencil } from 'lucide-react';
 import RejectionModal from '../components/RejectionModal';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
+import EditExpenseModal from '../components/EditExpenseModal';
 import { toast } from 'sonner';
 import { motion as Motion } from 'framer-motion';
 
@@ -21,6 +22,7 @@ export default function AdminApprovals() {
   
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState(null);
+  const [editExpense, setEditExpense] = useState(null);
   // Date Range State for Export
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -89,7 +91,7 @@ export default function AdminApprovals() {
           });
 
           // Define CSV Headers
-          const headers = ["Fecha", "Hora", "Usuario", "Código Proyecto", "Proyecto", "Evento", "Proveedor", "NIT", "No. Factura", "Dirección", "Ciudad", "Teléfono", "Forma Pago", "Tarjeta Last4", "Descripción", "Categoría", "Monto", "Moneda", "Estado", "Motivo Rechazo"];
+          const headers = ["Fecha", "Hora", "Usuario", "Código Proyecto", "Proyecto", "Evento", "Proveedor", "NIT", "No. Factura", "Dirección", "Ciudad", "Teléfono", "Forma Pago", "Tarjeta Last4", "Empresa Tarjeta", "Descripción", "Categoría", "Monto", "Moneda", "TRM", "Equivalente COP", "Fuente TRM", "Estado", "Motivo Rechazo"];
           
           // Map Data to CSV Rows
           const rows = expenses.map(e => {
@@ -116,10 +118,14 @@ export default function AdminApprovals() {
                 e.phone || "",
                 e.paymentMethod || "",
                 e.cardLast4 || "",
-                `"${(e.description || "").replace(/"/g, '""')}"`, // Escape quotes
+                e.cardCompany || "",
+                `"${(e.description || "").replace(/"/g, '""')}"`,
                 e.category || "",
                 e.amount || 0,
                 e.currency || "COP",
+                e.trm || "",
+                e.amountCOP || "",
+                e.trmSource || "",
                 e.status === 'approved' ? 'Aprobado' : e.status === 'rejected' ? 'Rechazado' : 'Pendiente',
                 `"${(e.rejectionReason || "").replace(/"/g, '""')}"`
               ];
@@ -290,6 +296,7 @@ export default function AdminApprovals() {
                             <th className="px-6 py-3 font-medium text-gray-500">Fecha</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Usuario</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
+                            <th className="px-6 py-3 font-medium text-gray-500">Empresa</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Monto</th>
                             {viewMode === 'history' && <th className="px-6 py-3 font-medium text-gray-500">Estado</th>}
                             <th className="px-6 py-3 font-medium text-gray-500">Acciones</th>
@@ -310,6 +317,7 @@ export default function AdminApprovals() {
                                     <td className="px-6 py-4 text-gray-600 text-sm font-medium">{e.projectName || 'N/A'}</td>
                                     <span className="px-6 text-xs text-gray-400">{e.description}</span>
                                 </div>
+                                <td className="px-6 py-4 text-sm text-gray-500">{e.cardCompany || '-'}</td>
                                 <td className="px-6 py-4 font-semibold">{formatCurrency(e.amount)}</td>
                                 {viewMode === 'history' && (
                                     <td className="px-6 py-4">
@@ -338,14 +346,21 @@ export default function AdminApprovals() {
                                     </button>
                                     {viewMode === 'pending' && (
                                         <>
-                                            <button 
+                                            <button
+                                                onClick={() => setEditExpense(e)}
+                                                className="text-amber-500 hover:text-amber-700 p-1 hover:bg-amber-50 rounded"
+                                                title="Editar Rendición"
+                                            >
+                                                <Pencil className="w-5 h-5" />
+                                            </button>
+                                            <button
                                                 onClick={() => handleApprove(e)}
                                                 className="text-green-600 hover:text-green-800 p-1 hover:bg-green-50 rounded"
                                                 title="Aprobar"
                                             >
                                                 <CheckCircle className="w-6 h-6" />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => openRejectionModal(e)}
                                                 className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded"
                                                 title="Rechazar"
@@ -374,6 +389,17 @@ export default function AdminApprovals() {
           onClose={() => setDetailsModalOpen(false)}
           expense={selectedExpenseForDetails}
       />
+      {editExpense && (
+        <EditExpenseModal
+          isOpen={true}
+          onClose={() => setEditExpense(null)}
+          expense={editExpense}
+          onSave={(updated) => {
+            setPendingExpenses(prev => prev.map(e => e.id === updated.id ? updated : e));
+            setEditExpense(null);
+          }}
+        />
+      )}
     </Layout>
   );
 }

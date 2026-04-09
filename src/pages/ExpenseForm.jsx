@@ -9,6 +9,7 @@ import { formatCurrency } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
+import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { toast } from 'sonner';
 
 const CATEGORIES_COMMON = [
@@ -44,6 +45,9 @@ export default function ExpenseForm() {
   // Manual Entry State
   const [isManual, setIsManual] = useState(false);
 
+  // TRM State (USD→COP exchange rate)
+  const [trmState, setTrmState] = useState({ trm: null, source: null, fetchedAt: null, loading: false });
+
   const [files, setFiles] = useState({ receipt: null, voucher: null });
   const [previews, setPreviews] = useState({ receipt: null, voucher: null });
 
@@ -63,7 +67,8 @@ export default function ExpenseForm() {
     amount: '',
     currency: 'COP',
     paymentMethod: '',
-    cardLast4: ''
+    cardLast4: '',
+    cardCompany: ''
   });
 
   useEffect(() => {
@@ -85,9 +90,9 @@ export default function ExpenseForm() {
           });
           setExistingEvents(Array.from(events).sort());
 
-          // Fetch Users (If Admin)
-          if (userRole === 'admin') {
-              const uQuery = query(collection(db, "users"), where("role", "==", "professional"));
+          // Fetch Users (If Admin or Assistant)
+          if (userRole === 'admin' || userRole === 'assistant') {
+              const uQuery = query(collection(db, "users"), where("role", "in", ["professional", "admin", "assistant"]));
               const uSnap = await getDocs(uQuery);
               const uData = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
               setUsers(uData);
@@ -97,6 +102,20 @@ export default function ExpenseForm() {
           fetchData();
       }
   }, [userRole]);
+
+  // Fetch TRM automatically when currency is USD, date is set, and user is on review step
+  useEffect(() => {
+    if (formData.currency !== 'USD' || !formData.date || step !== 'review') {
+      setTrmState({ trm: null, source: null, fetchedAt: null, loading: false });
+      return;
+    }
+    let cancelled = false;
+    setTrmState(prev => ({ ...prev, loading: true }));
+    fetchTRM(formData.date).then(result => {
+      if (!cancelled) setTrmState({ ...result, loading: false });
+    });
+    return () => { cancelled = true; };
+  }, [formData.currency, formData.date, step]);
 
   const handleFileSelect = async (type, e) => {
     const file = e.target.files[0];
@@ -163,7 +182,7 @@ export default function ExpenseForm() {
       setFiles({ receipt: null, voucher: null });
       setPreviews({ receipt: null, voucher: null });
       setFormData({
-        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: ''
+        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: '', cardCompany: ''
       });
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
@@ -234,13 +253,13 @@ export default function ExpenseForm() {
         let targetName = currentUser.displayName;
         let isProjectExpense = false;
 
-        if (userRole === 'admin') {
-            if (expenseMode === 'project') {
+        if (userRole === 'admin' || userRole === 'assistant') {
+            if (expenseMode === 'project' && userRole === 'admin') {
                 targetUid = 'company_expense';
                 targetName = 'Gasto Empresa';
                 isProjectExpense = true;
             } else if (expenseMode === 'other') {
-                if (!selectedUserId) { alert("Seleccione un profesional."); setLoading(false); return; }
+                if (!selectedUserId) { alert("Seleccione un usuario."); setLoading(false); return; }
                 const selUser = users.find(u => u.id === selectedUserId);
                 targetUid = selUser.id;
                 targetName = selUser.displayName;
@@ -285,6 +304,7 @@ export default function ExpenseForm() {
                 address: formData.address || null,
                 phone: formData.phone || null,
                 paymentMethod: formData.paymentMethod || null,
+                cardCompany: formData.cardCompany || null,
                 description: formData.description + (isSplitMode ? ' [Distribución]' : ''),
                 amount: item.amount,
                 currency: formData.currency || 'COP',
@@ -296,7 +316,10 @@ export default function ExpenseForm() {
                 status: initialStatus,
                 createdAt: new Date().toISOString(),
                 isCompanyExpense: isProjectExpense,
-                splitGroupId: splitGroupId
+                splitGroupId: splitGroupId,
+                trm: formData.currency === 'USD' ? (trmState.trm || null) : null,
+                amountCOP: formData.currency === 'USD' ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
+                trmSource: formData.currency === 'USD' ? (trmState.source || null) : null,
             });
 
             if (!isProjectExpense) {
@@ -448,15 +471,15 @@ export default function ExpenseForm() {
                         Cancelar / Cambiar Archivos
                     </button>
                     
-                    {/* Admin Mode Selector (Moved Here for Layout) */}
-                     {userRole === 'admin' && (
+                    {/* Admin/Assistant Mode Selector (Moved Here for Layout) */}
+                     {(userRole === 'admin' || userRole === 'assistant') && (
                         <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
                             <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Asignación del Gasto</label>
-                            
+
                             <div className="space-y-2">
                                 {[
                                     { id: 'me', label: 'Mí mismo' },
-                                    { id: 'project', label: 'Empresa / Centro de Costo' },
+                                    ...(userRole === 'admin' ? [{ id: 'project', label: 'Empresa / Centro de Costo' }] : []),
                                     { id: 'other', label: 'Otro(a)' }
                                 ].map(opt => (
                                     <label key={opt.id} className={`
@@ -697,11 +720,11 @@ export default function ExpenseForm() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.invoiceNumber}
                                 onChange={e => setFormData({...formData, invoiceNumber: e.target.value})}
@@ -710,7 +733,7 @@ export default function ExpenseForm() {
                         </div>
                         <div>
                              <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
-                             <select 
+                             <select
                                  className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                  value={formData.paymentMethod}
                                  onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
@@ -722,6 +745,18 @@ export default function ExpenseForm() {
                                  <option value="Transfer">Transferencia</option>
                                  <option value="Wallet">Billetera Digital (Nequi/Daviplata)</option>
                                  <option value="Other">Otro</option>
+                             </select>
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
+                             <select
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                 value={formData.cardCompany}
+                                 onChange={e => setFormData({...formData, cardCompany: e.target.value})}
+                             >
+                                 <option value="">Seleccionar...</option>
+                                 <option value="SPI Americas">SPI Americas</option>
+                                 <option value="SPI Advisors">SPI Advisors</option>
                              </select>
                         </div>
                     </div>
@@ -751,7 +786,44 @@ export default function ExpenseForm() {
                              />
                         </div>
                     </div>
-                    
+
+                    {/* TRM Info Box (USD expenses only) */}
+                    {formData.currency === 'USD' && (
+                      <div className={`p-4 rounded-xl border text-sm ${trmState.trm ? 'bg-blue-50 border-blue-100' : trmState.loading ? 'bg-blue-50 border-blue-100' : 'bg-yellow-50 border-yellow-200'}`}>
+                        {trmState.loading ? (
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Obteniendo TRM...</span>
+                          </div>
+                        ) : trmState.trm ? (
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-0.5">
+                              <p className="text-blue-800 font-medium">
+                                TRM del día: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-blue-600">COP/USD</span>
+                              </p>
+                              {formData.amount > 0 && (
+                                <p className="text-blue-700">
+                                  Equivalente: <span className="font-mono font-bold">{formatCurrency(calculateCOPEquivalent(formData.amount, trmState.trm))}</span> COP
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTrmState(prev => ({ ...prev, loading: true }));
+                                fetchTRM(formData.date).then(r => setTrmState({ ...r, loading: false }));
+                              }}
+                              className="text-xs text-blue-600 font-bold hover:underline whitespace-nowrap"
+                            >
+                              Actualizar TRM
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-yellow-800">⚠️ No se pudo obtener la TRM. El gasto se guardará sin conversión.</p>
+                        )}
+                      </div>
+                    )}
+
                     {/* AI Extracted Details */}
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

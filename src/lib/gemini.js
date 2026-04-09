@@ -80,6 +80,7 @@ export async function parseExpenseDocuments(
       - paymentMethod: 'Credit Card', 'Debit Card', 'Cash', 'Transfer', 'Wallet', or 'Other'.
       - description: Brief summary in SPANISH (e.g., "Almuerzo de trabajo").
       - cardLast4: Last 4 digits of the card used.
+      - cardCompany: null (this field cannot be determined from a receipt; always return null).
       ${categoriesList}
       
       CATEGORY AFFINITY:
