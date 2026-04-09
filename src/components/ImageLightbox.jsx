@@ -39,11 +39,8 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
   const hasBoth = hasReceipt && hasVoucher;
 
   const [activeTab, setActiveTab] = useState('recibo');
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setActiveTab(hasReceipt ? 'recibo' : 'voucher');
-  }, [isOpen, hasReceipt]);
+  // Derive effective tab without an effect — fall back if selected tab has no content
+  const effectiveTab = (activeTab === 'recibo' && hasReceipt) || !hasVoucher ? 'recibo' : 'voucher';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +51,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
 
   if (!isOpen) return null;
 
-  const currentUrl = activeTab === 'recibo' ? receiptUrl : voucherUrl;
+  const currentUrl = effectiveTab === 'recibo' ? receiptUrl : voucherUrl;
 
   return (
     <div
@@ -72,7 +69,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
               <button
                 onClick={() => setActiveTab('recibo')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                  activeTab === 'recibo'
+                  effectiveTab === 'recibo'
                     ? 'bg-white text-blue-700 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
@@ -83,7 +80,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
               <button
                 onClick={() => setActiveTab('voucher')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                  activeTab === 'voucher'
+                  effectiveTab === 'voucher'
                     ? 'bg-white text-purple-700 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
@@ -120,7 +117,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
           ) : (
             <MediaViewer
               url={currentUrl}
-              label={activeTab === 'recibo' ? 'Recibo' : 'Voucher'}
+              label={effectiveTab === 'recibo' ? 'Recibo' : 'Voucher'}
             />
           )}
         </div>

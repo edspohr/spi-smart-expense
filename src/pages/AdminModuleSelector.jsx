@@ -1,8 +1,3 @@
-import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
-import { useAuth } from '../context/useAuth';
-import { FileText, Receipt, ArrowRight } from 'lucide-react';
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';

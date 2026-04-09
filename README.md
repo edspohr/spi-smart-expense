@@ -6,6 +6,19 @@ This application leverages **Artificial Intelligence (Google Gemini)** to automa
 
 ---
 
+## 🆕 Recent Features (v2.0)
+
+- **Multi-currency totals**: All dashboard views now separate COP and USD expense totals, displayed as stacked currency blocks.
+- **Automatic TRM capture**: When submitting or editing a USD expense, the app fetches the live USD→COP exchange rate (TRM) from `open.er-api.com` and stores `trm`, `amountCOP`, and `trmSource` on the expense document.
+- **Receipt image viewer**: Full-screen lightbox with tab switching between Recibo and Voucher; PDF files show an "Abrir PDF" fallback link.
+- **Expense editing**: Admins can edit any expense via the `EditExpenseModal` (amount, currency, description, TRM recalculation).
+- **Tarjeta / empresa**: Card last-4 and card company captured at submission, visible in approvals table and expense details.
+- **Assistant role**: New `assistant` Firestore role that can submit expenses on behalf of others.
+- **Reports page** (`/admin/reports`): Advanced filters (user, cost center, date range, currency, status, card company) with CSV export, Excel export (with auto-column widths and summary rows), and ZIP download of all receipt images.
+- **Optimized bundle**: Vite `manualChunks` splits the build into `vendor-firebase`, `vendor-react`, `vendor-ui`, and `vendor-utils` for faster page loads.
+
+---
+
 ## 🚀 Key Features
 
 ### 🤖 AI-Powered Expense Entry
