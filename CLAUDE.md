@@ -36,6 +36,7 @@ VITE_GEMINI_API_KEY
 ### Auth & Roles
 
 `src/context/AuthContext.jsx` wraps the entire app. On login it:
+
 1. Resolves the Firebase Auth user
 2. Looks up the Firestore `users` doc to get `role` (`admin` | `professional`)
 3. Migrates seeded users — matches by email and updates Firestore refs to the real UID
@@ -52,24 +53,26 @@ Hardcoded admin emails (`edmundo@spohr.cl`, `admin@spi.cl`, `gerencia@spi.cl`) g
 ### Key Data Flow
 
 **Expense submission** (professional):
+
 1. `ExpenseForm.jsx` — user uploads receipt image
 2. `src/lib/gemini.js` calls Gemini (`gemini-2.5-flash-lite`, fallback `gemini-1.5-pro`) to extract date, merchant, amount, currency, NIT, payment method
 3. User fills/corrects the pre-filled form and selects cost center(s)
 4. On submit: image uploaded to Firebase Storage, expense doc written to Firestore `expenses` collection
 
 **Expense approval** (admin):
+
 - `AdminApprovals.jsx` lists pending expenses
 - Approving deducts from project budget and updates user balance
 - Rejecting writes a reason to the expense doc
 
 ### Firestore Collections
 
-| Collection | Purpose |
-|---|---|
-| `users` | User profile, role, balance |
-| `projects` | Cost centers with budget tracking |
-| `expenses` | Expense records (status: pending/approved/rejected) |
-| `allocations` | Per-user budget allocations per project |
+| Collection    | Purpose                                             |
+| ------------- | --------------------------------------------------- |
+| `users`       | User profile, role, balance                         |
+| `projects`    | Cost centers with budget tracking                   |
+| `expenses`    | Expense records (status: pending/approved/rejected) |
+| `allocations` | Per-user budget allocations per project             |
 
 Security rules enforce: users read/write own data; only admins write projects and approve expenses.
 
@@ -89,3 +92,9 @@ Security rules enforce: users read/write own data; only admins write projects an
 ### Styling
 
 Tailwind CSS with custom `brand` color palette (blue shades) and `soft`/`glass` shadow variants defined in `tailwind.config.js`. Font is Inter (Google Fonts). Animations via Framer Motion.
+
+## Active implementation plan
+
+See `docs/implementation-plan.md` for the current multi-phase upgrade
+plan. Execute phases in order. Each phase is self-contained and
+independently deployable.
