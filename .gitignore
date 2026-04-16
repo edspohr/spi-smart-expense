@@ -29,3 +29,9 @@ dist-ssr
 # Backup
 _backup/
 vercel_env.txt
+
+# ESLint cache
+node_modules/.cache/
+
+# Firebase CLI cache
+.firebase/

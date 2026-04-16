@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "lint": "eslint src/ --max-warnings 0 --cache --cache-location node_modules/.cache/eslint/",
     "preview": "vite preview"
   },
   "dependencies": {
