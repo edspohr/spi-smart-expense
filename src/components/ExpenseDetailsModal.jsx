@@ -1,5 +1,6 @@
 import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import { CARD_BRAND_LABELS } from '../lib/constants';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
   if (!isOpen || !expense) return null;
@@ -115,6 +116,15 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                              {expense.cardLast4 && <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-2">**** {expense.cardLast4}</span>}
                         </div>
                     </div>
+                    {expense.cardBrand && (
+                        <div>
+                            <label className="text-xs text-gray-500 block mb-1">Marca Tarjeta</label>
+                            <div className="flex items-center gap-2 text-gray-700">
+                                 <CreditCard className="w-4 h-4 text-gray-400" />
+                                 {CARD_BRAND_LABELS[expense.cardBrand] || expense.cardBrand}
+                            </div>
+                        </div>
+                    )}
                     <div>
                         <label className="text-xs text-gray-500 block mb-1">Empresa Tarjeta</label>
                         <div className="flex items-center gap-2 text-gray-700">

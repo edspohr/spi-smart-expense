@@ -9,6 +9,7 @@ import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import { toast } from 'sonner';
 import { motion as Motion } from 'framer-motion';
+import { CARD_BRAND_LABELS } from '../lib/constants';
 
 export default function AdminApprovals() {
   const [pendingExpenses, setPendingExpenses] = useState([]);
@@ -91,7 +92,7 @@ export default function AdminApprovals() {
           });
 
           // Define CSV Headers
-          const headers = ["Fecha", "Hora", "Usuario", "Código Proyecto", "Proyecto", "Evento", "Proveedor", "NIT", "No. Factura", "Dirección", "Ciudad", "Teléfono", "Forma Pago", "Tarjeta Last4", "Empresa Tarjeta", "Descripción", "Categoría", "Monto", "Moneda", "TRM", "Equivalente COP", "Fuente TRM", "Estado", "Motivo Rechazo"];
+          const headers = ["Fecha", "Hora", "Usuario", "Código Proyecto", "Proyecto", "Evento", "Proveedor", "NIT", "No. Factura", "Dirección", "Ciudad", "Teléfono", "Forma Pago", "Tarjeta Last4", "Empresa Tarjeta", "Marca Tarjeta", "Descripción", "Categoría", "Monto", "Moneda", "TRM", "Equivalente COP", "Fuente TRM", "Estado", "Motivo Rechazo"];
           
           // Map Data to CSV Rows
           const rows = expenses.map(e => {
@@ -119,6 +120,7 @@ export default function AdminApprovals() {
                 e.paymentMethod || "",
                 e.cardLast4 || "",
                 e.cardCompany || "",
+                e.cardBrand ? (CARD_BRAND_LABELS[e.cardBrand] || e.cardBrand) : "",
                 `"${(e.description || "").replace(/"/g, '""')}"`,
                 e.category || "",
                 e.amount || 0,

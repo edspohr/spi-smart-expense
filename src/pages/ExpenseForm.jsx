@@ -10,18 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
-
-const CATEGORIES_COMMON = [
-  "RESTAURANTE - ALIMENTACION",
-  "HOTEL",
-  "ROOMING",
-  "TRANSPORTE TERRESTRE",
-  "TRANSPORTE AEREO",
-  "VARIOS"
-];
-
-const CATEGORIES_ADMIN = [];
 
 export default function ExpenseForm() {
   const { currentUser, userRole } = useAuth();
@@ -68,7 +58,8 @@ export default function ExpenseForm() {
     currency: 'COP',
     paymentMethod: '',
     cardLast4: '',
-    cardCompany: ''
+    cardCompany: '',
+    cardBrand: ''
   });
 
   useEffect(() => {
@@ -164,7 +155,8 @@ export default function ExpenseForm() {
                  category: data.category || prev.category,
                  currency: data.currency || prev.currency,
                  paymentMethod: data.paymentMethod || prev.paymentMethod,
-                 cardLast4: data.cardLast4 || prev.cardLast4
+                 cardLast4: data.cardLast4 || prev.cardLast4,
+                 cardBrand: data.cardBrand || prev.cardBrand
              }));
              toast.success("Información extraída con éxito.");
              setStep('review');
@@ -182,7 +174,7 @@ export default function ExpenseForm() {
       setFiles({ receipt: null, voucher: null });
       setPreviews({ receipt: null, voucher: null });
       setFormData({
-        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: '', cardCompany: ''
+        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: '', cardCompany: '', cardBrand: ''
       });
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
@@ -304,6 +296,7 @@ export default function ExpenseForm() {
                 address: formData.address || null,
                 phone: formData.phone || null,
                 paymentMethod: formData.paymentMethod || null,
+                cardBrand: formData.cardBrand || null,
                 cardCompany: formData.cardCompany || null,
                 description: formData.description + (isSplitMode ? ' [Distribución]' : ''),
                 amount: item.amount,
@@ -720,59 +713,78 @@ export default function ExpenseForm() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
-                            <input
-                                type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
-                                value={formData.invoiceNumber}
-                                onChange={e => setFormData({...formData, invoiceNumber: e.target.value})}
-                                placeholder="Ej: A-123456"
-                            />
-                        </div>
-                        <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
-                             <select
-                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
-                                 value={formData.paymentMethod}
-                                 onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
-                             >
-                                 <option value="">Seleccionar...</option>
-                                 <option value="Credit Card">Tarjeta de Crédito</option>
-                                 <option value="Debit Card">Tarjeta Débito</option>
-                                 <option value="Cash">Efectivo</option>
-                                 <option value="Transfer">Transferencia</option>
-                                 <option value="Wallet">Billetera Digital (Nequi/Daviplata)</option>
-                                 <option value="Other">Otro</option>
-                             </select>
-                        </div>
-                        <div>
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
-                             <select
-                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
-                                 value={formData.cardCompany}
-                                 onChange={e => setFormData({...formData, cardCompany: e.target.value})}
-                             >
-                                 <option value="">Seleccionar...</option>
-                                 <option value="SPI Americas">SPI Americas</option>
-                                 <option value="SPI Advisors">SPI Advisors</option>
-                             </select>
-                        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
+                        <input
+                            type="text"
+                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                            value={formData.invoiceNumber}
+                            onChange={e => setFormData({...formData, invoiceNumber: e.target.value})}
+                            placeholder="Ej: A-123456"
+                        />
                     </div>
+
+                    {/* Clasificación y Pago */}
+                    {(() => {
+                        const isCardPayment = formData.paymentMethod === 'Credit Card' || formData.paymentMethod === 'Debit Card';
+                        return (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                     <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
+                                     <select
+                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                         value={formData.paymentMethod}
+                                         onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
+                                     >
+                                         <option value="">Seleccionar...</option>
+                                         {PAYMENT_METHODS.map(pm => (
+                                             <option key={pm.value} value={pm.value}>{pm.label}</option>
+                                         ))}
+                                     </select>
+                                </div>
+                                <div>
+                                     <label className={`block text-sm font-medium mb-1 ${isCardPayment ? 'text-gray-700' : 'text-gray-400'}`}>Marca Tarjeta</label>
+                                     <select
+                                         disabled={!isCardPayment}
+                                         className={`w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 ${isCardPayment ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'}`}
+                                         value={formData.cardBrand}
+                                         onChange={e => setFormData({...formData, cardBrand: e.target.value})}
+                                     >
+                                         <option value="">Seleccionar...</option>
+                                         {CARD_BRANDS.map(cb => (
+                                             <option key={cb.value} value={cb.value}>{cb.label}</option>
+                                         ))}
+                                     </select>
+                                </div>
+                                <div>
+                                     <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
+                                     <select
+                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                         value={formData.cardCompany}
+                                         onChange={e => setFormData({...formData, cardCompany: e.target.value})}
+                                     >
+                                         <option value="">Seleccionar...</option>
+                                         {CARD_COMPANIES.map(cc => (
+                                             <option key={cc.value} value={cc.value}>{cc.label}</option>
+                                         ))}
+                                     </select>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Amount & Currency */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-1">
                              <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
-                             <select 
+                             <select
                                  className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                  value={formData.currency}
                                  onChange={e => setFormData({...formData, currency: e.target.value})}
                              >
-                                 <option value="COP">COP ($)</option>
-                                 <option value="USD">USD (u$s)</option>
-                                 <option value="CLP">CLP ($)</option>
+                                 {CURRENCIES.map(c => (
+                                     <option key={c.value} value={c.value}>{c.label}</option>
+                                 ))}
                              </select>
                         </div>
                         <div className="md:col-span-2">

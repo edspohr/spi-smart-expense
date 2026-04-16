@@ -5,15 +5,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { formatCurrency } from '../utils/format';
-
-const CATEGORIES_COMMON = [
-  "RESTAURANTE - ALIMENTACION",
-  "HOTEL",
-  "ROOMING",
-  "TRANSPORTE TERRESTRE",
-  "TRANSPORTE AEREO",
-  "VARIOS"
-];
+import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 
 export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
   const [saving, setSaving] = useState(false);
@@ -32,6 +24,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
     paymentMethod: expense?.paymentMethod || '',
     cardLast4: expense?.cardLast4 || '',
     cardCompany: expense?.cardCompany || '',
+    cardBrand: expense?.cardBrand || '',
     description: expense?.description || '',
     eventName: expense?.eventName || '',
   });
@@ -82,6 +75,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         category: form.category,
         paymentMethod: form.paymentMethod || null,
         cardLast4: form.cardLast4 || null,
+        cardBrand: form.cardBrand || null,
         cardCompany: form.cardCompany || null,
         description: form.description,
         eventName: form.eventName ? form.eventName.toUpperCase() : '',
@@ -214,59 +208,78 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
             </div>
 
             {/* Categoría y Pago */}
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-4">
-              <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Clasificación y Pago</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Categoría</label>
-                  <select className={inputClass} value={form.category} onChange={set('category')}>
-                    <option value="">Seleccionar...</option>
-                    {CATEGORIES_COMMON.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+            {(() => {
+              const isCardPayment = form.paymentMethod === 'Credit Card' || form.paymentMethod === 'Debit Card';
+              const mutedSelectClass = 'w-full border border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed rounded-lg p-2.5 text-sm outline-none';
+              return (
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-4">
+                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Clasificación y Pago</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClass}>Categoría</label>
+                      <select className={inputClass} value={form.category} onChange={set('category')}>
+                        <option value="">Seleccionar...</option>
+                        {CATEGORIES_COMMON.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Medio de Pago</label>
+                      <select className={inputClass} value={form.paymentMethod} onChange={set('paymentMethod')}>
+                        <option value="">Seleccionar...</option>
+                        {PAYMENT_METHODS.map(pm => (
+                          <option key={pm.value} value={pm.value}>{pm.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`${labelClass} ${isCardPayment ? '' : 'text-gray-400'}`}>Marca Tarjeta</label>
+                      <select
+                        disabled={!isCardPayment}
+                        className={isCardPayment ? inputClass : mutedSelectClass}
+                        value={form.cardBrand}
+                        onChange={set('cardBrand')}
+                      >
+                        <option value="">Seleccionar...</option>
+                        {CARD_BRANDS.map(cb => (
+                          <option key={cb.value} value={cb.value}>{cb.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Empresa Tarjeta</label>
+                      <select className={inputClass} value={form.cardCompany} onChange={set('cardCompany')}>
+                        <option value="">Seleccionar...</option>
+                        {CARD_COMPANIES.map(cc => (
+                          <option key={cc.value} value={cc.value}>{cc.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Tarjeta (Últimos 4)</label>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        className={inputClass}
+                        value={form.cardLast4}
+                        onChange={set('cardLast4')}
+                        placeholder="1234"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className={labelClass}>Medio de Pago</label>
-                  <select className={inputClass} value={form.paymentMethod} onChange={set('paymentMethod')}>
-                    <option value="">Seleccionar...</option>
-                    <option value="Credit Card">Tarjeta de Crédito</option>
-                    <option value="Debit Card">Tarjeta Débito</option>
-                    <option value="Cash">Efectivo</option>
-                    <option value="Transfer">Transferencia</option>
-                    <option value="Wallet">Billetera Digital (Nequi/Daviplata)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>Empresa Tarjeta</label>
-                  <select className={inputClass} value={form.cardCompany} onChange={set('cardCompany')}>
-                    <option value="">Seleccionar...</option>
-                    <option value="SPI Americas">SPI Americas</option>
-                    <option value="SPI Advisors">SPI Advisors</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>Tarjeta (Últimos 4)</label>
-                  <input
-                    type="text"
-                    maxLength={4}
-                    className={inputClass}
-                    value={form.cardLast4}
-                    onChange={set('cardLast4')}
-                    placeholder="1234"
-                  />
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Monto / Moneda */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelClass}>Moneda</label>
                 <select className={inputClass} value={form.currency} onChange={set('currency')}>
-                  <option value="COP">COP ($)</option>
-                  <option value="USD">USD (u$s)</option>
-                  <option value="CLP">CLP ($)</option>
+                  {CURRENCIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="md:col-span-2">

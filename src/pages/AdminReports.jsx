@@ -7,6 +7,7 @@ import { Download, Search, FileSpreadsheet, Loader2, Filter, ImageDown } from 'l
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { toast } from 'sonner';
+import { CARD_BRANDS, CARD_BRAND_LABELS } from '../lib/constants';
 
 const STATUS_LABELS = {
   approved: 'Aprobado',
@@ -14,9 +15,9 @@ const STATUS_LABELS = {
   rejected: 'Rechazado',
 };
 
-// Column headers for CSV (23 columns)
+// Column headers for CSV (24 columns)
 const CSV_HEADERS = [
-  'Fecha', 'Hora', 'Persona', 'Empresa Tarjeta', 'Tarjeta Last4', 'Evento',
+  'Fecha', 'Hora', 'Persona', 'Empresa Tarjeta', 'Marca Tarjeta', 'Tarjeta Last4', 'Evento',
   'Proyecto', 'Código Proyecto', 'Comercio', 'NIT', 'No. Factura', 'Dirección', 'Ciudad',
   'Categoría', 'Forma Pago', 'Descripción', 'Monto', 'Moneda',
   'TRM', 'Equivalente COP', 'Fuente TRM', 'Estado', 'Motivo Rechazo',
@@ -41,6 +42,7 @@ function expenseToRow(e, forExcel = false, projectsMap = {}) {
     e.time || '',
     e.userName || '',
     e.cardCompany || '',
+    e.cardBrand ? (CARD_BRAND_LABELS[e.cardBrand] || e.cardBrand) : '',
     e.cardLast4 || '',
     e.eventName || '',
     e.projectName || '',
@@ -120,6 +122,7 @@ function buildImageFilename(expense, type, ext, projectsMap, usedNames) {
 export default function AdminReports() {
   const [filters, setFilters] = useState({
     cardCompany: '',
+    cardBrand: '',
     cardLast4: '',
     eventName: '',
     userId: '',
@@ -195,6 +198,7 @@ export default function AdminReports() {
       let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       if (filters.cardCompany) data = data.filter(e => e.cardCompany === filters.cardCompany);
+      if (filters.cardBrand)   data = data.filter(e => e.cardBrand === filters.cardBrand);
       if (filters.cardLast4)   data = data.filter(e => e.cardLast4 === filters.cardLast4);
       if (filters.eventName)   data = data.filter(e => (e.eventName || '').toLowerCase().includes(filters.eventName.toLowerCase()));
       if (filters.userId)      data = data.filter(e => e.userId === filters.userId);
@@ -252,8 +256,8 @@ export default function AdminReports() {
       const total = subset.reduce((s, e) => s + (Number(e.amount) || 0), 0);
       const summaryRow = Array(XLSX_HEADERS.length).fill('');
       summaryRow[0] = `TOTAL ${cur}`;
-      summaryRow[16] = total;  // Monto is now at index 16 (shifted by Código Proyecto)
-      summaryRow[17] = cur;    // Moneda is now at index 17
+      summaryRow[17] = total;  // Monto is now at index 17 (shifted by Marca Tarjeta)
+      summaryRow[18] = cur;    // Moneda is now at index 18
       allData.push(summaryRow);
     });
 
@@ -488,6 +492,16 @@ export default function AdminReports() {
           </div>
 
           <div>
+            <label className={labelClass}>Marca Tarjeta</label>
+            <select className={inputClass} value={filters.cardBrand} onChange={setFilter('cardBrand')}>
+              <option value="">Todas</option>
+              {CARD_BRANDS.map(cb => (
+                <option key={cb.value} value={cb.value}>{cb.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className={labelClass}>Últimos 4 dígitos tarjeta</label>
             <input
               type="text"
@@ -656,6 +670,7 @@ export default function AdminReports() {
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Fecha</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Persona</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Empresa</th>
+                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Marca</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Tarjeta</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Evento</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Comercio</th>
@@ -672,6 +687,9 @@ export default function AdminReports() {
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.date}</td>
                         <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{e.userName || '—'}</td>
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.cardCompany || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                          {e.cardBrand ? (CARD_BRAND_LABELS[e.cardBrand] || e.cardBrand) : '—'}
+                        </td>
                         <td className="px-4 py-3 font-mono text-gray-600 whitespace-nowrap">
                           {e.cardLast4 ? `**** ${e.cardLast4}` : '—'}
                         </td>
