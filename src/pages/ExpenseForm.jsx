@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
 import { parseExpenseDocuments } from '../lib/gemini';
@@ -12,6 +12,94 @@ import { sortProjects } from '../utils/sort';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
+
+function DropzoneSlot({
+  title, hint, loadedLabel,
+  LoadedIcon, EmptyIcon, emptyIconColor,
+  preview, fileName, isCompressing, isTouch,
+  onPickCamera, onPickFile,
+  cameraInputRef, fileInputRef, onFileSelect,
+}) {
+  return (
+    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center relative hover:bg-slate-100 transition min-h-[16rem]">
+      {isCompressing && (
+        <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center" aria-live="polite">
+          <Loader2 className="w-6 h-6 text-brand-600 animate-spin" aria-hidden="true" />
+          <span className="text-xs text-slate-600 font-semibold mt-2">Procesando...</span>
+        </div>
+      )}
+
+      {preview ? (
+        <div className="flex flex-col items-center text-center">
+          <LoadedIcon className="w-12 h-12 text-green-500 mb-2" aria-hidden="true" />
+          <span className="text-green-600 font-medium">{loadedLabel}</span>
+          {fileName && <p className="text-xs text-slate-400 mt-1 break-all max-w-full">{fileName}</p>}
+        </div>
+      ) : (
+        <>
+          <div className="bg-white p-3 rounded-full shadow-sm mb-4">
+            <EmptyIcon className={`w-6 h-6 ${emptyIconColor}`} aria-hidden="true" />
+          </div>
+          <span className="font-semibold text-slate-700">{title}</span>
+          <span className="text-xs text-slate-400 mt-1">{hint}</span>
+        </>
+      )}
+
+      {/* Picker buttons — always visible so user can replace after upload */}
+      <div className={`mt-4 w-full flex gap-2 ${preview ? 'justify-center' : 'justify-center'}`}>
+        {isTouch ? (
+          <>
+            <button
+              type="button"
+              onClick={onPickCamera}
+              className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 text-sm font-semibold bg-brand-600 text-white px-3 py-2 rounded-lg hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 transition"
+            >
+              <Camera className="w-4 h-4" aria-hidden="true" />
+              Tomar Foto
+            </button>
+            <button
+              type="button"
+              onClick={onPickFile}
+              className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 text-sm font-semibold bg-slate-800 text-white px-3 py-2 rounded-lg hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 transition"
+            >
+              <Upload className="w-4 h-4" aria-hidden="true" />
+              Elegir Archivo
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onPickFile}
+            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 text-sm font-semibold bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 transition"
+          >
+            <Upload className="w-4 h-4" aria-hidden="true" />
+            {preview ? 'Cambiar archivo' : 'Subir archivo'}
+          </button>
+        )}
+      </div>
+
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={onFileSelect}
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        onChange={onFileSelect}
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
 
 export default function ExpenseForm() {
   const { currentUser, userRole } = useAuth();
@@ -40,6 +128,23 @@ export default function ExpenseForm() {
 
   const [files, setFiles] = useState({ receipt: null, voucher: null });
   const [previews, setPreviews] = useState({ receipt: null, voucher: null });
+  const [compressing, setCompressing] = useState({ receipt: false, voucher: false });
+  const [isTouch, setIsTouch] = useState(false);
+
+  const inputRefs = {
+    receipt: { camera: useRef(null), file: useRef(null) },
+    voucher: { camera: useRef(null), file: useRef(null) },
+  };
+
+  // Detect touch-first devices so we can surface camera capture.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(pointer: coarse)');
+    setIsTouch(mq.matches);
+    const handler = (e) => setIsTouch(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const [formData, setFormData] = useState({
     projectId: '',
@@ -110,8 +215,11 @@ export default function ExpenseForm() {
 
   const handleFileSelect = async (type, e) => {
     const file = e.target.files[0];
+    // Clearing value lets the same file be picked again later if needed.
+    e.target.value = '';
     if (!file) return;
 
+    setCompressing(prev => ({ ...prev, [type]: true }));
     try {
         let processedFile = file;
         if (file.type.startsWith('image/')) {
@@ -119,13 +227,23 @@ export default function ExpenseForm() {
         }
 
         const url = URL.createObjectURL(processedFile);
-        
+
         setFiles(prev => ({ ...prev, [type]: processedFile }));
         setPreviews(prev => ({ ...prev, [type]: url }));
 
     } catch (err) {
         console.error("Error processing file:", err);
         toast.error("Error al procesar el archivo.");
+    } finally {
+        setCompressing(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  const openPicker = (type, source) => {
+    const ref = inputRefs[type]?.[source];
+    if (ref?.current) {
+      ref.current.value = '';
+      ref.current.click();
     }
   };
 
@@ -377,40 +495,44 @@ export default function ExpenseForm() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      
                      {/* Receipt Upload */}
-                     <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center relative hover:bg-slate-100 transition h-64">
-                         <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileSelect('receipt', e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                         {previews.receipt ? (
-                             <div className="flex flex-col items-center">
-                                 <FileText className="w-12 h-12 text-green-500 mb-2" />
-                                 <span className="text-green-600 font-medium">Recibo Cargado</span>
-                                 <p className="text-xs text-slate-400 mt-1">{files.receipt?.name}</p>
-                             </div>
-                         ) : (
-                             <>
-                                <div className="bg-white p-3 rounded-full shadow-sm mb-4"><Upload className="w-6 h-6 text-blue-500" /></div>
-                                <span className="font-semibold text-slate-700">1. Factura / Recibo</span>
-                                <span className="text-xs text-slate-400 mt-1">(Obligatorio)</span>
-                             </>
-                         )}
-                     </div>
+                     <DropzoneSlot
+                         type="receipt"
+                         title="1. Factura / Recibo"
+                         hint="(Obligatorio)"
+                         loadedLabel="Recibo Cargado"
+                         LoadedIcon={FileText}
+                         EmptyIcon={Upload}
+                         emptyIconColor="text-blue-500"
+                         preview={previews.receipt}
+                         fileName={files.receipt?.name}
+                         isCompressing={compressing.receipt}
+                         isTouch={isTouch}
+                         onPickCamera={() => openPicker('receipt', 'camera')}
+                         onPickFile={() => openPicker('receipt', 'file')}
+                         cameraInputRef={inputRefs.receipt.camera}
+                         fileInputRef={inputRefs.receipt.file}
+                         onFileSelect={(e) => handleFileSelect('receipt', e)}
+                     />
 
                      {/* Voucher Upload */}
-                     <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center relative hover:bg-slate-100 transition h-64">
-                         <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileSelect('voucher', e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                         {previews.voucher ? (
-                             <div className="flex flex-col items-center">
-                                 <CreditCard className="w-12 h-12 text-green-500 mb-2" />
-                                 <span className="text-green-600 font-medium">Voucher Cargado</span>
-                                 <p className="text-xs text-slate-400 mt-1">{files.voucher?.name}</p>
-                             </div>
-                         ) : (
-                             <>
-                                <div className="bg-white p-3 rounded-full shadow-sm mb-4"><CreditCard className="w-6 h-6 text-purple-500" /></div>
-                                <span className="font-semibold text-slate-700">2. Voucher Pago</span>
-                                <span className="text-xs text-slate-400 mt-1">(Opcional)</span>
-                             </>
-                         )}
-                     </div>
+                     <DropzoneSlot
+                         type="voucher"
+                         title="2. Voucher Pago"
+                         hint="(Opcional)"
+                         loadedLabel="Voucher Cargado"
+                         LoadedIcon={CreditCard}
+                         EmptyIcon={CreditCard}
+                         emptyIconColor="text-purple-500"
+                         preview={previews.voucher}
+                         fileName={files.voucher?.name}
+                         isCompressing={compressing.voucher}
+                         isTouch={isTouch}
+                         onPickCamera={() => openPicker('voucher', 'camera')}
+                         onPickFile={() => openPicker('voucher', 'file')}
+                         cameraInputRef={inputRefs.voucher.camera}
+                         fileInputRef={inputRefs.voucher.file}
+                         onFileSelect={(e) => handleFileSelect('voucher', e)}
+                     />
                  </div>
 
                  <div className="mt-8 flex justify-center">
@@ -436,31 +558,53 @@ export default function ExpenseForm() {
                 
                 {/* Left: Previews */}
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                    {/* Mobile thumbnail strip */}
+                    <div className="md:hidden flex gap-3 items-start">
+                        {[
+                            { key: 'receipt', label: 'Recibo', preview: previews.receipt, file: files.receipt },
+                            { key: 'voucher', label: 'Voucher', preview: previews.voucher, file: files.voucher },
+                        ].map(slot => (
+                            <div key={slot.key} className="flex flex-col items-center">
+                                <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                                    {slot.preview ? (
+                                        slot.file?.type === 'application/pdf'
+                                            ? <FileText className="w-8 h-8 text-slate-400" aria-hidden="true" />
+                                            : <img src={slot.preview} className="w-full h-full object-cover" alt={`Vista previa ${slot.label.toLowerCase()}`} />
+                                    ) : (
+                                        <span className="text-[10px] text-slate-400 italic px-2 text-center">Sin {slot.label}</span>
+                                    )}
+                                </div>
+                                <span className="text-xs text-slate-500 mt-1">{slot.label}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop preview cards */}
+                    <div className="hidden md:block bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Recibo</h4>
                         {previews.receipt ? (
-                            files.receipt?.type === 'application/pdf' 
+                            files.receipt?.type === 'application/pdf'
                             ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
-                            : <img src={previews.receipt} className="rounded-lg w-full max-h-64 object-contain" />
+                            : <img src={previews.receipt} className="rounded-lg w-full max-h-64 object-contain" alt="Vista previa del recibo" />
                         ) : (
                             <div className="h-32 bg-gray-50 flex items-center justify-center rounded text-xs text-gray-400 italic border border-dashed border-gray-200">
                                 Sin Recibo
                             </div>
                         )}
                     </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="hidden md:block bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                         <h4 className="text-sm font-bold text-gray-500 mb-2 uppercase">Voucher</h4>
                         {previews.voucher ? (
                             files.voucher?.type === 'application/pdf'
                             ? <div className="h-32 bg-gray-50 flex items-center justify-center rounded"><FileText className="text-gray-400"/></div>
-                            : <img src={previews.voucher} className="rounded-lg w-full max-h-64 object-contain" />
+                            : <img src={previews.voucher} className="rounded-lg w-full max-h-64 object-contain" alt="Vista previa del voucher" />
                         ) : (
                             <div className="h-32 bg-gray-50 flex items-center justify-center rounded text-xs text-gray-400 italic border border-dashed border-gray-200">
                                 Sin Voucher
                             </div>
                         )}
                     </div>
-                    <button type="button" onClick={handleCancel} className="w-full py-2 text-red-500 text-sm hover:bg-red-50 rounded-lg">
+                    <button type="button" onClick={handleCancel} className="w-full min-h-[44px] py-2 text-red-500 text-sm hover:bg-red-50 rounded-lg">
                         Cancelar / Cambiar Archivos
                     </button>
                     
@@ -789,10 +933,11 @@ export default function ExpenseForm() {
                         </div>
                         <div className="md:col-span-2">
                              <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
-                             <input 
-                                 type="number" 
+                             <input
+                                 type="number"
+                                 inputMode="decimal"
                                  required
-                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 font-mono text-lg font-bold"
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 font-mono text-base md:text-lg font-bold min-h-[44px]"
                                  value={formData.amount}
                                  onChange={e => setFormData({...formData, amount: e.target.value})}
                              />
@@ -873,14 +1018,29 @@ export default function ExpenseForm() {
                         ></textarea>
                     </div>
 
-                    <button 
+                    {/* Desktop submit (md and up) */}
+                    <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition flex items-center justify-center text-lg shadow-lg hover:shadow-xl transform active:scale-[0.99]"
+                        className="hidden md:flex w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition items-center justify-center text-lg shadow-lg hover:shadow-xl transform active:scale-[0.99] min-h-[44px]"
                     >
                         {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Confirmar Rendición <CheckCircle className="w-6 h-6 ml-2" /></>}
                     </button>
 
+                </div>
+
+                {/* Mobile sticky submit (below md) */}
+                <div
+                    className="md:hidden sticky bottom-0 z-30 -mx-6 -mb-6 bg-white border-t border-slate-200 px-4 pt-3 shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.1)] lg:col-span-3"
+                    style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+                >
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex items-center justify-center text-base shadow-lg active:scale-[0.99] min-h-[44px]"
+                    >
+                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Confirmar Rendición <CheckCircle className="w-5 h-5 ml-2" /></>}
+                    </button>
                 </div>
             </form>
         )}

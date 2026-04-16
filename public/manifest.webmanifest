@@ -1,0 +1,15 @@
+{
+  "name": "SPI Smart Expense",
+  "short_name": "SPI Expense",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "lang": "es",
+  "_todo": "TODO: replace with proper square icons at 192x192 and 512x512. Current logo.png is 1024x433 and will stretch in Chrome install banners.",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
