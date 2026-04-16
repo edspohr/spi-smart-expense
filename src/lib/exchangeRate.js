@@ -13,7 +13,6 @@ const ER_API_URL = 'https://open.er-api.com/v6/latest/USD';
  * @param {string} _date - YYYY-MM-DD (reserved for future historical lookup)
  * @returns {Promise<{ trm: number|null, source: string, fetchedAt: string|null }>}
  */
-// eslint-disable-next-line no-unused-vars
 export async function fetchTRM(_date) {
   try {
     const response = await fetch(ER_API_URL);
