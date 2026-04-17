@@ -23,7 +23,7 @@ function relativeDays(dateStr) {
   return `hace ${years} año${years === 1 ? '' : 's'}`;
 }
 
-function renderMonthTotals(byCurrency) {
+function renderCurrencyTotals(byCurrency) {
   const order = ['COP', 'USD', 'CLP'];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
@@ -54,7 +54,7 @@ export default function TeamTable({ rows }) {
           <tr className="border-b border-slate-100">
             <th className="px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Persona</th>
             <th className="px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Última rendición</th>
-            <th className="px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Este mes</th>
+            <th className="px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Últimos 30 días</th>
             <th className="px-5 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-right">Rendiciones</th>
             <th className="px-5 py-3 w-8" aria-hidden="true" />
           </tr>
@@ -73,7 +73,7 @@ export default function TeamTable({ rows }) {
                 </Link>
               </td>
               <td className="px-5 py-3 text-sm text-slate-500">{relativeDays(row.lastActivityDate)}</td>
-              <td className="px-5 py-3">{renderMonthTotals(row.thisMonthByCurrency)}</td>
+              <td className="px-5 py-3">{renderCurrencyTotals(row.last30ByCurrency)}</td>
               <td className="px-5 py-3 text-right text-sm font-semibold text-slate-700">{row.count}</td>
               <td className="px-5 py-3 text-right">
                 <Link
