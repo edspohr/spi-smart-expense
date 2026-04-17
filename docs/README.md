@@ -25,6 +25,9 @@ independiente (cada una se puede `firebase deploy` sin romper la anterior).
 | 3 | Approvals estilo ETFA (filtros, sort, bulk, atajos) | ✅ Deployada 2026-04-16 |
 | 4 | Mobile-first + PWA install prompt | ✅ Deployada 2026-04-16 |
 | 5 | Polish pass (skeletons, empty states, a11y, optimistic) | ✅ Deployada 2026-04-16 |
+| 6 † | Rediseño del dashboard (hero proyectos, anomalías, equipo) | ✅ Deployada 2026-04-16 |
+
+† Micro-fase post-plan, rediseño del dashboard.
 
 Marcar cada fila como ✅ al deployar a producción.
 
@@ -104,3 +107,4 @@ Backend / infra: **Felipe Soto Santibáñez**
 | 3 | `8e9225f` | 2026-04-16 |
 | 4 | `8fcea36` | 2026-04-16 |
 | 5 | `<sha>` | 2026-04-16 |
+| 6 | `<sha>` | 2026-04-16 |

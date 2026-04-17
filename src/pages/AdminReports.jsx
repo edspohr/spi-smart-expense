@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -146,6 +147,25 @@ export default function AdminReports() {
     message: '',
   });
   const cancelRef = useRef(false);
+
+  // Seed filters from URL query params on mount (e.g., from a dashboard
+  // drill-down like /admin/reports?eventName=X&currency=USD). After seeding,
+  // strip the query string so refresh doesn't re-apply stale params.
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    const seed = {};
+    ['eventName', 'currency', 'startDate', 'endDate', 'status', 'userId', 'cardCompany', 'cardBrand'].forEach(k => {
+      const v = searchParams.get(k);
+      if (v) seed[k] = v;
+    });
+    if (Object.keys(seed).length > 0) {
+      setFilters(prev => ({ ...prev, ...seed }));
+      navigate(location.pathname, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load filter metadata and projects map on mount
   useEffect(() => {
