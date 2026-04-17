@@ -8,6 +8,7 @@ import { Plus, DollarSign, Trash2 } from 'lucide-react';
 
 import { sortProjects } from '../utils/sort';
 import { toast } from 'sonner';
+import TableSkeleton from '../components/TableSkeleton';
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
@@ -81,7 +82,7 @@ export default function AdminProjects() {
   const handleDeleteProject = async (projectId) => {
       const pin = prompt("Ingrese clave maestra para ELIMINAR este centro de costo:");
       if (pin !== "1234") {
-          alert("Clave incorrecta.");
+          toast.error("Clave incorrecta.");
           return;
       }
 
@@ -91,11 +92,11 @@ export default function AdminProjects() {
           await updateDoc(doc(db, "projects", projectId), {
               status: 'deleted'
           });
-          alert("Centro de Costo eliminado.");
+          toast.success("Centro de Costo eliminado.");
           fetchData();
       } catch (e) {
           console.error(e);
-          alert("Error al eliminar.");
+          toast.error("Error al eliminar.");
       }
   };
 
@@ -196,7 +197,7 @@ export default function AdminProjects() {
       return parts.join(' ');
   };
 
-  if (loading) return <Layout title="Gestión de Proyectos">Cargando...</Layout>;
+  if (loading) return <Layout title="Gestión de Proyectos"><TableSkeleton rows={5} cols={5} /></Layout>;
 
   return (
     <Layout title="Gestión de Centros de Costo">
@@ -215,11 +216,14 @@ export default function AdminProjects() {
                         >
                             Cargar Defaults SPI
                         </button>
-                        <button 
+                        <button
+                            type="button"
                             onClick={() => setShowProjectForm(!showProjectForm)}
-                            className="text-blue-600 hover:text-blue-800"
+                            aria-label={showProjectForm ? 'Cancelar creación' : 'Crear nuevo centro de costo'}
+                            aria-expanded={showProjectForm}
+                            className="text-blue-600 hover:text-blue-800 focus-ring rounded p-1"
                         >
-                            {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5"/>}
+                            {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5" aria-hidden="true" />}
                         </button>
                     </div>
                 </div>
@@ -399,12 +403,14 @@ export default function AdminProjects() {
                                             <td className="px-6 py-4">{formatCurrency(p.expenses || 0)}</td>
                                             <td className="px-6 py-4"><span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Activo</span></td>
                                             <td className="px-6 py-4">
-                                                <button 
+                                                <button
+                                                    type="button"
                                                     onClick={() => handleDeleteProject(p.id)}
-                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                    className="text-red-500 hover:text-red-700 p-1 focus-ring rounded"
                                                     title="Eliminar Centro de Costo"
+                                                    aria-label="Eliminar centro de costo"
                                                 >
-                                                    <Trash2 className="w-5 h-5" />
+                                                    <Trash2 className="w-5 h-5" aria-hidden="true" />
                                                 </button>
                                             </td>
                                         </tr>

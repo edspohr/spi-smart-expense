@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "../components/Layout";
 import { db } from "../lib/firebase";
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
+import TableSkeleton from '../components/TableSkeleton';
 
 export default function AdminUserDetails() {
   const { id } = useParams();
@@ -150,6 +151,8 @@ export default function AdminUserDetails() {
     if (id) fetchData();
   }, [id, fetchData]);
 
+  const statusSnapshotRef = useRef(null);
+
   const handleUpdateStatus = async (expenseId, newStatus, amount) => {
     if (
       !confirm(
@@ -158,52 +161,52 @@ export default function AdminUserDetails() {
     )
       return;
 
+    const exp = expenses.find((e) => e.id === expenseId);
+    if (!exp) return;
+
+    // Optimistic: snapshot current expenses and user before mutating.
+    statusSnapshotRef.current = { expenses, user };
+
+    let balanceChange = 0;
+    if (newStatus === "rejected" && !exp.isCompanyExpense) {
+      balanceChange = -amount;
+    }
+
+    setExpenses((prev) =>
+      prev.map((e) => (e.id === expenseId ? { ...e, status: newStatus } : e))
+    );
+    if (balanceChange !== 0) {
+      setUser((prev) => ({
+        ...prev,
+        balance: (prev.balance || 0) + balanceChange,
+      }));
+    }
+
     try {
-      const expenseRef = doc(db, "expenses", expenseId);
-
-      // If Rejecting, we need to REVERSE the balance credit (subtract amount)
-      let balanceChange = 0;
-      if (newStatus === "rejected") {
-        const exp = expenses.find((e) => e.id === expenseId);
-        if (exp && !exp.isCompanyExpense) {
-          const userRef = doc(db, "users", id);
-          await updateDoc(userRef, {
-            balance: increment(-amount),
-          });
-          balanceChange = -amount;
-        }
+      if (newStatus === "rejected" && !exp.isCompanyExpense) {
+        const userRef = doc(db, "users", id);
+        await updateDoc(userRef, { balance: increment(-amount) });
       }
 
-      await updateDoc(expenseRef, { status: newStatus });
+      await updateDoc(doc(db, "expenses", expenseId), { status: newStatus });
 
-      // Update Project Expenses Total if Approved
-      if (newStatus === "approved") {
-        const exp = expenses.find((e) => e.id === expenseId);
-        if (exp?.projectId) {
-          await updateDoc(doc(db, "projects", exp.projectId), {
-            expenses: increment(amount),
-          });
-        }
+      if (newStatus === "approved" && exp.projectId) {
+        await updateDoc(doc(db, "projects", exp.projectId), {
+          expenses: increment(amount),
+        });
       }
 
-      // Optimistic / Local Update (No Re-fetch)
-      setExpenses((prev) =>
-        prev.map((e) => {
-          if (e.id === expenseId) return { ...e, status: newStatus };
-          return e;
-        })
-      );
-
-      if (balanceChange !== 0) {
-        setUser((prev) => ({
-          ...prev,
-          balance: (prev.balance || 0) + balanceChange,
-        }));
-      }
+      statusSnapshotRef.current = null;
       toast.success("Estado actualizado.");
     } catch (e) {
       console.error("Error updating status:", e);
-      toast.error("Error al actualizar.");
+      // Rollback
+      if (statusSnapshotRef.current) {
+        setExpenses(statusSnapshotRef.current.expenses);
+        setUser(statusSnapshotRef.current.user);
+      }
+      statusSnapshotRef.current = null;
+      toast.error("Error al actualizar. Se restauró el estado anterior.");
     }
   };
 
@@ -282,7 +285,7 @@ export default function AdminUserDetails() {
       }
   };
 
-  if (loading) return <Layout title="Detalles del Usuario">Cargando...</Layout>;
+  if (loading) return <Layout title="Detalles del Usuario"><TableSkeleton rows={5} cols={7} /></Layout>;
   if (!user) return <Layout title="Error">Usuario no encontrado.</Layout>;
 
   return (
@@ -412,7 +415,7 @@ export default function AdminUserDetails() {
 
                                return (
                                    <>
-                                   <tr key={row.id} className={`hover:bg-gray-50 transition cursor-pointer ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)}>
+                                   <tr key={row.id} tabIndex={0} role="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} detalles del proyecto ${row.name}`} className={`hover:bg-gray-50 transition cursor-pointer focus-ring ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleProject(row.id); } }}>
                                        <td className="px-6 py-4">
                                            <span className="font-medium text-gray-800">
                                                 {row.code ? `[${row.code}] ` : ''}{row.name}
@@ -456,7 +459,7 @@ export default function AdminUserDetails() {
                                            )}
                                        </td>
                                        <td className="px-6 py-4 text-right text-gray-400">
-                                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                            {isExpanded ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
                                        </td>
                                    </tr>
                                    {isExpanded && (
@@ -534,13 +537,13 @@ export default function AdminUserDetails() {
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     {e.status === 'pending' && (
                                                                                         <div className="flex justify-center gap-1">
-                                                                                            <button onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'approved', e.amount); }} className="p-1 text-green-600 hover:bg-green-100 rounded"><CheckCircle className="w-4 h-4"/></button>
-                                                                                            <button onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'rejected', e.amount); }} className="p-1 text-red-600 hover:bg-red-100 rounded"><XCircle className="w-4 h-4"/></button>
-                                                                                            <button onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded"><Trash2 className="w-4 h-4"/></button>
+                                                                                            <button type="button" aria-label="Aprobar rendición" title="Aprobar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'approved', e.amount); }} className="p-1 text-green-600 hover:bg-green-100 rounded focus-ring"><CheckCircle className="w-4 h-4" aria-hidden="true" /></button>
+                                                                                            <button type="button" aria-label="Rechazar rendición" title="Rechazar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'rejected', e.amount); }} className="p-1 text-red-600 hover:bg-red-100 rounded focus-ring"><XCircle className="w-4 h-4" aria-hidden="true" /></button>
+                                                                                            <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
                                                                                         </div>
                                                                                     )}
                                                                                     {e.status !== 'pending' && (
-                                                                                        <button onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded"><Trash2 className="w-4 h-4"/></button>
+                                                                                        <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
                                                                                     )}
                                                                                 </td>
                                                                             </tr>

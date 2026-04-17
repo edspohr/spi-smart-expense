@@ -8,6 +8,8 @@ import { groupByCurrency } from '../utils/currencyHelpers';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Calendar, User, Trash2, Pencil, Ban } from 'lucide-react';
 import RejectionModal from '../components/RejectionModal';
 import { toast } from 'sonner';
+import TableSkeleton from '../components/TableSkeleton';
+import EmptyState from '../components/EmptyState';
 
 export default function AdminProjectDetails() {
   const { id } = useParams();
@@ -291,7 +293,7 @@ export default function AdminProjectDetails() {
       }
   };
 
-  if (loading) return <Layout title="Detalles del Centro de Costo">Cargando...</Layout>;
+  if (loading) return <Layout title="Detalles del Centro de Costo"><TableSkeleton rows={5} cols={6} /></Layout>;
   if (!project) return <Layout title="Error">Centro de Costo no encontrado.</Layout>;
 
   return (
@@ -405,20 +407,22 @@ export default function AdminProjectDetails() {
                                                 <>
                                                     {e.status === 'pending' && (
                                                         <>
-                                                            <button onClick={() => handleUpdateStatus(e.id, 'approved', e.amount, e.userId)} className="text-green-600 hover:text-green-800" title="Aprobar">
-                                                                <CheckCircle className="w-5 h-5" />
+                                                            <button type="button" aria-label="Aprobar rendición" onClick={() => handleUpdateStatus(e.id, 'approved', e.amount, e.userId)} className="text-green-600 hover:text-green-800 focus-ring rounded p-1" title="Aprobar">
+                                                                <CheckCircle className="w-5 h-5" aria-hidden="true" />
                                                             </button>
-                                                            <button onClick={() => handleUpdateStatus(e.id, 'rejected', e.amount, e.userId)} className="text-red-600 hover:text-red-800" title="Rechazar">
-                                                                <XCircle className="w-5 h-5" />
+                                                            <button type="button" aria-label="Rechazar rendición" onClick={() => handleUpdateStatus(e.id, 'rejected', e.amount, e.userId)} className="text-red-600 hover:text-red-800 focus-ring rounded p-1" title="Rechazar">
+                                                                <XCircle className="w-5 h-5" aria-hidden="true" />
                                                             </button>
                                                         </>
                                                     )}
-                                                    <button 
-                                                        onClick={() => handleDeleteExpense(e)} 
-                                                        className="text-gray-400 hover:text-red-500" 
+                                                    <button
+                                                        type="button"
+                                                        aria-label="Eliminar rendición definitivamente"
+                                                        onClick={() => handleDeleteExpense(e)}
+                                                        className="text-gray-400 hover:text-red-500 focus-ring rounded p-1"
                                                         title="Eliminar Definitivamente"
                                                     >
-                                                        <Trash2 className="w-5 h-5" />
+                                                        <Trash2 className="w-5 h-5" aria-hidden="true" />
                                                     </button>
                                                 </>
                                         </div>
@@ -427,7 +431,14 @@ export default function AdminProjectDetails() {
                             ))}
                              {expenses.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No hay rendiciones registradas.</td>
+                                    <td colSpan="6" className="px-4 py-0">
+                                        <EmptyState
+                                            icon={FileText}
+                                            title="Sin rendiciones"
+                                            description="No hay rendiciones registradas en este centro de costo."
+                                            small
+                                        />
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
@@ -466,26 +477,37 @@ export default function AdminProjectDetails() {
                                     </td>
                                     <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(a.amount)}</td>
                                     <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                        <button 
-                                            onClick={() => openEditAllocation(a)} 
-                                            className="text-gray-400 hover:text-blue-500" 
+                                        <button
+                                            type="button"
+                                            aria-label="Editar asignación"
+                                            onClick={() => openEditAllocation(a)}
+                                            className="text-gray-400 hover:text-blue-500 focus-ring rounded p-1"
                                             title="Editar Asignación"
                                         >
-                                            <Pencil className="w-5 h-5" />
+                                            <Pencil className="w-5 h-5" aria-hidden="true" />
                                         </button>
-                                        <button 
-                                            onClick={() => handleDeleteAllocation(a)} 
-                                            className="text-gray-400 hover:text-red-500" 
+                                        <button
+                                            type="button"
+                                            aria-label="Eliminar asignación"
+                                            onClick={() => handleDeleteAllocation(a)}
+                                            className="text-gray-400 hover:text-red-500 focus-ring rounded p-1"
                                             title="Eliminar Asignación"
                                         >
-                                            <Trash2 className="w-5 h-5" />
+                                            <Trash2 className="w-5 h-5" aria-hidden="true" />
                                         </button>
                                     </td>
                                 </tr>
                             ))}
                             {allocations.length === 0 && (
                                 <tr>
-                                    <td colSpan="3" className="px-4 py-8 text-center text-gray-500">No hay asignaciones registradas.</td>
+                                    <td colSpan="4" className="px-4 py-0">
+                                        <EmptyState
+                                            icon={Calendar}
+                                            title="Sin asignaciones"
+                                            description="No hay asignaciones de presupuesto registradas."
+                                            small
+                                        />
+                                    </td>
                                 </tr>
                             )}
                         </tbody>

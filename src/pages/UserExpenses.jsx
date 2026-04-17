@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { Trash2, AlertCircle, Eye, Pencil } from 'lucide-react';
+import { Trash2, AlertCircle, Eye, Pencil, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
+import TableSkeleton from '../components/TableSkeleton';
+import EmptyState from '../components/EmptyState';
 
 export default function UserExpenses() {
   const { currentUser } = useAuth();
@@ -38,37 +40,50 @@ export default function UserExpenses() {
     fetchExpenses();
   }, [currentUser]);
 
+  const snapshotRef = useRef(null);
+
   const handleDelete = async (expense) => {
       if (!confirm("¿Eliminar esta rendición pendiente? El saldo será descontado de tu cuenta.")) return;
-      
-      try {
-          // 1. Delete Expense
-          await deleteDoc(doc(db, "expenses", expense.id));
-          
-          // 2. Revert Balance (Subtract amount)
-          // Logic: Expense submission added credit. Deletion removes it.
-          // Exception: Company expenses (if any user can see them here?) don't affect user balance usually,
-          // but strict user expenses do.
-          if (!expense.isCompanyExpense) {
-               // Standard Logic
-               const targetUserId = currentUser.uid;
 
-               const userRef = doc(db, "users", targetUserId);
-               await updateDoc(userRef, {
-                   balance: increment(-expense.amount)
-               });
+      // Optimistic: snapshot current list, remove immediately, rollback on failure.
+      snapshotRef.current = expenses;
+      setExpenses(prev => prev.filter(e => e.id !== expense.id));
+
+      try {
+          await deleteDoc(doc(db, "expenses", expense.id));
+
+          if (!expense.isCompanyExpense) {
+               const userRef = doc(db, "users", currentUser.uid);
+               await updateDoc(userRef, { balance: increment(-expense.amount) });
           }
-          
-          // Refresh list
-          setExpenses(prev => prev.filter(e => e.id !== expense.id));
+
+          snapshotRef.current = null;
           toast.success("Rendición eliminada.");
       } catch (error) {
           console.error("Error deleting expense:", error);
-          toast.error("Error al eliminar.");
+          // Rollback
+          if (snapshotRef.current) setExpenses(snapshotRef.current);
+          snapshotRef.current = null;
+          toast.error("Error al eliminar. Se restauró la rendición.");
       }
   };
 
-  if (loading) return <Layout title="Mis Rendiciones">Cargando...</Layout>;
+  if (loading) return <Layout title="Mis Rendiciones"><TableSkeleton rows={5} cols={6} /></Layout>;
+
+  if (expenses.length === 0) {
+    return (
+      <Layout title="Mis Rendiciones Históricas">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+          <EmptyState
+            icon={Receipt}
+            title="Aún no tienes rendiciones"
+            description="Cuando rindas tu primer gasto aparecerá aquí."
+            action={{ label: 'Rendir un gasto', href: '/dashboard/new-expense' }}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Mis Rendiciones Históricas">
@@ -112,27 +127,33 @@ export default function UserExpenses() {
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-1">
                                 <button
+                                    type="button"
                                     onClick={() => setSelectedExpense(e)}
-                                    className="p-2 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50"
+                                    className="p-2 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 focus-ring"
                                     title="Ver detalles"
+                                    aria-label="Ver detalles"
                                 >
-                                    <Eye className="w-5 h-5" />
+                                    <Eye className="w-5 h-5" aria-hidden="true" />
                                 </button>
                                 {e.status === 'pending' && (
                                     <>
                                         <button
+                                            type="button"
                                             onClick={() => setEditExpense(e)}
-                                            className="p-2 text-gray-400 hover:text-amber-600 transition rounded-full hover:bg-amber-50"
+                                            className="p-2 text-gray-400 hover:text-amber-600 transition rounded-full hover:bg-amber-50 focus-ring"
                                             title="Editar Rendición"
+                                            aria-label="Editar rendición"
                                         >
-                                            <Pencil className="w-5 h-5" />
+                                            <Pencil className="w-5 h-5" aria-hidden="true" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => handleDelete(e)}
-                                            className="p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-red-50"
+                                            className="p-2 text-gray-400 hover:text-red-500 transition rounded-full hover:bg-red-50 focus-ring"
                                             title="Eliminar Rendición"
+                                            aria-label="Eliminar rendición"
                                         >
-                                            <Trash2 className="w-5 h-5" />
+                                            <Trash2 className="w-5 h-5" aria-hidden="true" />
                                         </button>
                                     </>
                                 )}
@@ -140,11 +161,6 @@ export default function UserExpenses() {
                         </td>
                     </tr>
                 ))}
-                {expenses.length === 0 && (
-                    <tr>
-                        <td colSpan="6" className="text-center py-8 text-gray-500">No tienes rendiciones registradas.</td>
-                    </tr>
-                )}
             </tbody>
         </table>
        </div>

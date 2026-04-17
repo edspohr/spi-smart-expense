@@ -1,20 +1,26 @@
 import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { CARD_BRAND_LABELS } from '../lib/constants';
+import FocusableModal from './FocusableModal';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
-  if (!isOpen || !expense) return null;
-
+  // Guard against accessing expense fields during initial render when expense is null.
+  if (!expense) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <FocusableModal isOpen={isOpen} onClose={onClose} ariaLabelledBy="expense-details-title">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
+          <h3 id="expense-details-title" className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" aria-hidden="true" />
             Detalle del Gasto
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors focus-ring"
+          >
+            <X className="w-5 h-5 text-gray-500" aria-hidden="true" />
           </button>
         </div>
 
@@ -177,11 +183,11 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
         </div>
         
         <div className="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-end">
-            <button onClick={onClose} className="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg hover:bg-gray-50 transition">
+            <button type="button" onClick={onClose} className="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg hover:bg-gray-50 focus-ring transition">
                 Cerrar
             </button>
         </div>
       </div>
-    </div>
+    </FocusableModal>
   );
 }

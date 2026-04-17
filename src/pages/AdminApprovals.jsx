@@ -17,6 +17,8 @@ import {
 import { toast } from 'sonner';
 import { motion as Motion } from 'framer-motion';
 import { CARD_BRAND_LABELS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
+import TableSkeleton from '../components/TableSkeleton';
+import EmptyState from '../components/EmptyState';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -659,7 +661,7 @@ export default function AdminApprovals() {
     headerCheckboxRef.current.indeterminate = indeterminate;
   }, [visibleExpenses, selectedIds]);
 
-  if (loading) return <Layout title="Aprobaciones"><p>Cargando...</p></Layout>;
+  if (loading) return <Layout title="Aprobaciones"><TableSkeleton rows={6} cols={7} /></Layout>;
 
   const currentSort = sort[viewMode] || DEFAULT_SORT[viewMode];
   const allVisibleSelected = visibleExpenses.length > 0 && visibleExpenses.every(e => selectedIds.has(e.id));
@@ -843,22 +845,25 @@ export default function AdminApprovals() {
         </div>
 
         {visibleExpenses.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">
-            {filtersApplied ? (
-              <>
-                <p className="font-semibold text-slate-700 mb-2">Ningún resultado con los filtros aplicados</p>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="text-sm font-semibold text-brand-600 hover:text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
-                >
-                  Limpiar filtros
-                </button>
-              </>
-            ) : (
-              <p>No hay registros en esta vista.</p>
-            )}
-          </div>
+          filtersApplied ? (
+            <EmptyState
+              icon={Filter}
+              title="Ningún resultado con los filtros aplicados"
+              action={{ label: 'Limpiar filtros', onClick: resetFilters }}
+            />
+          ) : viewMode === 'pending' ? (
+            <EmptyState
+              icon={CheckCircle}
+              title="Todo al día"
+              description="No hay rendiciones pendientes de revisión."
+            />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="Sin historial"
+              description="No hay rendiciones aprobadas o rechazadas aún."
+            />
+          )
         ) : (
           <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full text-left">

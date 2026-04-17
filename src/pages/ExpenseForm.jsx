@@ -369,7 +369,7 @@ export default function ExpenseForm() {
                 targetName = 'Gasto Empresa';
                 isProjectExpense = true;
             } else if (expenseMode === 'other') {
-                if (!selectedUserId) { alert("Seleccione un usuario."); setLoading(false); return; }
+                if (!selectedUserId) { toast.error("Seleccione un usuario."); setLoading(false); return; }
                 const selUser = users.find(u => u.id === selectedUserId);
                 targetUid = selUser.id;
                 targetName = selUser.displayName;
@@ -764,9 +764,10 @@ export default function ExpenseForm() {
 
                     {/* Event Field (Moved out of hidden block) */}
                     <div>
-                         <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
-                         <input 
-                             type="text" 
+                         <label htmlFor="ef-eventName" className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
+                         <input
+                             id="ef-eventName"
+                             type="text"
                              list="events-list"
                              className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                              placeholder="Ej: FERIA CHICAGO 2026"
@@ -781,9 +782,10 @@ export default function ExpenseForm() {
                     {/* Supplier & Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Comercio / Proveedor</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="ef-merchant" className="block text-sm font-medium text-gray-700 mb-1">Comercio / Proveedor</label>
+                            <input
+                                id="ef-merchant"
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.merchant}
                                 onChange={e => setFormData({...formData, merchant: e.target.value})}
@@ -791,9 +793,10 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">NIT / Identificación Fiscal</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="ef-taxId" className="block text-sm font-medium text-gray-700 mb-1">NIT / Identificación Fiscal</label>
+                            <input
+                                id="ef-taxId"
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.taxId}
                                 onChange={e => setFormData({...formData, taxId: e.target.value})}
@@ -804,9 +807,10 @@ export default function ExpenseForm() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="ef-address" className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                            <input
+                                id="ef-address"
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.address}
                                 onChange={e => setFormData({...formData, address: e.target.value})}
@@ -814,9 +818,10 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="ef-city" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                            <input
+                                id="ef-city"
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.city}
                                 onChange={e => setFormData({...formData, city: e.target.value})}
@@ -827,9 +832,10 @@ export default function ExpenseForm() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                            <input 
-                                type="text" 
+                            <label htmlFor="ef-phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                            <input
+                                id="ef-phone"
+                                type="text"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.phone}
                                 onChange={e => setFormData({...formData, phone: e.target.value})}
@@ -837,9 +843,10 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Factura</label>
-                            <input 
-                                type="date" 
+                            <label htmlFor="ef-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha Factura</label>
+                            <input
+                                id="ef-date"
+                                type="date"
                                 required
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.date}
@@ -847,9 +854,10 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-                            <input 
-                                type="time" 
+                            <label htmlFor="ef-time" className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                            <input
+                                id="ef-time"
+                                type="time"
                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                 value={formData.time}
                                 onChange={e => setFormData({...formData, time: e.target.value})}
@@ -858,8 +866,9 @@ export default function ExpenseForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
+                        <label htmlFor="ef-invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
                         <input
+                            id="ef-invoiceNumber"
                             type="text"
                             className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                             value={formData.invoiceNumber}
@@ -874,8 +883,9 @@ export default function ExpenseForm() {
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                     <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
+                                     <label htmlFor="ef-paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
                                      <select
+                                         id="ef-paymentMethod"
                                          className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                          value={formData.paymentMethod}
                                          onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
@@ -887,8 +897,9 @@ export default function ExpenseForm() {
                                      </select>
                                 </div>
                                 <div>
-                                     <label className={`block text-sm font-medium mb-1 ${isCardPayment ? 'text-gray-700' : 'text-gray-400'}`}>Marca Tarjeta</label>
+                                     <label htmlFor="ef-cardBrand" className={`block text-sm font-medium mb-1 ${isCardPayment ? 'text-gray-700' : 'text-gray-400'}`}>Marca Tarjeta</label>
                                      <select
+                                         id="ef-cardBrand"
                                          disabled={!isCardPayment}
                                          className={`w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 ${isCardPayment ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'}`}
                                          value={formData.cardBrand}
@@ -901,8 +912,9 @@ export default function ExpenseForm() {
                                      </select>
                                 </div>
                                 <div>
-                                     <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
+                                     <label htmlFor="ef-cardCompany" className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
                                      <select
+                                         id="ef-cardCompany"
                                          className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                          value={formData.cardCompany}
                                          onChange={e => setFormData({...formData, cardCompany: e.target.value})}
@@ -920,8 +932,9 @@ export default function ExpenseForm() {
                     {/* Amount & Currency */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-1">
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                             <label htmlFor="ef-currency" className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
                              <select
+                                 id="ef-currency"
                                  className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
                                  value={formData.currency}
                                  onChange={e => setFormData({...formData, currency: e.target.value})}
@@ -932,8 +945,9 @@ export default function ExpenseForm() {
                              </select>
                         </div>
                         <div className="md:col-span-2">
-                             <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
+                             <label htmlFor="ef-amount" className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
                              <input
+                                 id="ef-amount"
                                  type="number"
                                  inputMode="decimal"
                                  required
@@ -984,8 +998,9 @@ export default function ExpenseForm() {
                     {/* AI Extracted Details */}
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                             <label className="block text-xs font-bold text-blue-800 uppercase mb-1">Categoría Sugerida</label>
+                             <label htmlFor="ef-category" className="block text-xs font-bold text-blue-800 uppercase mb-1">Categoría Sugerida</label>
                              <select
+                                 id="ef-category"
                                  required
                                  className="w-full border border-blue-200 rounded p-2 text-sm bg-white"
                                  value={formData.category}
@@ -996,9 +1011,10 @@ export default function ExpenseForm() {
                              </select>
                         </div>
                         <div>
-                             <label className="block text-xs font-bold text-blue-800 uppercase mb-1">Tarjeta (Últimos 4)</label>
-                             <input 
-                                 type="text" 
+                             <label htmlFor="ef-cardLast4" className="block text-xs font-bold text-blue-800 uppercase mb-1">Tarjeta (Últimos 4)</label>
+                             <input
+                                 id="ef-cardLast4"
+                                 type="text"
                                  className="w-full border border-blue-200 rounded p-2 text-sm bg-white"
                                  placeholder="**** 1234"
                                  maxLength={4}
@@ -1009,13 +1025,14 @@ export default function ExpenseForm() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                        <textarea 
+                        <label htmlFor="ef-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <textarea
+                            id="ef-description"
                             className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
                             placeholder="Detalle del gasto..."
                             value={formData.description}
                             onChange={e => setFormData({...formData, description: e.target.value})}
-                        ></textarea>
+                        />
                     </div>
 
                     {/* Desktop submit (md and up) */}

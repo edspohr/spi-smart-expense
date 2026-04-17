@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/format';
 import { PlusCircle, Wallet, FileText, ChevronDown, ChevronUp, AlertCircle, ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ImageLightbox from '../components/ImageLightbox';
+import TableSkeleton from '../components/TableSkeleton';
 
 export default function UserDashboard() {
   const { currentUser } = useAuth();
@@ -72,7 +73,7 @@ export default function UserDashboard() {
     fetchData();
   }, [currentUser]);
 
-  if (loading) return <Layout title="Dashboard">Cargando...</Layout>;
+  if (loading) return <Layout title="Dashboard"><TableSkeleton rows={4} cols={6} /></Layout>;
 
   return (
     <Layout title={`Hola, ${currentUser?.displayName?.split(' ')[0] || 'Usuario'}`}>
@@ -171,7 +172,7 @@ export default function UserDashboard() {
 
                                return (
                                    <>
-                                   <tr key={row.id} className={`hover:bg-gray-50 transition cursor-pointer ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)}>
+                                   <tr key={row.id} tabIndex={0} role="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} detalles del proyecto ${row.name}`} className={`hover:bg-gray-50 transition cursor-pointer focus-ring ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(row.id); } }}>
                                        <td className="px-6 py-4">
                                            <span className="font-medium text-gray-800">
                                                 {row.code ? `[${row.code}] ` : ''}{row.name}
@@ -215,7 +216,7 @@ export default function UserDashboard() {
                                            )}
                                        </td>
                                        <td className="px-6 py-4 text-right text-gray-400">
-                                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                            {isExpanded ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
                                        </td>
                                    </tr>
                                    {isExpanded && (
@@ -283,11 +284,13 @@ export default function UserDashboard() {
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     {(e.receiptUrl || e.imageUrl || e.voucherUrl) ? (
                                                                                         <button
+                                                                                            type="button"
                                                                                             onClick={(ev) => openLightbox(ev, e)}
-                                                                                            className="p-1 text-gray-400 hover:text-blue-600 transition rounded hover:bg-blue-50"
+                                                                                            className="p-1 text-gray-400 hover:text-blue-600 transition rounded hover:bg-blue-50 focus-ring"
                                                                                             title="Ver comprobante"
+                                                                                            aria-label="Ver comprobante"
                                                                                         >
-                                                                                            <ImageIcon className="w-4 h-4" />
+                                                                                            <ImageIcon className="w-4 h-4" aria-hidden="true" />
                                                                                         </button>
                                                                                     ) : (
                                                                                         <span className="text-gray-300">—</span>

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { formatCurrency } from '../utils/format';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
+import FocusableModal from './FocusableModal';
 
 export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
     return () => { cancelled = true; };
   }, [isOpen, form.currency, form.date]);
 
-  if (!isOpen || !expense) return null;
+  // Guard against accessing expense fields during initial render when expense is null.
+  if (!expense) return null;
 
   const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
@@ -110,17 +112,22 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
   const labelClass = "block text-xs font-medium text-gray-600 mb-1";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <FocusableModal isOpen={isOpen} onClose={onClose} ariaLabelledBy="edit-expense-title">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
         <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
+          <h3 id="edit-expense-title" className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" aria-hidden="true" />
             Editar Rendición
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors focus-ring"
+          >
+            <X className="w-5 h-5 text-gray-500" aria-hidden="true" />
           </button>
         </div>
 
@@ -156,16 +163,17 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
             {/* Fecha / Hora / Evento */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className={labelClass}>Fecha *</label>
-                <input type="date" required className={inputClass} value={form.date} onChange={set('date')} />
+                <label htmlFor="eem-date" className={labelClass}>Fecha *</label>
+                <input id="eem-date" type="date" required className={inputClass} value={form.date} onChange={set('date')} />
               </div>
               <div>
-                <label className={labelClass}>Hora</label>
-                <input type="time" className={inputClass} value={form.time} onChange={set('time')} />
+                <label htmlFor="eem-time" className={labelClass}>Hora</label>
+                <input id="eem-time" type="time" className={inputClass} value={form.time} onChange={set('time')} />
               </div>
               <div>
-                <label className={labelClass}>Evento</label>
+                <label htmlFor="eem-eventName" className={labelClass}>Evento</label>
                 <input
+                  id="eem-eventName"
                   type="text"
                   className={inputClass + " uppercase"}
                   value={form.eventName}
@@ -178,32 +186,32 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
             {/* Comercio / NIT / No. Factura */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Comercio / Proveedor *</label>
-                <input type="text" required className={inputClass} value={form.merchant} onChange={set('merchant')} placeholder="Ej: Restaurante La 68" />
+                <label htmlFor="eem-merchant" className={labelClass}>Comercio / Proveedor *</label>
+                <input id="eem-merchant" type="text" required className={inputClass} value={form.merchant} onChange={set('merchant')} placeholder="Ej: Restaurante La 68" />
               </div>
               <div>
-                <label className={labelClass}>NIT / ID Fiscal</label>
-                <input type="text" className={inputClass} value={form.taxId} onChange={set('taxId')} placeholder="Ej: 900.123.456-7" />
+                <label htmlFor="eem-taxId" className={labelClass}>NIT / ID Fiscal</label>
+                <input id="eem-taxId" type="text" className={inputClass} value={form.taxId} onChange={set('taxId')} placeholder="Ej: 900.123.456-7" />
               </div>
               <div>
-                <label className={labelClass}>No. Factura</label>
-                <input type="text" className={inputClass} value={form.invoiceNumber} onChange={set('invoiceNumber')} placeholder="Ej: FE-00123" />
+                <label htmlFor="eem-invoiceNumber" className={labelClass}>No. Factura</label>
+                <input id="eem-invoiceNumber" type="text" className={inputClass} value={form.invoiceNumber} onChange={set('invoiceNumber')} placeholder="Ej: FE-00123" />
               </div>
               <div>
-                <label className={labelClass}>Teléfono</label>
-                <input type="text" className={inputClass} value={form.phone} onChange={set('phone')} />
+                <label htmlFor="eem-phone" className={labelClass}>Teléfono</label>
+                <input id="eem-phone" type="text" className={inputClass} value={form.phone} onChange={set('phone')} />
               </div>
             </div>
 
             {/* Dirección / Ciudad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Dirección</label>
-                <input type="text" className={inputClass} value={form.address} onChange={set('address')} />
+                <label htmlFor="eem-address" className={labelClass}>Dirección</label>
+                <input id="eem-address" type="text" className={inputClass} value={form.address} onChange={set('address')} />
               </div>
               <div>
-                <label className={labelClass}>Ciudad</label>
-                <input type="text" className={inputClass} value={form.city} onChange={set('city')} />
+                <label htmlFor="eem-city" className={labelClass}>Ciudad</label>
+                <input id="eem-city" type="text" className={inputClass} value={form.city} onChange={set('city')} />
               </div>
             </div>
 
@@ -216,8 +224,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                   <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Clasificación y Pago</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClass}>Categoría</label>
-                      <select className={inputClass} value={form.category} onChange={set('category')}>
+                      <label htmlFor="eem-category" className={labelClass}>Categoría</label>
+                      <select id="eem-category" className={inputClass} value={form.category} onChange={set('category')}>
                         <option value="">Seleccionar...</option>
                         {CATEGORIES_COMMON.map(c => (
                           <option key={c} value={c}>{c}</option>
@@ -225,8 +233,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       </select>
                     </div>
                     <div>
-                      <label className={labelClass}>Medio de Pago</label>
-                      <select className={inputClass} value={form.paymentMethod} onChange={set('paymentMethod')}>
+                      <label htmlFor="eem-paymentMethod" className={labelClass}>Medio de Pago</label>
+                      <select id="eem-paymentMethod" className={inputClass} value={form.paymentMethod} onChange={set('paymentMethod')}>
                         <option value="">Seleccionar...</option>
                         {PAYMENT_METHODS.map(pm => (
                           <option key={pm.value} value={pm.value}>{pm.label}</option>
@@ -234,8 +242,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       </select>
                     </div>
                     <div>
-                      <label className={`${labelClass} ${isCardPayment ? '' : 'text-gray-400'}`}>Marca Tarjeta</label>
+                      <label htmlFor="eem-cardBrand" className={`${labelClass} ${isCardPayment ? '' : 'text-gray-400'}`}>Marca Tarjeta</label>
                       <select
+                        id="eem-cardBrand"
                         disabled={!isCardPayment}
                         className={isCardPayment ? inputClass : mutedSelectClass}
                         value={form.cardBrand}
@@ -248,8 +257,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       </select>
                     </div>
                     <div>
-                      <label className={labelClass}>Empresa Tarjeta</label>
-                      <select className={inputClass} value={form.cardCompany} onChange={set('cardCompany')}>
+                      <label htmlFor="eem-cardCompany" className={labelClass}>Empresa Tarjeta</label>
+                      <select id="eem-cardCompany" className={inputClass} value={form.cardCompany} onChange={set('cardCompany')}>
                         <option value="">Seleccionar...</option>
                         {CARD_COMPANIES.map(cc => (
                           <option key={cc.value} value={cc.value}>{cc.label}</option>
@@ -257,8 +266,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       </select>
                     </div>
                     <div>
-                      <label className={labelClass}>Tarjeta (Últimos 4)</label>
+                      <label htmlFor="eem-cardLast4" className={labelClass}>Tarjeta (Últimos 4)</label>
                       <input
+                        id="eem-cardLast4"
                         type="text"
                         maxLength={4}
                         className={inputClass}
@@ -275,16 +285,17 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
             {/* Monto / Moneda */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className={labelClass}>Moneda</label>
-                <select className={inputClass} value={form.currency} onChange={set('currency')}>
+                <label htmlFor="eem-currency" className={labelClass}>Moneda</label>
+                <select id="eem-currency" className={inputClass} value={form.currency} onChange={set('currency')}>
                   {CURRENCIES.map(c => (
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className={labelClass}>Monto *</label>
+                <label htmlFor="eem-amount" className={labelClass}>Monto *</label>
                 <input
+                  id="eem-amount"
                   type="number"
                   required
                   min="0.01"
@@ -336,8 +347,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
 
             {/* Descripción */}
             <div>
-              <label className={labelClass}>Descripción / Notas</label>
+              <label htmlFor="eem-description" className={labelClass}>Descripción / Notas</label>
               <textarea
+                id="eem-description"
                 rows={3}
                 className={inputClass + " resize-none"}
                 value={form.description}
@@ -354,21 +366,21 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              className="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-6 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 focus-ring"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+              className="bg-blue-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 focus-ring"
             >
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {saving && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               Guardar Cambios
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </FocusableModal>
   );
 }

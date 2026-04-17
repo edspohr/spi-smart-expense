@@ -3,10 +3,12 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { Wallet, ArrowRight, RefreshCw } from 'lucide-react';
+import { Wallet, ArrowRight, RefreshCw, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { recalculateAllUserBalances } from '../utils/fixBalances';
 import { toast } from 'sonner';
+import TableSkeleton from '../components/TableSkeleton';
+import EmptyState from '../components/EmptyState';
 
 export default function AdminBalances() {
   const [professionals, setProfessionals] = useState([]);
@@ -45,7 +47,7 @@ export default function AdminBalances() {
       }
   };
 
-  if (loading) return <Layout title="Balances de Profesionales"><p>Cargando...</p></Layout>;
+  if (loading) return <Layout title="Balances de Profesionales"><TableSkeleton rows={5} cols={4} /></Layout>;
 
   return (
     <Layout title="Balances de Profesionales">
@@ -53,12 +55,13 @@ export default function AdminBalances() {
         <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <h3 className="font-bold text-gray-700">Estado de Cuentas Corrientes</h3>
             <div className="flex gap-2">
-                <button 
+                <button
+                    type="button"
                     onClick={handleRepairBalances}
                     disabled={repairing}
-                    className="text-sm bg-orange-100 text-orange-700 px-3 py-2 rounded hover:bg-orange-200 flex items-center font-bold disabled:opacity-50"
+                    className="text-sm bg-orange-100 text-orange-700 px-3 py-2 rounded hover:bg-orange-200 flex items-center font-bold disabled:opacity-50 focus-ring"
                 >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${repairing ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-4 h-4 mr-2 ${repairing ? 'animate-spin' : ''}`} aria-hidden="true" />
                     {repairing ? 'Reparando...' : 'Recalcular Saldos (Repair)'}
                 </button>
                 <Link to="/admin/projects" className="text-sm text-blue-600 hover:text-blue-800 flex items-center px-3 py-2">
@@ -110,7 +113,13 @@ export default function AdminBalances() {
                     ))}
                     {professionals.length === 0 && (
                         <tr>
-                            <td colSpan="4" className="px-6 py-8 text-center text-gray-500">No hay profesionales registrados.</td>
+                            <td colSpan="4" className="px-6 py-0">
+                                <EmptyState
+                                    icon={Users}
+                                    title="Sin profesionales"
+                                    description="No hay profesionales registrados en el sistema."
+                                />
+                            </td>
                         </tr>
                     )}
                 </tbody>

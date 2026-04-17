@@ -3,6 +3,7 @@ import { updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ForcePasswordChange({ user }) {
     const [newPass, setNewPass] = useState('');
@@ -26,11 +27,11 @@ export default function ForcePasswordChange({ user }) {
                 forcePasswordChange: false
             });
 
-            alert("Contraseña actualizada exitosamente.");
+            toast.success("Contraseña actualizada exitosamente.");
             window.location.reload(); // Refresh to clear state
         } catch (error) {
             console.error(error);
-            alert("Error al actualizar: " + error.message);
+            toast.error("Error al actualizar: " + error.message);
             // If error is "Recent Login Required", we might need to re-auth, 
             // but since they JUST logged in, it should be fine.
         } finally {

@@ -5,6 +5,7 @@ import { LogIn, UserPlus } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import { toast } from 'sonner';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
@@ -93,7 +94,7 @@ export default function Login() {
       try {
           setError('');
           await resetPassword(email);
-          alert(`Se ha enviado un correo de recuperación a ${email}`);
+          toast.success(`Se ha enviado un correo de recuperación a ${email}`);
       } catch (err) {
           setError("Error al enviar correo: " + err.message);
       }

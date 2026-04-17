@@ -10,13 +10,15 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
-  
+
   const linkClass = (path) => `
-    flex items-center py-2.5 px-4 rounded-full transition-all duration-200 font-medium text-sm mb-1
-    ${isActive(path) 
-        ? 'bg-white shadow-sm ring-1 ring-zinc-200 text-brand-600' 
+    flex items-center py-2.5 px-4 rounded-full transition-all duration-200 font-medium text-sm mb-1 focus-ring
+    ${isActive(path)
+        ? 'bg-white shadow-sm ring-1 ring-zinc-200 text-brand-600'
         : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'}
   `;
+
+  const ariaCurrent = (path) => (isActive(path) ? 'page' : undefined);
 
   const groupTitleClass = "px-4 text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2 mt-6";
 
@@ -54,43 +56,43 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <>
                 <p className={groupTitleClass}>Gestión</p>
                 
-                <Link to="/admin" className={linkClass('/admin')} onClick={() => setIsOpen(false)}>
-                <LayoutDashboard className={`w-4 h-4 mr-3 ${isActive('/admin') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                <Link to="/admin" className={linkClass('/admin')} aria-current={ariaCurrent('/admin')} onClick={() => setIsOpen(false)}>
+                <LayoutDashboard className={`w-4 h-4 mr-3 ${isActive('/admin') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Dashboard
                 </Link>
-                <Link to="/admin/projects" className={linkClass('/admin/projects')} onClick={() => setIsOpen(false)} style={{display: 'none'}}>
-                <FolderOpen className={`w-4 h-4 mr-3 ${isActive('/admin/projects') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                <Link to="/admin/projects" className={linkClass('/admin/projects')} aria-current={ariaCurrent('/admin/projects')} onClick={() => setIsOpen(false)} style={{display: 'none'}}>
+                <FolderOpen className={`w-4 h-4 mr-3 ${isActive('/admin/projects') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Centros de Costo
                 </Link>
-                <Link to="/admin/approvals" className={linkClass('/admin/approvals')} onClick={() => setIsOpen(false)}>
-                <CheckCircle className={`w-4 h-4 mr-3 ${isActive('/admin/approvals') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                <Link to="/admin/approvals" className={linkClass('/admin/approvals')} aria-current={ariaCurrent('/admin/approvals')} onClick={() => setIsOpen(false)}>
+                <CheckCircle className={`w-4 h-4 mr-3 ${isActive('/admin/approvals') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Aprobaciones
                 </Link>
-                <Link to="/admin/balances" className={linkClass('/admin/balances')} onClick={() => setIsOpen(false)}>
-                <Wallet className={`w-4 h-4 mr-3 ${isActive('/admin/balances') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                <Link to="/admin/balances" className={linkClass('/admin/balances')} aria-current={ariaCurrent('/admin/balances')} onClick={() => setIsOpen(false)}>
+                <Wallet className={`w-4 h-4 mr-3 ${isActive('/admin/balances') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Finanzas
                 </Link>
-                <Link to="/admin/reports" className={linkClass('/admin/reports')} onClick={() => setIsOpen(false)}>
-                <Download className={`w-4 h-4 mr-3 ${isActive('/admin/reports') ? 'text-brand-500' : 'text-zinc-400'}`} />
+                <Link to="/admin/reports" className={linkClass('/admin/reports')} aria-current={ariaCurrent('/admin/reports')} onClick={() => setIsOpen(false)}>
+                <Download className={`w-4 h-4 mr-3 ${isActive('/admin/reports') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Reportes
                 </Link>
             </>
         )}
 
         <p className={groupTitleClass}>Mi Espacio</p>
-        <Link to="/dashboard" className={linkClass('/dashboard')} onClick={() => setIsOpen(false)}>
-            <UserCircle className={`w-4 h-4 mr-3 ${isActive('/dashboard') ? 'text-brand-500' : 'text-zinc-400'}`} />
+        <Link to="/dashboard" className={linkClass('/dashboard')} aria-current={ariaCurrent('/dashboard')} onClick={() => setIsOpen(false)}>
+            <UserCircle className={`w-4 h-4 mr-3 ${isActive('/dashboard') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mi Resumen
         </Link>
-        <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
-            <Receipt className={`w-4 h-4 mr-3 ${isActive('/dashboard/expenses') ? 'text-brand-500' : 'text-zinc-400'}`} />
+        <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} aria-current={ariaCurrent('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
+            <Receipt className={`w-4 h-4 mr-3 ${isActive('/dashboard/expenses') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mis Rendiciones
         </Link>
 
-        
+
         <div className="mt-8 pt-6 border-t border-zinc-100">
-            <button onClick={logout} className="w-full flex items-center py-2.5 px-4 rounded-full text-zinc-500 hover:bg-red-50 hover:text-red-600 transition duration-200 group">
-                <LogOut className="w-4 h-4 mr-3 group-hover:rotate-180 transition-transform duration-300" />
+            <button type="button" onClick={logout} className="w-full flex items-center py-2.5 px-4 rounded-full text-zinc-500 hover:bg-red-50 hover:text-red-600 transition duration-200 group focus-ring">
+                <LogOut className="w-4 h-4 mr-3 group-hover:rotate-180 transition-transform duration-300" aria-hidden="true" />
                 <span className="font-medium text-sm">Cerrar Sesión</span>
             </button>
         </div>
