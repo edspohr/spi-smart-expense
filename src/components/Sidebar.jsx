@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -87,6 +87,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} aria-current={ariaCurrent('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
             <Receipt className={`w-4 h-4 mr-3 ${isActive('/dashboard/expenses') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mis Rendiciones
+        </Link>
+        <Link to="/dashboard/bulk-upload" className={linkClass('/dashboard/bulk-upload')} aria-current={ariaCurrent('/dashboard/bulk-upload')} onClick={() => setIsOpen(false)}>
+            <Layers className={`w-4 h-4 mr-3 ${isActive('/dashboard/bulk-upload') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+            Carga Masiva
         </Link>
 
 

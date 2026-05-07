@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, CreditCard } from 'lucide-react';
+import { X, FileText, CreditCard, AlertTriangle } from 'lucide-react';
 import FocusableModal from './FocusableModal';
 
 function isPdf(url) {
@@ -8,6 +8,8 @@ function isPdf(url) {
 }
 
 function MediaViewer({ url, label }) {
+  const [imgError, setImgError] = useState(false);
+
   if (!url) return null;
   if (isPdf(url)) {
     return (
@@ -25,11 +27,28 @@ function MediaViewer({ url, label }) {
       </div>
     );
   }
+  if (imgError) {
+    return (
+      <div className="flex flex-col items-center gap-3 text-gray-400 py-12">
+        <AlertTriangle className="w-14 h-14 text-yellow-300" aria-hidden="true" />
+        <p className="text-sm text-center">No se pudo cargar la imagen.</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-500 hover:underline focus-ring rounded"
+        >
+          Intentar abrir directamente
+        </a>
+      </div>
+    );
+  }
   return (
     <img
       src={url}
       alt={label}
       className="max-h-[70vh] max-w-full object-contain rounded-lg"
+      onError={() => setImgError(true)}
     />
   );
 }

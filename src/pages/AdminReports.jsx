@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
+import { ref as storageRef, getBytes } from 'firebase/storage';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import { Download, Search, FileSpreadsheet, Loader2, Filter, ImageDown } from 'lucide-react';
@@ -81,6 +82,19 @@ function sanitize(str) {
     .replace(/[^a-zA-Z0-9-]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '');
+}
+
+/**
+ * Parse a Firebase Storage download URL back to its gs:// storage path.
+ * Download URL format: .../o/{encoded-path}?alt=media&token=...
+ */
+function storagePathFromUrl(url) {
+  try {
+    const m = url.match(/\/o\/([^?#]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Detect file extension from a URL. Defaults to .jpg. */
@@ -344,10 +358,20 @@ export default function AdminReports() {
         }));
 
         try {
-          const response = await fetch(task.url);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const blob = await response.blob();
-          const ext = extFromUrl(task.url) || (blob.type.includes('pdf') ? '.pdf' : '.jpg');
+          // Use Firebase Storage SDK to avoid CORS restrictions on fetch().
+          // storagePathFromUrl() extracts the gs:// path from the download URL.
+          const path = storagePathFromUrl(task.url);
+          let blob;
+          if (path && storage) {
+            const bytes = await getBytes(storageRef(storage, path));
+            blob = new Blob([bytes]);
+          } else {
+            // Fallback for non-Firebase URLs (shouldn't occur in practice)
+            const response = await fetch(task.url, { mode: 'cors' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            blob = await response.blob();
+          }
+          const ext = extFromUrl(task.url);
           const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
           zip.file(filename, blob);
           downloaded++;
