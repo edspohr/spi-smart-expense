@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import { CARD_BRAND_LABELS } from '../lib/constants';
 import FocusableModal from './FocusableModal';
@@ -147,6 +147,17 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <p className="text-sm text-gray-700 italic">"{expense.description}"</p>
            </div>
            
+           {/* Rejection Reason */}
+           {expense.status === 'rejected' && expense.rejectionReason && (
+             <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3">
+               <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" aria-hidden="true" />
+               <div>
+                 <p className="text-xs font-bold text-red-700 uppercase mb-1">Motivo de rechazo</p>
+                 <p className="text-sm text-red-800">{expense.rejectionReason}</p>
+               </div>
+             </div>
+           )}
+
            {/* TRM Info (USD expenses only) */}
            {expense.currency === 'USD' && expense.trm && (
              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">

@@ -23,7 +23,7 @@ import EmptyState from '../components/EmptyState';
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
   startDate: '', endDate: '', user: '', cardCompany: '',
-  cardBrand: '', currency: '', minAmount: '', maxAmount: '', search: '',
+  cardBrand: '', currency: '', minAmount: '', maxAmount: '', search: '', eventName: '',
 };
 const DEFAULT_SORT = {
   pending: { key: 'date', dir: 'desc' },
@@ -211,6 +211,12 @@ export default function AdminApprovals() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [rawList]);
 
+  const distinctEvents = useMemo(() => {
+    const set = new Set();
+    [...pendingExpenses, ...historyExpenses].forEach(e => { if (e.eventName) set.add(e.eventName); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [pendingExpenses, historyExpenses]);
+
   const filteredList = useMemo(() => {
     return rawList.filter(e => {
       if (filters.startDate) {
@@ -230,6 +236,10 @@ export default function AdminApprovals() {
       const amt = Number(e.amount) || 0;
       if (filters.minAmount !== '' && amt < Number(filters.minAmount)) return false;
       if (filters.maxAmount !== '' && amt > Number(filters.maxAmount)) return false;
+      if (filters.eventName) {
+        const q = filters.eventName.toLowerCase();
+        if (!(e.eventName || '').toLowerCase().includes(q)) return false;
+      }
       if (filters.search) {
         const q = filters.search.toLowerCase();
         const hay = `${e.merchant || ''} ${e.description || ''}`.toLowerCase();
@@ -799,7 +809,17 @@ export default function AdminApprovals() {
                   placeholder="∞"
                   className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" />
               </div>
-              <div className="md:col-span-2 lg:col-span-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor="f-event">Evento</label>
+                <input id="f-event" type="text" list="f-event-list" value={filters.eventName}
+                  onChange={e => updateFilter('eventName', e.target.value)}
+                  placeholder="Filtrar por evento..."
+                  className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" />
+                <datalist id="f-event-list">
+                  {distinctEvents.map(ev => <option key={ev} value={ev} />)}
+                </datalist>
+              </div>
+              <div className="md:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor="f-search">Búsqueda (proveedor o descripción)</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
@@ -881,7 +901,10 @@ export default function AdminApprovals() {
                   </th>
                   <DataGridHeader label="Fecha" sortable sortKey="date" sortState={currentSort} onSortChange={handleSortChange} />
                   <DataGridHeader label="Usuario" sortable sortKey="userName" sortState={currentSort} onSortChange={handleSortChange} />
+                  <DataGridHeader label="Evento" sortable sortKey="eventName" sortState={currentSort} onSortChange={handleSortChange} />
+                  <DataGridHeader label="Comercio" sortable sortKey="merchant" sortState={currentSort} onSortChange={handleSortChange} />
                   <DataGridHeader label="Proyecto" sortable sortKey="projectName" sortState={currentSort} onSortChange={handleSortChange} />
+                  <DataGridHeader label="Categoría" sortable sortKey="category" sortState={currentSort} onSortChange={handleSortChange} />
                   <DataGridHeader label="Empresa" sortable sortKey="cardCompany" sortState={currentSort} onSortChange={handleSortChange} />
                   <DataGridHeader label="Monto" sortable sortKey="amount" sortState={currentSort} onSortChange={handleSortChange} align="right" />
                   {viewMode === 'history' && <DataGridHeader label="Estado" />}
@@ -921,15 +944,18 @@ export default function AdminApprovals() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-600 align-top">{e.date}</td>
-                      <td className="px-4 py-4 font-medium text-gray-800 align-top">{e.userName || 'N/A'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600 align-top whitespace-nowrap">{e.date}</td>
+                      <td className="px-4 py-4 font-medium text-gray-800 align-top whitespace-nowrap">{e.userName || 'N/A'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[130px] truncate">{e.eventName || '—'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[150px] truncate">{e.merchant || '—'}</td>
                       <td className="px-4 py-4 align-top">
                         <div className="flex flex-col">
                           <span className="text-gray-600 text-sm font-medium">{e.projectName || 'N/A'}</span>
                           {e.description && <span className="text-xs text-gray-400 truncate max-w-xs">{e.description}</span>}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-500 align-top">{e.cardCompany || '-'}</td>
+                      <td className="px-4 py-4 text-xs text-gray-500 align-top whitespace-nowrap">{e.category || '—'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-500 align-top whitespace-nowrap">{e.cardCompany || '-'}</td>
                       <td className="px-4 py-4 font-semibold text-right align-top whitespace-nowrap">
                         {formatCurrency(Number(e.amount) || 0, e.currency || 'COP')}
                         {e.currency && e.currency !== 'COP' && <span className="text-xs font-normal text-slate-400 ml-1">{e.currency}</span>}

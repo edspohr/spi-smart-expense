@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -75,6 +75,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <Link to="/admin/reports" className={linkClass('/admin/reports')} aria-current={ariaCurrent('/admin/reports')} onClick={() => setIsOpen(false)}>
                 <Download className={`w-4 h-4 mr-3 ${isActive('/admin/reports') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Reportes
+                </Link>
+                <Link to="/admin/reconciliation" className={linkClass('/admin/reconciliation')} aria-current={ariaCurrent('/admin/reconciliation')} onClick={() => setIsOpen(false)}>
+                <GitCompare className={`w-4 h-4 mr-3 ${isActive('/admin/reconciliation') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+                Conciliación
                 </Link>
             </>
         )}

@@ -8,6 +8,7 @@ import AdminProjectDetails from './pages/AdminProjectDetails';
 import AdminUserDetails from './pages/AdminUserDetails';
 import AdminUserSeeder from './pages/AdminUserSeeder';
 import AdminReports from './pages/AdminReports';
+import AdminReconciliation from './pages/AdminReconciliation';
 import UserDashboard from './pages/UserDashboard';
 import UserExpenses from './pages/UserExpenses';
 import ExpenseForm from './pages/ExpenseForm';
@@ -44,6 +45,7 @@ function App() {
         <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin"><AdminBalances /></ProtectedRoute>} />
         <Route path="/admin/users-seeder" element={<ProtectedRoute requiredRole="admin"><AdminUserSeeder /></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/reconciliation" element={<ProtectedRoute requiredRole="admin"><AdminReconciliation /></ProtectedRoute>} />
 
 
         {/* User Routes */}

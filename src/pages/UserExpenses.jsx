@@ -112,19 +112,16 @@ export default function UserExpenses() {
                             )}
                         </td>
                         <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold 
-                                    ${e.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                            <div className="flex flex-col gap-1">
+                                <span className={`self-start px-2 py-1 rounded-full text-xs font-semibold
+                                    ${e.status === 'approved' ? 'bg-green-100 text-green-800' :
                                       e.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                     {e.status === 'approved' ? 'Aprobado' : e.status === 'pending' ? 'Pendiente' : 'Rechazado'}
                                 </span>
                                 {e.status === 'rejected' && e.rejectionReason && (
-                                    <div className="group relative">
-                                        <AlertCircle className="w-4 h-4 text-red-500 cursor-help" />
-                                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded p-2 z-10 shadow-lg">
-                                            {e.rejectionReason}
-                                            <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-gray-800"></div>
-                                        </div>
+                                    <div className="flex items-start gap-1 max-w-[180px]">
+                                        <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
+                                        <span className="text-xs text-red-600 leading-snug">{e.rejectionReason}</span>
                                     </div>
                                 )}
                             </div>
