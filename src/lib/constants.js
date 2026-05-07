@@ -7,12 +7,21 @@ export const CATEGORIES_COMMON = [
   "ROOMING",
   "TRANSPORTE TERRESTRE",
   "TRANSPORTE AEREO",
+  "PARQUEADEROS",
+  "GASOLINA",
+  "PEAJES",
+  "TICKET FERIA",
+  "TECNOLOGÍA",
+  "SUSCRIPCIONES",
+  "FEES BANCARIOS",
   "VARIOS",
 ];
 
 export const PAYMENT_METHODS = [
   { value: "Credit Card", label: "Tarjeta de Crédito" },
   { value: "Debit Card", label: "Tarjeta Débito" },
+  { value: "Amex", label: "Tarjeta American Express" },
+  { value: "Citi", label: "Tarjeta Citi" },
   { value: "Cash", label: "Efectivo" },
   { value: "Transfer", label: "Transferencia" },
   { value: "Wallet", label: "Billetera Digital (Nequi/Daviplata)" },
@@ -31,6 +40,8 @@ export const CARD_BRANDS = [
 export const CARD_COMPANIES = [
   { value: "SPI Americas", label: "SPI Americas" },
   { value: "SPI Advisors", label: "SPI Advisors" },
+  { value: "Socios SPI Advisors", label: "Socios SPI Advisors" },
+  { value: "Socios SPI Americas", label: "Socios SPI Américas" },
 ];
 
 export const CURRENCIES = [
