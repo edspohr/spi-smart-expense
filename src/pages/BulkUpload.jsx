@@ -575,9 +575,10 @@ export default function BulkUpload() {
                     {items.map((item, idx) => {
                       const isDisabled = phase === 'analyzing' || phase === 'submitting';
                       const rowBg =
-                        item.submitStatus === 'done'  ? 'bg-green-50/40' :
-                        item.submitStatus === 'error' ? 'bg-red-50/40'   :
-                        item.status === 'error'       ? 'bg-red-50/20'   : '';
+                        item.submitStatus === 'done'  ? 'bg-green-50/40'  :
+                        item.submitStatus === 'error' ? 'bg-red-50/40'    :
+                        item.status === 'error'       ? 'bg-red-50/20'    :
+                        item.dupeWarning              ? 'bg-yellow-50/40' : '';
 
                       return (
                         <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors ${rowBg}`}>
@@ -587,8 +588,15 @@ export default function BulkUpload() {
                             {item.status === 'analyzing' && (
                               <Loader2 className="w-4 h-4 animate-spin text-blue-500 mx-auto" aria-label="Analizando" />
                             )}
-                            {item.status === 'ready' && item.submitStatus === 'idle' && (
+                            {item.status === 'ready' && item.submitStatus === 'idle' && !item.dupeWarning && (
                               <CheckCircle className="w-4 h-4 text-green-500 mx-auto" aria-label="Listo" />
+                            )}
+                            {item.status === 'ready' && item.submitStatus === 'idle' && item.dupeWarning && (
+                              <AlertTriangle
+                                className="w-4 h-4 text-yellow-500 mx-auto"
+                                aria-label={item.dupeWarning}
+                                title={item.dupeWarning}
+                              />
                             )}
                             {item.status === 'error' && (
                               <div className="flex items-center justify-center gap-0.5">
