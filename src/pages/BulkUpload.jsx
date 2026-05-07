@@ -21,6 +21,26 @@ const MAX_FILES = 25;
 const UPLOAD_CONCURRENCY = 4;
 const FIRESTORE_BATCH_SIZE = 20;
 
+function findBulkDuplicate(item, existingExpenses) {
+  if (item.invoiceNumber) {
+    const inv = item.invoiceNumber.toLowerCase().trim();
+    if (existingExpenses.some(e => e.invoiceNumber && e.invoiceNumber.toLowerCase().trim() === inv)) {
+      return `Factura ${item.invoiceNumber} ya registrada`;
+    }
+  }
+  if (item.amount && item.date && item.merchant) {
+    const norm = (item.merchant || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    if (existingExpenses.some(e =>
+      Number(e.amount) === Number(item.amount) &&
+      e.date === item.date &&
+      (e.merchant || '').toLowerCase().trim().replace(/\s+/g, ' ') === norm
+    )) {
+      return 'Mismo monto, fecha y comercio ya registrados';
+    }
+  }
+  return null;
+}
+
 function mkItem(file, preview) {
   return {
     id: crypto.randomUUID(),
@@ -28,6 +48,7 @@ function mkItem(file, preview) {
     preview,
     status: 'queued',      // queued | analyzing | ready | error
     errorMsg: null,
+    dupeWarning: null,
     merchant: '',
     date: '',
     time: '',
@@ -175,6 +196,18 @@ export default function BulkUpload() {
       if (item.status !== 'queued') continue;
       await runOCR(item);
     }
+    // After OCR, flag potential duplicates against this user's existing expenses
+    try {
+      const expSnap = await getDocs(
+        query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
+      );
+      const existing = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setItems(prev => prev.map(item => ({
+        ...item,
+        dupeWarning: findBulkDuplicate(item, existing),
+      })));
+    } catch { /* non-fatal */ }
+
     setPhase('review');
   };
 

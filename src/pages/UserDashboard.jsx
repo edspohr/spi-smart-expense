@@ -73,6 +73,10 @@ export default function UserDashboard() {
     fetchData();
   }, [currentUser]);
 
+  const usdTotal = expenses
+    .filter(e => e.currency === 'USD' && e.status !== 'rejected')
+    .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
   if (loading) return <Layout title="Dashboard"><TableSkeleton rows={4} cols={6} /></Layout>;
 
   return (
@@ -87,7 +91,13 @@ export default function UserDashboard() {
                     <p className="text-4xl font-bold mb-2">
                         {formatCurrency(balance)}
                     </p>
-                    <p className="text-blue-200 text-sm">Saldo disponible para gastos.</p>
+                    {usdTotal > 0 ? (
+                      <p className="text-blue-200 text-xs">
+                        Incluye {formatCurrency(usdTotal, 'USD')} USD (saldo en múltiples monedas)
+                      </p>
+                    ) : (
+                      <p className="text-blue-200 text-sm">Saldo disponible para gastos.</p>
+                    )}
                 </div>
             </div>
             

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/useAuth';
 import { parseExpenseDocuments } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
@@ -12,6 +13,32 @@ import { sortProjects } from '../utils/sort';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
+
+/**
+ * Checks a set of existing expenses for a potential duplicate of the given formData.
+ * Returns { match, method } if a duplicate is found, otherwise null.
+ * Primary key: invoiceNumber. Fallback: amount + date + merchant (normalized).
+ */
+function findPotentialDuplicate(formData, existingExpenses) {
+  if (formData.invoiceNumber) {
+    const inv = formData.invoiceNumber.toLowerCase().trim();
+    const match = existingExpenses.find(
+      e => e.invoiceNumber && e.invoiceNumber.toLowerCase().trim() === inv
+    );
+    if (match) return { match, method: 'invoice' };
+  }
+  if (formData.amount && formData.date && formData.merchant) {
+    const norm = (formData.merchant || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const match = existingExpenses.find(
+      e =>
+        Number(e.amount) === Number(formData.amount) &&
+        e.date === formData.date &&
+        (e.merchant || '').toLowerCase().trim().replace(/\s+/g, ' ') === norm
+    );
+    if (match) return { match, method: 'amountDateMerchant' };
+  }
+  return null;
+}
 
 function DropzoneSlot({
   title, hint, loadedLabel,
@@ -122,6 +149,11 @@ export default function ExpenseForm() {
 
   // Manual Entry State
   const [isManual, setIsManual] = useState(false);
+
+  // Duplicate detection state
+  const [duplicateWarning, setDuplicateWarning] = useState(null); // null | { match, method }
+  const duplicateAcknowledged = useRef(false);
+  const reviewFormRef = useRef(null);
 
   // TRM State (USD→COP exchange rate)
   const [trmState, setTrmState] = useState({ trm: null, source: null, fetchedAt: null, loading: false });
@@ -346,9 +378,25 @@ export default function ExpenseForm() {
         // }
     }
 
+    // Soft stop: check for duplicate invoices (skipped when user explicitly acknowledged)
+    if (!duplicateAcknowledged.current) {
+      try {
+        const expSnap = await getDocs(
+          query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
+        );
+        const userExps = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const dupResult = findPotentialDuplicate(formData, userExps);
+        if (dupResult) {
+          setDuplicateWarning(dupResult);
+          return;
+        }
+      } catch { /* non-fatal — if check fails, proceed to submit */ }
+    }
+    duplicateAcknowledged.current = false;
+
     try {
         setLoading(true);
-        
+
         let receiptUrl = null;
         let voucherUrl = null;
 
@@ -554,7 +602,7 @@ export default function ExpenseForm() {
 
         {/* Step 2: Review */}
         {step === 'review' && (
-            <form onSubmit={handleSubmit} className="animate-fadeIn grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <form ref={reviewFormRef} onSubmit={handleSubmit} className="animate-fadeIn grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 
                 {/* Left: Previews */}
                 <div className="lg:col-span-1 space-y-4">
@@ -1063,6 +1111,36 @@ export default function ExpenseForm() {
         )}
 
       </div>
+
+      {/* Duplicate invoice soft-stop dialog */}
+      <ConfirmDialog
+        isOpen={!!duplicateWarning}
+        title="Posible duplicado detectado"
+        description={
+          duplicateWarning?.method === 'invoice'
+            ? `Ya existe una rendición con el mismo número de factura "${formData.invoiceNumber}". Podría ser un duplicado.`
+            : 'Ya existe una rendición con el mismo monto, fecha y comercio. Podría ser un duplicado.'
+        }
+        confirmLabel="Continuar de todas formas"
+        confirmTone="primary"
+        onConfirm={() => {
+          duplicateAcknowledged.current = true;
+          setDuplicateWarning(null);
+          reviewFormRef.current?.requestSubmit();
+        }}
+        onClose={() => setDuplicateWarning(null)}
+      >
+        {duplicateWarning?.match && (
+          <div className="mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800 space-y-1">
+            <p className="font-semibold text-xs uppercase tracking-wide text-yellow-600 mb-1">Gasto existente similar:</p>
+            <p>
+              {duplicateWarning.match.date} &mdash; {duplicateWarning.match.merchant} &mdash;{' '}
+              {formatCurrency(Number(duplicateWarning.match.amount), duplicateWarning.match.currency || 'COP')}
+              {' '}({duplicateWarning.match.status === 'approved' ? 'Aprobado' : duplicateWarning.match.status === 'pending' ? 'Pendiente' : 'Rechazado'})
+            </p>
+          </div>
+        )}
+      </ConfirmDialog>
     </Layout>
   );
 }

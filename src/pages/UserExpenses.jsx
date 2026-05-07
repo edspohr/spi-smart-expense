@@ -105,7 +105,12 @@ export default function UserExpenses() {
                         <td className="px-6 py-4 text-gray-600">{e.date}</td>
                         <td className="px-6 py-4 text-gray-800 font-medium">{e.projectName || 'Sin Proyecto'}</td>
                         <td className="px-6 py-4 text-gray-500 text-sm">{e.cardCompany || '-'}</td>
-                        <td className="px-6 py-4 font-medium">{formatCurrency(e.amount)}</td>
+                        <td className="px-6 py-4 font-medium">
+                            {formatCurrency(e.amount, e.currency)}
+                            {e.currency && e.currency !== 'COP' && (
+                                <span className="text-xs text-gray-400 ml-1">{e.currency}</span>
+                            )}
+                        </td>
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold 
