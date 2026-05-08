@@ -409,7 +409,7 @@ export default function AdminReports() {
     }
 
     if (downloaded === 0) {
-      toast.error('No se pudo descargar ninguna imagen. Verifique los permisos de Firebase Storage.');
+      toast.error('No se pudo descargar ninguna imagen. Esto suele deberse a falta de configuración de CORS en Firebase Storage.');
       setZipProgress({ active: false, current: 0, total: 0, phase: 'downloading', message: '' });
       return;
     }
