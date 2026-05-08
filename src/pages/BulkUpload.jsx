@@ -269,19 +269,23 @@ export default function BulkUpload() {
 
     // Step 1: Upload images in parallel chunks
     const uploadedItems = [];
+    
     for (let i = 0; i < snapshot.length; i += UPLOAD_CONCURRENCY) {
       const chunk = snapshot.slice(i, i + UPLOAD_CONCURRENCY);
       const results = await Promise.allSettled(
-        chunk.map(item =>
-          uploadReceiptImage(item.file, currentUser.uid).then(url => ({ item, receiptUrl: url }))
-        )
+        chunk.map(async (item) => {
+          if (item.submitStatus === 'done') return { item, receiptUrl: item.receiptUrl, alreadyDone: true };
+          const url = await uploadReceiptImage(item.file, currentUser.uid);
+          return { item, receiptUrl: url };
+        })
       );
       results.forEach((r, idx) => {
+        const item = chunk[idx];
         if (r.status === 'fulfilled') {
           uploadedItems.push(r.value);
-          setItem(chunk[idx].id, { submitStatus: 'done' });
+          setItem(item.id, { submitStatus: 'done', receiptUrl: r.value.receiptUrl });
         } else {
-          setItem(chunk[idx].id, { submitStatus: 'error', submitError: r.reason?.message });
+          setItem(item.id, { submitStatus: 'error', submitError: r.reason?.message || 'Error de subida' });
         }
         setSubmitProgress(prev => ({ ...prev, done: prev.done + 1 }));
       });
@@ -338,13 +342,13 @@ export default function BulkUpload() {
       }
       await batch.commit();
     }
-
     const errorCount = snapshot.length - uploadedItems.length;
     setPhase('done');
     if (errorCount === 0) {
-      toast.success(`${uploadedItems.length} rendición(es) enviadas exitosamente.`);
+      toast.success(`${uploadedItems.length} rendiciones enviadas exitosamente.`);
     } else {
-      toast.warning(`${uploadedItems.length} enviadas, ${errorCount} con error de subida.`);
+      toast.warning(`${uploadedItems.length} enviadas, ${errorCount} con error de subida. Puedes reintentar las fallidas.`);
+      setPhase('review'); // Stay in review if there are errors to allow retry
     }
   };
 
@@ -475,7 +479,14 @@ export default function BulkUpload() {
                   {phase === 'submitting' && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin text-blue-600" aria-hidden="true" />
-                      Subiendo... {submitProgress.done}/{submitProgress.total}
+                      Procesando... {submitProgress.done}/{submitProgress.total}
+                    </div>
+                  )}
+                  
+                  {phase === 'review' && items.some(i => i.submitStatus === 'error') && (
+                    <div className="text-xs text-red-500 font-medium bg-red-50 px-3 py-2 rounded-lg border border-red-100 flex items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Algunas subidas fallaron. Puedes reintentar enviar.
                     </div>
                   )}
                 </div>
