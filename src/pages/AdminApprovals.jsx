@@ -8,7 +8,7 @@ import RejectionModal from '../components/RejectionModal';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, increment, writeBatch, orderBy, limit } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, increment, writeBatch, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import {
   CheckCircle, XCircle, Download, FileText, Eye, Pencil, Trash2,

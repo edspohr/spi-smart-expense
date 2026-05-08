@@ -125,14 +125,13 @@ function buildImageFilename(expense, type, ext, projectsMap, usedNames) {
   const proj = sanitize(expense.projectName || 'SinProyecto').substring(0, 30);
 
   const base = `FC-${inv}-${merch}-${code}-${proj}_${type}`.substring(0, 100);
-
   let candidate = `${base}${ext}`;
   let counter = 2;
-  while (usedNames.has(candidate)) {
+  while (usedNames.has(candidate.toLowerCase())) {
     candidate = `${base}_${counter}${ext}`;
     counter++;
   }
-  usedNames.add(candidate);
+  usedNames.add(candidate.toLowerCase());
   return candidate;
 }
 
@@ -358,35 +357,43 @@ export default function AdminReports() {
         setZipProgress(prev => ({
           ...prev,
           current: fileNum,
-          message: `Descargando imagen ${fileNum} de ${totalFiles}...`,
+          message: `Descargando archivo ${fileNum} de ${totalFiles}...`,
         }));
 
-          try {
-            const path = storagePathFromUrl(task.url);
-            let blob;
-            if (path && storage) {
-              try {
-                const bytes = await getBytes(storageRef(storage, path));
-                blob = new Blob([bytes]);
-              } catch (storageErr) {
-                console.warn(`[ZIP] Firebase Storage getBytes failed for ${path}, trying fetch fallback:`, storageErr.message);
-                const response = await fetch(task.url, { mode: 'cors' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                blob = await response.blob();
-              }
-            } else {
-              const response = await fetch(task.url, { mode: 'cors' });
+        try {
+          console.log(`[ZIP] Procesando (${task.type}):`, task.url);
+          const path = storagePathFromUrl(task.url);
+          let blob;
+
+          if (path && storage) {
+            try {
+              console.log(`[ZIP] Intentando getBytes para: ${path}`);
+              const bytes = await getBytes(storageRef(storage, path));
+              blob = new Blob([bytes]);
+              console.log(`[ZIP] Éxito con getBytes para: ${path}`);
+            } catch (storageErr) {
+              console.warn(`[ZIP] getBytes falló para ${path}, intentando fetch directo:`, storageErr.message);
+              const response = await fetch(task.url);
               if (!response.ok) throw new Error(`HTTP ${response.status}`);
               blob = await response.blob();
+              console.log(`[ZIP] Éxito con fetch para: ${task.url}`);
             }
-            const ext = extFromUrl(task.url);
-            const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
-            zip.file(filename, blob);
-            downloaded++;
-          } catch (err) {
-            console.error(`[ZIP] Error procesando imagen de gasto ${expense.id} (${task.type}):`, err.message);
-            skipped++;
+          } else {
+            console.log(`[ZIP] Sin ruta de storage o sin objeto storage, intentando fetch directo.`);
+            const response = await fetch(task.url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            blob = await response.blob();
+            console.log(`[ZIP] Éxito con fetch directo.`);
           }
+
+          const ext = extFromUrl(task.url);
+          const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
+          zip.file(filename, blob);
+          downloaded++;
+        } catch (err) {
+          console.error(`[ZIP] ERROR CRÍTICO procesando ${task.url}:`, err);
+          skipped++;
+        }
       }
     }
 
@@ -435,9 +442,9 @@ export default function AdminReports() {
       }));
 
       if (skipped > 0) {
-        toast.warning(`Se descargaron ${downloaded} de ${totalFiles} imágenes. ${skipped} no pudieron ser descargadas.`);
+        toast.warning(`Se descargaron ${downloaded} de ${totalFiles} archivos. ${skipped} fallaron.`);
       } else {
-        toast.success(`${downloaded} imagen${downloaded !== 1 ? 'es descargadas' : ' descargada'} exitosamente.`);
+        toast.success(`${downloaded} archivos descargados exitosamente.`);
       }
 
       setTimeout(() => {
