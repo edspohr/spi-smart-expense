@@ -11,7 +11,7 @@ import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, increment, writeBatch, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import {
-  CheckCircle, XCircle, Download, FileText, Eye, Pencil,
+  CheckCircle, XCircle, Download, FileText, Eye, Pencil, Trash2,
   Filter, Keyboard, AlertCircle, ChevronDown, ChevronUp, Search, X as XIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -140,6 +140,8 @@ export default function AdminApprovals() {
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
   const [bulkRejectReason, setBulkRejectReason] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [selectedExpenseToDelete, setSelectedExpenseToDelete] = useState(null);
 
   // Desktop-only keyboard shortcuts
   const [isKeyboardDevice, setIsKeyboardDevice] = useState(true);
@@ -184,7 +186,8 @@ export default function AdminApprovals() {
     try {
       setLoading(true);
       const [pSnap, hSnap] = await Promise.all([
-        getDocs(query(collection(db, "expenses"), where("status", "in", ["pending", "Pending", "PENDING"]))),
+        // Fetch everything that is NOT approved/rejected to be safe (inclusive of missing/varied status)
+        getDocs(query(collection(db, "expenses"), where("status", "not-in", ["approved", "rejected"]))),
         getDocs(query(
           collection(db, "expenses"),
           where("status", "in", ["approved", "rejected"]),
@@ -197,6 +200,14 @@ export default function AdminApprovals() {
       setHistoryExpenses(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
       console.error("Error fetching pending:", e);
+      // Fallback if not-in query fails (e.g. index missing)
+      try {
+        const snap = await getDocs(query(collection(db, "expenses"), limit(200)));
+        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPendingExpenses(all.filter(e => !['approved', 'rejected'].includes(e.status)));
+      } catch (inner) {
+        console.error("Fallback fetch failed:", inner);
+      }
     } finally {
       setLoading(false);
     }
@@ -592,6 +603,43 @@ export default function AdminApprovals() {
     window.open(url, '_blank');
   };
 
+  const handleDeleteExpense = (expense) => {
+    setSelectedExpenseToDelete(expense);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteExpense = async () => {
+    if (!selectedExpenseToDelete) return;
+    try {
+      const e = selectedExpenseToDelete;
+      const batch = writeBatch(db);
+      batch.delete(doc(db, "expenses", e.id));
+      // If it was approved, decrement project expenses
+      if (e.status === 'approved' && e.projectId) {
+          batch.update(doc(db, "projects", e.projectId), {
+              expenses: increment(-(Number(e.amount) || 0))
+          });
+      }
+      // If it was NOT approved/rejected (i.e. pending), decrement user balance
+      if (e.status === 'pending' && e.userId && !e.isCompanyExpense) {
+          batch.update(doc(db, "users", e.userId), {
+              balance: increment(-(Number(e.amount) || 0))
+          });
+      }
+      await batch.commit();
+      toast.success("Rendición eliminada.");
+      setPendingExpenses(prev => prev.filter(item => item.id !== e.id));
+      setHistoryExpenses(prev => prev.filter(item => item.id !== e.id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(e.id); return n; });
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+      toast.error("Error al eliminar");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setSelectedExpenseToDelete(null);
+    }
+  };
+
   // Auto-scroll focused row into view
   useEffect(() => {
     if (focusedIndex < 0) return;
@@ -974,7 +1022,7 @@ export default function AdminApprovals() {
                           <button
                             type="button"
                             onClick={() => { setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }}
-                            className="text-gray-600 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
+                            className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
                             title="Ver detalles"
                             aria-label="Ver detalles"
                           >
@@ -1017,6 +1065,15 @@ export default function AdminApprovals() {
                                 aria-label="Rechazar"
                               >
                                 <XCircle className="w-5 h-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteExpense(e)}
+                                className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
+                                title="Eliminar"
+                                aria-label="Eliminar"
+                              >
+                                <Trash2 className="w-5 h-5" />
                               </button>
                             </>
                           )}
@@ -1106,6 +1163,16 @@ export default function AdminApprovals() {
           />
         </div>
       </ConfirmDialog>
+
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteExpense}
+        confirmTone="danger"
+        title="Eliminar Rendición"
+        description="¿Estás seguro de que deseas eliminar esta rendición permanentemente? Esta acción no se puede deshacer y ajustará el saldo del usuario si corresponde."
+        confirmLabel="Eliminar"
+      />
 
       {/* Shortcuts */}
       <KeyboardShortcutsModal
