@@ -343,58 +343,63 @@ export default function AdminReports() {
     let downloaded = 0;
     let skipped = 0;
 
-    for (const expense of withImages) {
+    // Flat list of all tasks
+    const allTasks = [];
+    withImages.forEach(expense => {
+      if (expense.receiptUrl) allTasks.push({ expense, url: expense.receiptUrl, type: 'recibo' });
+      if (expense.voucherUrl) allTasks.push({ expense, url: expense.voucherUrl, type: 'voucher' });
+    });
+
+    const CONCURRENCY = 5; // Download 5 files at a time
+    const fetchWithTimeout = async (taskPromise) => {
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout de 15s')), 15000)
+      );
+      return Promise.race([taskPromise, timeout]);
+    };
+
+    for (let i = 0; i < allTasks.length; i += CONCURRENCY) {
       if (cancelRef.current) break;
 
-      const tasks = [];
-      if (expense.receiptUrl) tasks.push({ url: expense.receiptUrl, type: 'recibo' });
-      if (expense.voucherUrl) tasks.push({ url: expense.voucherUrl, type: 'voucher' });
-
-      for (const task of tasks) {
-        if (cancelRef.current) break;
-
-        const fileNum = downloaded + skipped + 1;
-        setZipProgress(prev => ({
-          ...prev,
-          current: fileNum,
-          message: `Descargando archivo ${fileNum} de ${totalFiles}...`,
-        }));
+      const chunk = allTasks.slice(i, i + CONCURRENCY);
+      
+      await Promise.all(chunk.map(async (task) => {
+        if (cancelRef.current) return;
 
         try {
-          console.log(`[ZIP] Procesando (${task.type}):`, task.url);
           const path = storagePathFromUrl(task.url);
           let blob;
 
           if (path && storage) {
             try {
-              console.log(`[ZIP] Intentando getBytes para: ${path}`);
-              const bytes = await getBytes(storageRef(storage, path));
+              const bytes = await fetchWithTimeout(getBytes(storageRef(storage, path)));
               blob = new Blob([bytes]);
-              console.log(`[ZIP] Éxito con getBytes para: ${path}`);
-            } catch (storageErr) {
-              console.warn(`[ZIP] getBytes falló para ${path}, intentando fetch directo:`, storageErr.message);
-              const response = await fetch(task.url);
+            } catch {
+              const response = await fetchWithTimeout(fetch(task.url));
               if (!response.ok) throw new Error(`HTTP ${response.status}`);
               blob = await response.blob();
-              console.log(`[ZIP] Éxito con fetch para: ${task.url}`);
             }
           } else {
-            console.log(`[ZIP] Sin ruta de storage o sin objeto storage, intentando fetch directo.`);
-            const response = await fetch(task.url);
+            const response = await fetchWithTimeout(fetch(task.url));
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             blob = await response.blob();
-            console.log(`[ZIP] Éxito con fetch directo.`);
           }
 
           const ext = extFromUrl(task.url);
-          const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
+          const filename = buildImageFilename(task.expense, task.type, ext, projectsMap, usedNames);
           zip.file(filename, blob);
           downloaded++;
         } catch (err) {
-          console.error(`[ZIP] ERROR CRÍTICO procesando ${task.url}:`, err);
+          console.error(`[ZIP] Error en ${task.url}:`, err);
           skipped++;
+        } finally {
+          setZipProgress(prev => ({
+            ...prev,
+            current: downloaded + skipped,
+            message: `Descargando archivo ${downloaded + skipped} de ${totalFiles}...`,
+          }));
         }
-      }
+      }));
     }
 
     if (cancelRef.current) {
