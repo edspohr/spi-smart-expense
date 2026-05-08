@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
+import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { CATEGORIES_COMMON } from '../lib/constants';
 import { toast } from 'sonner';
 
@@ -63,6 +64,9 @@ function mkItem(file, preview) {
     description: '',
     eventName: '',
     projectId: '',
+    trm: null,
+    amountCOP: null,
+    trmSource: null,
     submitStatus: 'idle',  // idle | uploading | done | error
     submitError: null,
   };
@@ -196,17 +200,38 @@ export default function BulkUpload() {
       if (item.status !== 'queued') continue;
       await runOCR(item);
     }
-    // After OCR, flag potential duplicates against this user's existing expenses
+    // After OCR, flag potential duplicates and fetch TRM for USD expenses
     try {
       const expSnap = await getDocs(
         query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
       );
       const existing = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setItems(prev => prev.map(item => ({
-        ...item,
-        dupeWarning: findBulkDuplicate(item, existing),
-      })));
-    } catch { /* non-fatal */ }
+      
+      setItems(prev => {
+        const next = [...prev];
+        return next.map(item => {
+          const dupe = findBulkDuplicate(item, existing);
+          return { ...item, dupeWarning: dupe };
+        });
+      });
+
+      // Fetch TRM for USD items
+      const currentItems = itemsRef.current;
+      for (const item of currentItems) {
+        if (item.currency === 'USD' && item.date && !item.trm) {
+          const res = await fetchTRM(item.date);
+          if (res.trm) {
+            setItem(item.id, { 
+              trm: res.trm, 
+              trmSource: res.source,
+              amountCOP: calculateCOPEquivalent(item.amount, res.trm)
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('BulkUpload: non-fatal enrichment failed', err);
+    }
 
     setPhase('review');
   };
@@ -303,9 +328,9 @@ export default function BulkUpload() {
           createdAt:     new Date().toISOString(),
           isCompanyExpense: false,
           splitGroupId:  null,
-          trm:           null,
-          amountCOP:     null,
-          trmSource:     null,
+          trm:           item.trm || null,
+          amountCOP:     item.amountCOP || (item.currency === 'USD' ? calculateCOPEquivalent(item.amount, item.trm) : null),
+          trmSource:     item.trmSource || null,
           bulkUpload:    true,
         });
         const userRef = doc(db, 'users', currentUser.uid);

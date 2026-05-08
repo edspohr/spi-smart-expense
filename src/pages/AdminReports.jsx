@@ -90,9 +90,13 @@ function sanitize(str) {
  */
 function storagePathFromUrl(url) {
   try {
+    if (!url || typeof url !== 'string') return null;
+    // Standard Firebase Storage URL: .../b/{bucket}/o/{path}?alt=media...
     const m = url.match(/\/o\/([^?#]+)/);
-    return m ? decodeURIComponent(m[1]) : null;
-  } catch {
+    if (!m) return null;
+    return decodeURIComponent(m[1]);
+  } catch (err) {
+    console.error('[storagePathFromUrl] Error parsing URL:', url, err);
     return null;
   }
 }
@@ -357,28 +361,32 @@ export default function AdminReports() {
           message: `Descargando imagen ${fileNum} de ${totalFiles}...`,
         }));
 
-        try {
-          // Use Firebase Storage SDK to avoid CORS restrictions on fetch().
-          // storagePathFromUrl() extracts the gs:// path from the download URL.
-          const path = storagePathFromUrl(task.url);
-          let blob;
-          if (path && storage) {
-            const bytes = await getBytes(storageRef(storage, path));
-            blob = new Blob([bytes]);
-          } else {
-            // Fallback for non-Firebase URLs (shouldn't occur in practice)
-            const response = await fetch(task.url, { mode: 'cors' });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            blob = await response.blob();
+          try {
+            const path = storagePathFromUrl(task.url);
+            let blob;
+            if (path && storage) {
+              try {
+                const bytes = await getBytes(storageRef(storage, path));
+                blob = new Blob([bytes]);
+              } catch (storageErr) {
+                console.warn(`[ZIP] Firebase Storage getBytes failed for ${path}, trying fetch fallback:`, storageErr.message);
+                const response = await fetch(task.url, { mode: 'cors' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                blob = await response.blob();
+              }
+            } else {
+              const response = await fetch(task.url, { mode: 'cors' });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              blob = await response.blob();
+            }
+            const ext = extFromUrl(task.url);
+            const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
+            zip.file(filename, blob);
+            downloaded++;
+          } catch (err) {
+            console.error(`[ZIP] Error procesando imagen de gasto ${expense.id} (${task.type}):`, err.message);
+            skipped++;
           }
-          const ext = extFromUrl(task.url);
-          const filename = buildImageFilename(expense, task.type, ext, projectsMap, usedNames);
-          zip.file(filename, blob);
-          downloaded++;
-        } catch (err) {
-          console.warn(`[ZIP] Saltado gasto ${expense.id} (${task.type}):`, err.message);
-          skipped++;
-        }
       }
     }
 

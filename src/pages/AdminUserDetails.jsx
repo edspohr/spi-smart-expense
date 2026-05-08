@@ -25,11 +25,13 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Eye,
 } from "lucide-react";
 import { addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import TableSkeleton from '../components/TableSkeleton';
+import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 
 export default function AdminUserDetails() {
   const { id } = useParams();
@@ -39,6 +41,8 @@ export default function AdminUserDetails() {
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedProject, setExpandedProject] = useState(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState(null);
 
   const toggleProject = (pid) => {
       if (expandedProject === pid) setExpandedProject(null);
@@ -537,13 +541,17 @@ export default function AdminUserDetails() {
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     {e.status === 'pending' && (
                                                                                         <div className="flex justify-center gap-1">
+                                                                                            <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Aprobar rendición" title="Aprobar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'approved', e.amount); }} className="p-1 text-green-600 hover:bg-green-100 rounded focus-ring"><CheckCircle className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Rechazar rendición" title="Rechazar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'rejected', e.amount); }} className="p-1 text-red-600 hover:bg-red-100 rounded focus-ring"><XCircle className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
                                                                                         </div>
                                                                                     )}
                                                                                     {e.status !== 'pending' && (
+                                                                                      <div className="flex justify-center gap-1">
+                                                                                        <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
                                                                                         <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
+                                                                                      </div>
                                                                                     )}
                                                                                 </td>
                                                                             </tr>
@@ -640,6 +648,11 @@ export default function AdminUserDetails() {
               </div>
           </div>
       )}
+      <ExpenseDetailsModal
+        isOpen={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        expense={selectedExpenseForDetails}
+      />
     </Layout>
   );
 }

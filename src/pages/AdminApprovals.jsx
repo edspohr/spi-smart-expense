@@ -184,7 +184,7 @@ export default function AdminApprovals() {
     try {
       setLoading(true);
       const [pSnap, hSnap] = await Promise.all([
-        getDocs(query(collection(db, "expenses"), where("status", "==", "pending"))),
+        getDocs(query(collection(db, "expenses"), where("status", "in", ["pending", "Pending", "PENDING"]))),
         getDocs(query(
           collection(db, "expenses"),
           where("status", "in", ["approved", "rejected"]),
@@ -192,7 +192,8 @@ export default function AdminApprovals() {
           limit(50)
         )),
       ]);
-      setPendingExpenses(pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const pendingData = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPendingExpenses(pendingData);
       setHistoryExpenses(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {
       console.error("Error fetching pending:", e);
