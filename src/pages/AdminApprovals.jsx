@@ -185,26 +185,31 @@ export default function AdminApprovals() {
   const fetchPending = async () => {
     try {
       setLoading(true);
-      const [pSnap, hSnap] = await Promise.all([
-        // Fetch everything that is NOT approved/rejected to be safe (inclusive of missing/varied status)
-        getDocs(query(collection(db, "expenses"), where("status", "not-in", ["approved", "rejected"]))),
-        getDocs(query(
-          collection(db, "expenses"),
-          where("status", "in", ["approved", "rejected"]),
-          orderBy("date", "desc"),
-          limit(50)
-        )),
-      ]);
-      const pendingData = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setPendingExpenses(pendingData);
-      setHistoryExpenses(hSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // Fetch a large enough batch of recent expenses to ensure we catch all pending ones.
+      // We don't filter by status in the query to avoid missing documents with missing status fields.
+      const snap = await getDocs(query(
+        collection(db, "expenses"),
+        orderBy("date", "desc"),
+        limit(500)
+      ));
+      
+      const allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Filter pending: anything that is not explicitly approved or rejected
+      const pending = allData.filter(e => !['approved', 'rejected'].includes(e.status));
+      // Filter history: explicitly approved or rejected
+      const history = allData.filter(e => ['approved', 'rejected'].includes(e.status));
+      
+      setPendingExpenses(pending);
+      setHistoryExpenses(history);
     } catch (e) {
-      console.error("Error fetching pending:", e);
-      // Fallback if not-in query fails (e.g. index missing)
+      console.error("Error fetching data:", e);
+      // Even simpler fallback if orderBy fails (e.g. index missing)
       try {
-        const snap = await getDocs(query(collection(db, "expenses"), limit(200)));
-        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setPendingExpenses(all.filter(e => !['approved', 'rejected'].includes(e.status)));
+        const snap = await getDocs(query(collection(db, "expenses"), limit(300)));
+        const allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPendingExpenses(allData.filter(e => !['approved', 'rejected'].includes(e.status)));
+        setHistoryExpenses(allData.filter(e => ['approved', 'rejected'].includes(e.status)));
       } catch (inner) {
         console.error("Fallback fetch failed:", inner);
       }
