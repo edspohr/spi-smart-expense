@@ -710,7 +710,7 @@ export default function ExpenseForm() {
                 <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
                     
                     {/* Cost Center (Hidden as per requirement) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                    <div className="hidden">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Evento *</label>
                             <input 

@@ -50,8 +50,6 @@ export const CARD_BRANDS = [
 export const CARD_COMPANIES = [
   { value: "SPI Americas", label: "SPI Americas" },
   { value: "SPI Advisors", label: "SPI Advisors" },
-  { value: "Socios SPI Advisors", label: "Socios SPI Advisors" },
-  { value: "Socios SPI Americas", label: "Socios SPI Américas" },
 ];
 
 export const CURRENCIES = [
