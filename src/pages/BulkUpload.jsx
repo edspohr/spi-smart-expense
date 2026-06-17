@@ -15,7 +15,7 @@ import {
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
 import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
-import { CATEGORIES_COMMON } from '../lib/constants';
+import { CATEGORIES_COMMON, CARD_COMPANIES } from '../lib/constants';
 import { toast } from 'sonner';
 
 const MAX_FILES = 25;
@@ -61,6 +61,7 @@ function mkItem(file, preview) {
     paymentMethod: '',
     cardLast4: '',
     cardBrand: '',
+    cardCompany: '',
     description: '',
     eventName: '',
     projectId: '',
@@ -105,6 +106,7 @@ export default function BulkUpload() {
   const [existingEvents, setExistingEvents] = useState([]);
   const [globalEvent, setGlobalEvent] = useState('');
   const [globalProject, setGlobalProject] = useState('');
+  const [globalCompany, setGlobalCompany] = useState('');
   const [submitProgress, setSubmitProgress] = useState({ done: 0, total: 0 });
 
   // Keep ref in sync so cleanup effect doesn't stale-close over items
@@ -250,7 +252,13 @@ export default function BulkUpload() {
   const applyGlobalProject = () => {
     if (!globalProject) return;
     setItems(prev => prev.map(i => ({ ...i, projectId: globalProject })));
-    toast.success('Proyecto aplicado a todas las filas.');
+    toast.success('Centro de Costo aplicado a todas las filas.');
+  };
+
+  const applyGlobalCompany = () => {
+    if (!globalCompany) return;
+    setItems(prev => prev.map(i => ({ ...i, cardCompany: globalCompany })));
+    toast.success('Empresa aplicada a todas las filas.');
   };
 
   // ─── Submit ─────────────────────────────────────────────────────────────────
@@ -321,7 +329,7 @@ export default function BulkUpload() {
           phone:         null,
           paymentMethod: item.paymentMethod  || null,
           cardBrand:     item.cardBrand      || null,
-          cardCompany:   null,
+          cardCompany:   item.cardCompany || null,
           description:   item.description   || null,
           amount:        Number(item.amount),
           currency:      item.currency      || 'COP',
@@ -517,7 +525,7 @@ export default function BulkUpload() {
 
                   <div className="flex items-center gap-2">
                     <label className="text-xs font-bold text-gray-500 whitespace-nowrap">
-                      Proyecto para todos:
+                      Centro de Costo para todos:
                     </label>
                     <select
                       className="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-400 w-48 bg-white"
@@ -533,6 +541,28 @@ export default function BulkUpload() {
                     </select>
                     <button
                       onClick={applyGlobalProject}
+                      className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-gray-500 whitespace-nowrap">
+                      Empresa para todos:
+                    </label>
+                    <select
+                      className="border border-gray-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-400 w-48 bg-white"
+                      value={globalCompany}
+                      onChange={e => setGlobalCompany(e.target.value)}
+                    >
+                      <option value="">-- Sin Asignar --</option>
+                      {CARD_COMPANIES.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={applyGlobalCompany}
                       className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
                     >
                       Aplicar
@@ -602,8 +632,9 @@ export default function BulkUpload() {
                       <th className="px-3 py-3 text-gray-600 font-semibold min-w-[145px]">Monto * / Moneda</th>
                       <th className="px-3 py-3 text-gray-600 font-semibold min-w-[110px]">No. Factura</th>
                       <th className="px-3 py-3 text-gray-600 font-semibold min-w-[145px]">Categoría</th>
+                      <th className="px-3 py-3 text-gray-600 font-semibold min-w-[155px]">Empresa</th>
                       <th className="px-3 py-3 text-gray-600 font-semibold min-w-[155px]">Evento</th>
-                      <th className="px-3 py-3 text-gray-600 font-semibold min-w-[165px]">Proyecto</th>
+                      <th className="px-3 py-3 text-gray-600 font-semibold min-w-[165px]">Centro de Costo</th>
                       <th className="px-3 py-3 w-8"></th>
                     </tr>
                   </thead>
@@ -742,6 +773,21 @@ export default function BulkUpload() {
                               <option value="">Categoría...</option>
                               {CATEGORIES_COMMON.map(c => (
                                 <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Empresa (cardCompany) */}
+                          <td className="px-3 py-2">
+                            <select
+                              className={sel}
+                              value={item.cardCompany}
+                              onChange={e => setItem(item.id, { cardCompany: e.target.value })}
+                              disabled={isDisabled}
+                            >
+                              <option value="">Empresa...</option>
+                              {CARD_COMPANIES.map(c => (
+                                <option key={c.value} value={c.value}>{c.label}</option>
                               ))}
                             </select>
                           </td>

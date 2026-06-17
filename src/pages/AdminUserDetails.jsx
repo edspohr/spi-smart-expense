@@ -27,11 +27,13 @@ import {
   Trash2,
   ArrowRightLeft,
   Eye,
+  ShieldCheck,
 } from "lucide-react";
 import { addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import TableSkeleton from '../components/TableSkeleton';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
+import { resolvePermissions } from '../lib/permissions';
 
 export default function AdminUserDetails() {
   const { id } = useParams();
@@ -43,6 +45,39 @@ export default function AdminUserDetails() {
   const [expandedProject, setExpandedProject] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedExpenseForDetails, setSelectedExpenseForDetails] = useState(null);
+
+  // Granular permission flags (sourced from user doc on load)
+  const [permFlags, setPermFlags] = useState({
+    canApprove: null,
+    canDelete: null,
+    isColombiaApprover: null,
+    canExport: null,
+    requiresApproval: null,
+  });
+  const [permSaving, setPermSaving] = useState(false);
+
+  const handleSavePermissions = async () => {
+    setPermSaving(true);
+    try {
+      const patch = {};
+      if (permFlags.requiresApproval !== null) {
+        patch.requiresApproval = permFlags.requiresApproval;
+      }
+      const permPatch = {};
+      if (permFlags.canApprove !== null)         permPatch.canApprove         = permFlags.canApprove;
+      if (permFlags.canDelete !== null)           permPatch.canDelete           = permFlags.canDelete;
+      if (permFlags.isColombiaApprover !== null)  permPatch.isColombiaApprover  = permFlags.isColombiaApprover;
+      if (permFlags.canExport !== null)           permPatch.canExport           = permFlags.canExport;
+      if (Object.keys(permPatch).length > 0) patch.permissions = permPatch;
+      await updateDoc(doc(db, "users", id), patch);
+      toast.success("Permisos guardados.");
+    } catch (e) {
+      console.error("Error saving permissions:", e);
+      toast.error("Error al guardar permisos.");
+    } finally {
+      setPermSaving(false);
+    }
+  };
 
   const toggleProject = (pid) => {
       if (expandedProject === pid) setExpandedProject(null);
@@ -116,8 +151,15 @@ export default function AdminUserDetails() {
       const uSnap = await getDoc(uRef);
       if (uSnap.exists()) {
         let userData = { id: uSnap.id, ...uSnap.data() };
-        // (Terreno logic removed as user is deleted)
         setUser(userData);
+        const flags = userData.permissions || {};
+        setPermFlags({
+          canApprove:         flags.canApprove         !== undefined ? flags.canApprove         : null,
+          canDelete:          flags.canDelete           !== undefined ? flags.canDelete           : null,
+          isColombiaApprover: flags.isColombiaApprover  !== undefined ? flags.isColombiaApprover  : null,
+          canExport:          flags.canExport           !== undefined ? flags.canExport           : null,
+          requiresApproval:   userData.requiresApproval !== undefined ? userData.requiresApproval : null,
+        });
       }
 
       // 2. Get Expenses (for this user)
@@ -338,8 +380,75 @@ export default function AdminUserDetails() {
         </div>
       </div>
 
+      {/* Permisos Card */}
+      {(() => {
+        const effectivePerms = resolvePermissions(user);
+        const PERM_ROWS = [
+          { key: 'canApprove',         label: 'Puede aprobar rendiciones',         defaultVal: effectivePerms.canApprove },
+          { key: 'canDelete',           label: 'Puede eliminar rendiciones',         defaultVal: effectivePerms.canDelete },
+          { key: 'isColombiaApprover',  label: 'Aprobador Colombia (COP)',           defaultVal: effectivePerms.isColombiaApprover },
+          { key: 'canExport',           label: 'Puede exportar CSV',                 defaultVal: effectivePerms.canExport },
+          { key: 'requiresApproval',    label: 'Sus rendiciones requieren aprobación', defaultVal: user.requiresApproval !== false },
+        ];
+        return (
+          <div className="bg-white rounded-2xl shadow-soft border border-slate-100 mb-6 overflow-hidden">
+            <div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between">
+              <h3 className="font-bold text-gray-700 flex items-center">
+                <ShieldCheck className="w-5 h-5 mr-2 text-brand-500" />
+                Permisos
+              </h3>
+              <button
+                type="button"
+                onClick={handleSavePermissions}
+                disabled={permSaving}
+                className="text-sm bg-brand-600 text-white px-4 py-1.5 rounded-lg hover:bg-brand-700 disabled:opacity-50 transition font-medium"
+              >
+                {permSaving ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {PERM_ROWS.map(({ key, label, defaultVal }) => {
+                const current = permFlags[key];
+                const effective = current !== null ? current : defaultVal;
+                const isOverridden = current !== null;
+                return (
+                  <div key={key} className="flex items-center justify-between px-6 py-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                      {!isOverridden && (
+                        <span className="ml-2 text-xs text-gray-400 italic">(por rol: {defaultVal ? 'sí' : 'no'})</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {isOverridden && (
+                        <button
+                          type="button"
+                          onClick={() => setPermFlags(prev => ({ ...prev, [key]: null }))}
+                          className="text-xs text-gray-400 hover:text-gray-600 underline"
+                        >
+                          Restablecer
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={effective}
+                        onClick={() => setPermFlags(prev => ({ ...prev, [key]: !effective }))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${effective ? 'bg-brand-600' : 'bg-gray-200'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${effective ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-1 gap-8">
-        
+
         {/* Project Summary Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b bg-gray-50">

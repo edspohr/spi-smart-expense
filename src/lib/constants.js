@@ -1,6 +1,7 @@
 // Shared constants for expense capture, edit, display, and reporting flows.
 // Values are stored as-is in Firestore; labels are Spanish UI strings.
 
+// Extension point — add new categories here; they propagate to all forms, filters and exports.
 export const CATEGORIES_COMMON = [
   "RESTAURANTE - ALIMENTACION",
   "HOTEL",
@@ -14,19 +15,28 @@ export const CATEGORIES_COMMON = [
   "TECNOLOGÍA",
   "SUSCRIPCIONES",
   "FEES BANCARIOS",
+  "PUBLICIDAD",
   "VARIOS",
 ];
 
+// Amex and Citi removed from PAYMENT_METHODS — they are now captured under CARD_BRANDS (Marca de tarjeta).
+// Legacy expenses that still hold "Amex" or "Citi" are resolved via PAYMENT_METHOD_LABELS below.
 export const PAYMENT_METHODS = [
   { value: "Credit Card", label: "Tarjeta de Crédito" },
   { value: "Debit Card", label: "Tarjeta Débito" },
-  { value: "Amex", label: "Tarjeta American Express" },
-  { value: "Citi", label: "Tarjeta Citi" },
   { value: "Cash", label: "Efectivo" },
   { value: "Transfer", label: "Transferencia" },
   { value: "Wallet", label: "Billetera Digital (Nequi/Daviplata)" },
   { value: "Other", label: "Otro" },
 ];
+
+export const PAYMENT_METHOD_LABELS = Object.fromEntries(
+  [
+    ...PAYMENT_METHODS,
+    { value: "Amex", label: "American Express (heredado)" },
+    { value: "Citi", label: "Citi (heredado)" },
+  ].map(p => [p.value, p.label])
+);
 
 export const CARD_BRANDS = [
   { value: "visa", label: "Visa" },

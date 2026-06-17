@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import ForcePasswordChange from './ForcePasswordChange';
 import PageTransition from './PageTransition';
+import NotificationBell from './NotificationBell';
 import { useLocation } from 'react-router-dom';
 
 export default function Layout({ children, title }) {
@@ -45,7 +46,7 @@ export default function Layout({ children, title }) {
                 <h1 className="text-xl md:text-2xl font-bold text-zinc-800 tracking-tight">{title}</h1>
             </div>
             <div>
-                {/* Notification Icon or future user menu */}
+                <NotificationBell />
             </div>
         </header>
 

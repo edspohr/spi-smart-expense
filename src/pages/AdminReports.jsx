@@ -114,17 +114,14 @@ function extFromUrl(url) {
 
 /**
  * Build a unique filename for an image file.
- * Convention: FC-{invoice}-{merchant}-{code}-{project}_{type}.{ext}
+ * Convention: {category}-{invoice|SN}-{merchant<=30}_{type}.{ext}
  */
-function buildImageFilename(expense, type, ext, projectsMap, usedNames) {
-  const inv  = sanitize(expense.invoiceNumber || 'SN');
+function buildImageFilename(expense, type, ext, _projectsMap, usedNames) {
+  const cat   = sanitize(expense.category || 'SIN_CATEGORIA');
+  const inv   = sanitize(expense.invoiceNumber || 'SN');
   const merch = sanitize(expense.merchant || 'Desconocido').substring(0, 30);
-  const code = sanitize(
-    (expense.projectId && projectsMap[expense.projectId]) || 'XX'
-  );
-  const proj = sanitize(expense.projectName || 'SinProyecto').substring(0, 30);
 
-  const base = `FC-${inv}-${merch}-${code}-${proj}_${type}`.substring(0, 100);
+  const base = `${cat}-${inv}-${merch}_${type}`.substring(0, 100);
   let candidate = `${base}${ext}`;
   let counter = 2;
   while (usedNames.has(candidate.toLowerCase())) {
@@ -352,17 +349,19 @@ export default function AdminReports() {
 
     const CONCURRENCY = 5; // Download 5 files at a time
     const fetchWithTimeout = async (taskPromise) => {
-      const timeout = new Promise((_, reject) => 
+      const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout de 15s')), 15000)
       );
       return Promise.race([taskPromise, timeout]);
     };
 
+    const corsFailedUrls = [];
+
     for (let i = 0; i < allTasks.length; i += CONCURRENCY) {
       if (cancelRef.current) break;
 
       const chunk = allTasks.slice(i, i + CONCURRENCY);
-      
+
       await Promise.all(chunk.map(async (task) => {
         if (cancelRef.current) return;
 
@@ -375,14 +374,31 @@ export default function AdminReports() {
               const bytes = await fetchWithTimeout(getBytes(storageRef(storage, path)));
               blob = new Blob([bytes]);
             } catch {
+              try {
+                const response = await fetchWithTimeout(fetch(task.url));
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                blob = await response.blob();
+              } catch (fetchErr) {
+                // Both SDK and direct fetch failed — likely a CORS/network issue
+                const isCors = fetchErr.message.includes('Failed to fetch') ||
+                  fetchErr.message.includes('NetworkError') ||
+                  fetchErr.message.includes('CORS');
+                if (isCors) corsFailedUrls.push(task.url);
+                throw fetchErr;
+              }
+            }
+          } else {
+            try {
               const response = await fetchWithTimeout(fetch(task.url));
               if (!response.ok) throw new Error(`HTTP ${response.status}`);
               blob = await response.blob();
+            } catch (fetchErr) {
+              const isCors = fetchErr.message.includes('Failed to fetch') ||
+                fetchErr.message.includes('NetworkError') ||
+                fetchErr.message.includes('CORS');
+              if (isCors) corsFailedUrls.push(task.url);
+              throw fetchErr;
             }
-          } else {
-            const response = await fetchWithTimeout(fetch(task.url));
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            blob = await response.blob();
           }
 
           const ext = extFromUrl(task.url);
@@ -412,6 +428,16 @@ export default function AdminReports() {
       toast.error('No se pudo descargar ninguna imagen. Esto suele deberse a falta de configuración de CORS en Firebase Storage.');
       setZipProgress({ active: false, current: 0, total: 0, phase: 'downloading', message: '' });
       return;
+    }
+
+    // Surface partial CORS failures even when some files succeeded
+    if (corsFailedUrls.length > 0) {
+      toast.warning(
+        `${corsFailedUrls.length} archivo(s) no pudieron descargarse por error de red o CORS. ` +
+        'Si persiste, revisa la configuración CORS del bucket de Storage.'
+      );
+    } else if (skipped > 0) {
+      toast.warning(`${skipped} archivo(s) omitidos por error de descarga.`);
     }
 
     setZipProgress(prev => ({ ...prev, phase: 'zipping', message: 'Generando archivo ZIP...' }));
@@ -476,9 +502,11 @@ export default function AdminReports() {
     results.forEach(e => {
       const cur = e.currency || 'COP';
       if (!totals[cur]) totals[cur] = { total: 0, count: 0 };
-      totals[cur].total += Number(e.amount) || 0;
       totals[cur].count += 1;
-      if (cur === 'USD' && e.amountCOP) usdCOPEquiv += Number(e.amountCOP);
+      if (e.status !== 'rejected') {
+        totals[cur].total += Number(e.amount) || 0;
+        if (cur === 'USD' && e.amountCOP) usdCOPEquiv += Number(e.amountCOP);
+      }
     });
   }
 
@@ -672,6 +700,7 @@ export default function AdminReports() {
                   <span className="text-xl font-bold text-gray-400">—</span>
                 )}
               </div>
+              <p className="text-xs text-gray-400 mt-2 italic">Los rechazados no suman.</p>
             </div>
 
             {usdCOPEquiv > 0 ? (

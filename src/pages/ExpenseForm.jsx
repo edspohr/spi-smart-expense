@@ -1059,7 +1059,9 @@ export default function ExpenseForm() {
                              </select>
                         </div>
                         <div>
-                             <label htmlFor="ef-cardLast4" className="block text-xs font-bold text-blue-800 uppercase mb-1">Tarjeta (Últimos 4)</label>
+                             <label htmlFor="ef-cardLast4" className="block text-xs font-bold text-blue-800 uppercase mb-1">
+                               Tarjeta (Últimos 4){formData.cardBrand === 'amex' && <span className="font-normal normal-case ml-1">(opcional)</span>}
+                             </label>
                              <input
                                  id="ef-cardLast4"
                                  type="text"
@@ -1069,6 +1071,9 @@ export default function ExpenseForm() {
                                  value={formData.cardLast4}
                                  onChange={e => setFormData({...formData, cardLast4: e.target.value})}
                              />
+                             {formData.cardBrand === 'amex' && (
+                               <p className="text-xs text-blue-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
+                             )}
                         </div>
                     </div>
 

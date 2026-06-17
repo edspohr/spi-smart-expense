@@ -92,7 +92,8 @@ export default function UserExpenses() {
             <thead>
                 <tr className="bg-gray-50 border-b">
                      <th className="px-6 py-3 font-medium text-gray-500">Fecha</th>
-                     <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
+                     <th className="px-6 py-3 font-medium text-gray-500">Evento</th>
+                     <th className="px-6 py-3 font-medium text-gray-500">Centro de Costo</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Empresa</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Monto</th>
                      <th className="px-6 py-3 font-medium text-gray-500">Estado</th>
@@ -103,7 +104,8 @@ export default function UserExpenses() {
                 {expenses.map(e => (
                     <tr key={e.id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="px-6 py-4 text-gray-600">{e.date}</td>
-                        <td className="px-6 py-4 text-gray-800 font-medium">{e.projectName || 'Sin Proyecto'}</td>
+                        <td className="px-6 py-4 text-gray-800 font-medium">{e.eventName || '—'}</td>
+                        <td className="px-6 py-4 text-gray-500 text-sm">{e.projectName || '—'}</td>
                         <td className="px-6 py-4 text-gray-500 text-sm">{e.cardCompany || '-'}</td>
                         <td className="px-6 py-4 font-medium">
                             {formatCurrency(e.amount, e.currency)}

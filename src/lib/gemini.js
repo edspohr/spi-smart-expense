@@ -84,14 +84,19 @@ export async function parseExpenseDocuments(
       - cardCompany: null (this field cannot be determined from a receipt; always return null).
       ${categoriesList}
       
-      CATEGORY AFFINITY:
-      - 'RESTAURANTE - ALIMENTACION': Food, drinks, cafes.
-      - 'HOTEL': Individual lodging.
-      - 'ROOMING': Multiple guests/rooms mentioned.
-      - 'TRANSPORTE TERRESTRE': Taxis, Uber, gas.
-      - 'TRANSPORTE AEREO': Flights.
-      
-      If a field is not found, return null. 
+      CATEGORY AFFINITY (use these mappings strictly):
+      - 'GASOLINA': Fuel and service stations. If the merchant or description matches ANY of these keywords (case-insensitive): gasolina, combustible, fuel, gas station, estación de servicio, Terpel, Primax, Texaco, Esso, Mobil, Shell, Petrobras, Biomax, Puma, gasolinera, EDS, petrol, nafta — set category to 'GASOLINA'. NEVER use 'VARIOS' for fuel purchases.
+      - 'RESTAURANTE - ALIMENTACION': Food, drinks, cafes, restaurants.
+      - 'HOTEL': Individual lodging, hotel stays.
+      - 'ROOMING': Multiple guests or rooms mentioned.
+      - 'TRANSPORTE TERRESTRE': Taxis, Uber, bus, metro, ground transport (NOT fuel stations).
+      - 'TRANSPORTE AEREO': Flights, airline tickets.
+      - 'PARQUEADEROS': Parking lots, parking fees.
+      - 'SUSCRIPCIONES': Software subscriptions, SaaS, digital services.
+      - 'TECNOLOGÍA': Technology purchases, hardware, electronics.
+      - 'PUBLICIDAD': Advertising, marketing services.
+
+      If a field is not found, return null.
       JSON output only:
     `;
 
@@ -134,7 +139,17 @@ export async function parseExpenseDocuments(
       jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
     }
 
-    return JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr);
+
+    // Safety net: if Gemini still returned VARIOS/empty for a fuel receipt, override locally.
+    const FUEL_RE = /gasolina|combustible|fuel|gas\s*station|estaci[oó]n\s*de\s*servicio|terpel|primax|texaco|esso|mobil|shell|petrobras|biomax|puma|gasolinera|\beds\b|petrol|nafta/i;
+    const needsOverride = !parsed.category || parsed.category === 'VARIOS';
+    const isFuel = FUEL_RE.test(`${parsed.merchant || ''} ${parsed.description || ''}`);
+    if (needsOverride && isFuel && availableCategories.includes('GASOLINA')) {
+      parsed.category = 'GASOLINA';
+    }
+
+    return parsed;
   } catch (error) {
     console.error("Error parsing documents with Gemini:", error);
     // Provide a more user-friendly error if it's still quota issues

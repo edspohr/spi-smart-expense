@@ -21,10 +21,12 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { AuthContext } from "./AuthContextDefinition";
+import { resolvePermissions } from "../lib/permissions";
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [permissions, setPermissions] = useState(resolvePermissions(null));
   const [loading, setLoading] = useState(isConfigured);
 
   async function ensureUserExists(user) {
@@ -159,7 +161,9 @@ export function AuthProvider({ children }) {
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
-              setUserRole(userSnap.data().role);
+              const data = userSnap.data();
+              setUserRole(data.role);
+              setPermissions(resolvePermissions(data));
             }
           }
         } catch (e) {
@@ -169,6 +173,7 @@ export function AuthProvider({ children }) {
       } else {
         setCurrentUser(null);
         setUserRole(null);
+        setPermissions(resolvePermissions(null));
       }
       setLoading(false);
     });
@@ -202,6 +207,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     userRole,
+    permissions,
     loginWithGoogle,
     login,
     resetPassword,

@@ -114,7 +114,7 @@ export default function UserDashboard() {
             <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                <h3 className="font-bold text-gray-700 flex items-center">
                   <FileText className="w-5 h-5 mr-2 text-gray-400" />
-                  Mi Resumen por Proyecto
+                  Mi Resumen por Centro de Costo
                </h3>
             </div>
             
@@ -122,7 +122,7 @@ export default function UserDashboard() {
                <table className="w-full text-left text-sm">
                    <thead className="bg-white">
                       <tr className="border-b">
-                          <th className="px-6 py-3 font-medium text-gray-500">Proyecto</th>
+                          <th className="px-6 py-3 font-medium text-gray-500">Centro de Costo</th>
                           <th className="px-6 py-3 font-medium text-gray-500">Recurrencia</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Asignado</th>
                           <th className="px-6 py-3 font-medium text-gray-500 text-right">Total Rendido</th>

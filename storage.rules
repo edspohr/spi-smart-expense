@@ -2,9 +2,12 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /receipts/{userId}/{fileName} {
-      // Allow read to any authenticated user (so Admins can see receipts)
+      // READ is intentionally open to all authenticated users.
+      // Approvers (non-admin) must be able to view and download receipts/vouchers
+      // for expenses submitted by others. These are internal finance documents —
+      // no PII beyond what already appears in Firestore is exposed here.
       allow read: if request.auth != null;
-      // Allow write only if user matches the path
+      // WRITE is restricted to the owning user (upload own receipts).
       allow write: if request.auth != null && request.auth.uid == userId;
     }
   }

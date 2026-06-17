@@ -1,9 +1,28 @@
-import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calendar, Clock, MapPin, FileText, CreditCard, Building, User, Tag, DollarSign, Hash, AlertCircle, History } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
-import { CARD_BRAND_LABELS } from '../lib/constants';
+import { CARD_BRAND_LABELS, PAYMENT_METHOD_LABELS } from '../lib/constants';
 import FocusableModal from './FocusableModal';
+import { db } from '../lib/firebase';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
+  const [movements, setMovements] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const expId = expense?.id;
+    if (!isOpen || !expId) {
+      // defer reset out of the synchronous effect body
+      Promise.resolve().then(() => { if (!cancelled) setMovements([]); });
+      return () => { cancelled = true; };
+    }
+    getDocs(query(collection(db, 'expenses', expId, 'movements'), orderBy('at', 'asc')))
+      .then(snap => { if (!cancelled) setMovements(snap.docs.map(d => ({ id: d.id, ...d.data() }))); })
+      .catch(err => { console.error('[movements] fetch failed:', err); if (!cancelled) setMovements([]); });
+    return () => { cancelled = true; };
+  }, [isOpen, expense?.id]);
+
   // Guard against accessing expense fields during initial render when expense is null.
   if (!expense) return null;
   return (
@@ -102,7 +121,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                         </span>
                     </div>
                     <div>
-                        <label className="text-xs text-gray-500 block mb-1">Proyecto (Centro Costo)</label>
+                        <label className="text-xs text-gray-500 block mb-1">Centro de Costo</label>
                         <span className="text-sm text-gray-700">
                             {expense.projectName || 'Sin Asignar'}
                         </span>
@@ -118,7 +137,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                         <label className="text-xs text-gray-500 block mb-1">Medio de Pago</label>
                         <div className="flex items-center gap-2 text-gray-700">
                              <CreditCard className="w-4 h-4 text-gray-400" />
-                             {expense.paymentMethod || 'N/A'}
+                             {expense.paymentMethod ? (PAYMENT_METHOD_LABELS[expense.paymentMethod] || expense.paymentMethod) : 'N/A'}
                              {expense.cardLast4 && <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-2">**** {expense.cardLast4}</span>}
                         </div>
                     </div>
@@ -176,6 +195,34 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                </div>
              </div>
            )}
+
+           {/* Movement History */}
+           <div className="space-y-2">
+             <h4 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+               <History className="w-4 h-4 text-gray-400" aria-hidden="true" />
+               Historial de movimientos
+             </h4>
+             {movements.length === 0 ? (
+               <p className="text-xs text-gray-400 italic">Sin movimientos registrados.</p>
+             ) : (
+               <ul className="space-y-1">
+                 {movements.map(m => {
+                   const d = new Date(m.at);
+                   const dateStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                   const timeStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+                   return (
+                     <li key={m.id} className="text-xs text-gray-600 font-mono bg-gray-50 rounded px-3 py-1.5">
+                       {dateStr} {timeStr} — <span className="font-semibold">{m.field}</span>:{' '}
+                       <span className="text-red-500">{m.from ?? '—'}</span>
+                       {' → '}
+                       <span className="text-green-700">{m.to ?? '—'}</span>
+                       <span className="text-gray-400"> (por {m.byName})</span>
+                     </li>
+                   );
+                 })}
+               </ul>
+             )}
+           </div>
 
            {/* Files Links */}
            <div className="flex gap-4 pt-2">

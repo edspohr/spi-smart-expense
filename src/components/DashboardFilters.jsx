@@ -37,7 +37,7 @@ export default function DashboardFilters({ filters, onChange, projects, onRefres
           </select>
         </div>
         <div className="flex-1 min-w-[160px]">
-          <label htmlFor="df-project" className="block text-xs font-semibold text-slate-500 mb-1">Proyecto</label>
+          <label htmlFor="df-project" className="block text-xs font-semibold text-slate-500 mb-1">Centro de Costo</label>
           <select
             id="df-project"
             value={filters.projectId}

@@ -12,18 +12,21 @@ import { collection, query, getDocs, doc, updateDoc, increment, writeBatch, orde
 import { formatCurrency } from '../utils/format';
 import {
   CheckCircle, XCircle, Download, FileText, Eye, Pencil, Trash2,
-  Filter, Keyboard, AlertCircle, ChevronDown, ChevronUp, Search, X as XIcon,
+  Filter, Keyboard, AlertCircle, ChevronDown, ChevronUp, Search, X as XIcon, Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion as Motion } from 'framer-motion';
-import { CARD_BRAND_LABELS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
+import { CARD_BRAND_LABELS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES, CATEGORIES_COMMON } from '../lib/constants';
+import { canUserApprove } from '../lib/permissions';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
+import { useAuth } from '../context/useAuth';
+import { notify } from '../lib/notifications';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
   startDate: '', endDate: '', user: '', cardCompany: '',
-  cardBrand: '', currency: '', minAmount: '', maxAmount: '', search: '', eventName: '',
+  cardBrand: '', currency: '', minAmount: '', maxAmount: '', search: '', eventName: '', category: '',
 };
 const DEFAULT_SORT = {
   pending: { key: 'date', dir: 'desc' },
@@ -107,6 +110,8 @@ function formatTotalsLine(byCurrency) {
 }
 
 export default function AdminApprovals() {
+  const { permissions } = useAuth();
+
   // Data
   const [pendingExpenses, setPendingExpenses] = useState([]);
   const [historyExpenses, setHistoryExpenses] = useState([]);
@@ -185,6 +190,15 @@ export default function AdminApprovals() {
   const fetchPending = async () => {
     try {
       setLoading(true);
+
+      // Load users to build a requiresApproval lookup map (uid → bool, default true)
+      const usersSnap = await getDocs(collection(db, "users"));
+      const requiresApprovalMap = {};
+      usersSnap.docs.forEach(d => {
+        const data = d.data();
+        requiresApprovalMap[d.id] = data.requiresApproval !== false;
+      });
+
       // Fetch a large enough batch of recent expenses to ensure we catch all pending ones.
       // We don't filter by status in the query to avoid missing documents with missing status fields.
       const snap = await getDocs(query(
@@ -192,14 +206,18 @@ export default function AdminApprovals() {
         orderBy("date", "desc"),
         limit(500)
       ));
-      
+
       const allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      // Filter pending: anything that is not explicitly approved or rejected
-      const pending = allData.filter(e => !['approved', 'rejected'].includes(e.status));
+
+      // Filter pending: anything that is not explicitly approved or rejected,
+      // excluding submitters who have opted out of the approval workflow.
+      const pending = allData.filter(e =>
+        !['approved', 'rejected'].includes(e.status) &&
+        (requiresApprovalMap[e.userId] !== false)
+      );
       // Filter history: explicitly approved or rejected
       const history = allData.filter(e => ['approved', 'rejected'].includes(e.status));
-      
+
       setPendingExpenses(pending);
       setHistoryExpenses(history);
     } catch (e) {
@@ -257,6 +275,7 @@ export default function AdminApprovals() {
         const q = filters.eventName.toLowerCase();
         if (!(e.eventName || '').toLowerCase().includes(q)) return false;
       }
+      if (filters.category && e.category !== filters.category) return false;
       if (filters.search) {
         const q = filters.search.toLowerCase();
         const hay = `${e.merchant || ''} ${e.description || ''}`.toLowerCase();
@@ -311,6 +330,7 @@ export default function AdminApprovals() {
   const selectedSummary = useMemo(() => {
     const byCurrency = {};
     selectedList.forEach(e => {
+      if (e.status === 'rejected') return;
       const c = e.currency || 'COP';
       byCurrency[c] = (byCurrency[c] || 0) + (Number(e.amount) || 0);
     });
@@ -384,6 +404,15 @@ export default function AdminApprovals() {
       setPendingExpenses(prev => prev.filter(e => e.id !== expense.id));
       setHistoryExpenses(prev => [{ ...expense, status: 'approved' }, ...prev]);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(expense.id); return n; });
+      if (expense.userId && !expense.isCompanyExpense) {
+        notify({
+          toUid: expense.userId,
+          type: 'status_change',
+          title: 'Rendición aprobada',
+          body: `Tu rendición de ${expense.merchant || 'sin comercio'} fue aprobada.`,
+          expenseId: expense.id,
+        });
+      }
     } catch (error) {
       console.error("Error approving:", error);
       toast.error("Error al aprobar");
@@ -417,6 +446,15 @@ export default function AdminApprovals() {
         { ...expense, status: 'rejected', rejectionReason: reason }, ...prev,
       ]);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(expense.id); return n; });
+      if (expense.userId && !expense.isCompanyExpense) {
+        notify({
+          toUid: expense.userId,
+          type: 'rejection',
+          title: 'Rendición rechazada',
+          body: `Tu rendición de ${expense.merchant || 'sin comercio'} fue rechazada. Motivo: ${reason}`,
+          expenseId: expense.id,
+        });
+      }
     } catch (e) {
       console.error("Error rejecting:", e);
       toast.error("Error al rechazar");
@@ -426,6 +464,15 @@ export default function AdminApprovals() {
   // Bulk approve
   const openApproveConfirm = () => {
     if (selectedList.length === 0 || viewMode !== 'pending') return;
+    const blocked = selectedList.filter(e => !canUserApprove(permissions, e));
+    if (blocked.length > 0) {
+      toast.warning(`${blocked.length} rendición(es) de Colombia requieren aprobador autorizado y serán omitidas.`);
+    }
+    const approvable = selectedList.filter(e => canUserApprove(permissions, e));
+    if (approvable.length === 0) {
+      toast.error('No tienes permiso para aprobar las rendiciones seleccionadas.');
+      return;
+    }
     setApproveConfirmOpen(true);
   };
 
@@ -480,6 +527,18 @@ export default function AdminApprovals() {
         `Aprobadas ${successes.length} de ${toProcess.length}. Fallaron ${errors.size} — quedan seleccionadas.`
       );
     }
+    // Fire-and-forget notifications for each approved submitter
+    successes.forEach(exp => {
+      if (exp.userId && !exp.isCompanyExpense) {
+        notify({
+          toUid: exp.userId,
+          type: 'status_change',
+          title: 'Rendición aprobada',
+          body: `Tu rendición de ${exp.merchant || 'sin comercio'} fue aprobada.`,
+          expenseId: exp.id,
+        });
+      }
+    });
     setBulkBusy(false);
   };
 
@@ -544,6 +603,18 @@ export default function AdminApprovals() {
         `Rechazadas ${successes.length} de ${toProcess.length}. Fallaron ${errors.size} — quedan seleccionadas.`
       );
     }
+    // Fire-and-forget notifications for each rejected submitter
+    successes.forEach(exp => {
+      if (exp.userId && !exp.isCompanyExpense) {
+        notify({
+          toUid: exp.userId,
+          type: 'rejection',
+          title: 'Rendición rechazada',
+          body: `Tu rendición de ${exp.merchant || 'sin comercio'} fue rechazada. Motivo: ${reason}`,
+          expenseId: exp.id,
+        });
+      }
+    });
     setBulkRejectReason('');
     setBulkBusy(false);
   };
@@ -605,7 +676,16 @@ export default function AdminApprovals() {
 
   const handleViewReceipt = (url) => {
     if (!url) { toast.error("No hay comprobante adjunto."); return; }
-    window.open(url, '_blank');
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      // Popup was blocked — fall back to a programmatic anchor click
+      toast.warning("Permite ventanas emergentes para ver el comprobante.");
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+    }
   };
 
   const handleDeleteExpense = (expense) => {
@@ -688,7 +768,7 @@ export default function AdminApprovals() {
         e.preventDefault(); return;
       }
       if (key === 'a' && !e.shiftKey) {
-        if (current && s.viewMode === 'pending') handleApprove(current);
+        if (current && s.viewMode === 'pending' && canUserApprove(permissions, current)) handleApprove(current);
         e.preventDefault(); return;
       }
       if (key === 'j') {
@@ -714,7 +794,7 @@ export default function AdminApprovals() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isKeyboardDevice, toggleSelect]);
+  }, [isKeyboardDevice, toggleSelect, permissions]);
 
   // Indeterminate state for header checkbox
   const headerCheckboxRef = useRef(null);
@@ -770,13 +850,15 @@ export default function AdminApprovals() {
             />
           </div>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="bg-gray-800 text-white px-4 py-2 rounded flex items-center hover:bg-gray-700 transition"
-        >
-          <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-          Exportar Histórico (CSV)
-        </button>
+        {permissions.canExport && (
+          <button
+            onClick={handleExportCSV}
+            className="bg-gray-800 text-white px-4 py-2 rounded flex items-center hover:bg-gray-700 transition"
+          >
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+            Exportar Histórico (CSV)
+          </button>
+        )}
       </div>
 
       {/* Filters card */}
@@ -847,6 +929,15 @@ export default function AdminApprovals() {
                   className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
                   <option value="">Todas</option>
                   {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1" htmlFor="f-category">Categoría</label>
+                <select id="f-category" value={filters.category}
+                  onChange={e => updateFilter('category', e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                  <option value="">Todas</option>
+                  {CATEGORIES_COMMON.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
@@ -1053,15 +1144,25 @@ export default function AdminApprovals() {
                               >
                                 <Pencil className="w-5 h-5" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleApprove(e)}
-                                className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition"
-                                title="Aprobar"
-                                aria-label="Aprobar"
-                              >
-                                <CheckCircle className="w-5 h-5" />
-                              </button>
+                              {canUserApprove(permissions, e) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleApprove(e)}
+                                  className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition"
+                                  title="Aprobar"
+                                  aria-label="Aprobar"
+                                >
+                                  <CheckCircle className="w-5 h-5" />
+                                </button>
+                              ) : (
+                                <span
+                                  className="text-gray-300 p-1.5 cursor-not-allowed"
+                                  title="Requiere aprobador Colombia"
+                                  aria-label="Requiere aprobador Colombia"
+                                >
+                                  <Lock className="w-5 h-5" />
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => openRejectionModal(e)}
@@ -1071,15 +1172,17 @@ export default function AdminApprovals() {
                               >
                                 <XCircle className="w-5 h-5" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteExpense(e)}
-                                className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
-                                title="Eliminar"
-                                aria-label="Eliminar"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
+                              {permissions.canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteExpense(e)}
+                                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
+                                  title="Eliminar"
+                                  aria-label="Eliminar"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              )}
                             </>
                           )}
                         </div>

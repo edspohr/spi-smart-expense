@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -95,6 +95,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <Link to="/dashboard/bulk-upload" className={linkClass('/dashboard/bulk-upload')} aria-current={ariaCurrent('/dashboard/bulk-upload')} onClick={() => setIsOpen(false)}>
             <Layers className={`w-4 h-4 mr-3 ${isActive('/dashboard/bulk-upload') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Carga Masiva
+        </Link>
+        <Link to="/dashboard/mi-espacio" className={linkClass('/dashboard/mi-espacio')} aria-current={ariaCurrent('/dashboard/mi-espacio')} onClick={() => setIsOpen(false)}>
+            <Bell className={`w-4 h-4 mr-3 ${isActive('/dashboard/mi-espacio') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+            Notificaciones
         </Link>
 
 

@@ -7,8 +7,12 @@ import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
 import { formatCurrency } from '../utils/format';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import FocusableModal from './FocusableModal';
+import { logMovements } from '../lib/audit';
+import { useAuth } from '../context/useAuth';
+import { notify } from '../lib/notifications';
 
 export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
+  const { currentUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     date: expense?.date || '',
@@ -86,8 +90,61 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         trmSource: form.currency === 'USD' ? (trmState.source || null) : null,
       };
 
+      // Compute movement diff before saving (tracked fields only)
+      const TRACKED = [
+        { key: 'projectId',   label: 'Centro de Costo', fromKey: 'projectId',   toVal: expense.projectId },
+        { key: 'projectName', label: 'Centro de Costo', fromKey: 'projectName', toVal: expense.projectName },
+        { key: 'eventName',   label: 'Evento',          fromKey: 'eventName',   toVal: updates.eventName },
+        { key: 'userId',      label: 'Asignado a',      fromKey: 'userId',      toVal: expense.userId },
+        { key: 'userName',    label: 'Asignado a',      fromKey: 'userName',    toVal: expense.userName },
+      ];
+      const movementDiff = TRACKED
+        .filter(t => {
+          const oldVal = expense[t.fromKey] ?? null;
+          const newVal = updates[t.key] !== undefined ? (updates[t.key] ?? null) : (t.toVal ?? null);
+          return String(oldVal) !== String(newVal);
+        })
+        .map(t => ({
+          field: t.label,
+          from:  expense[t.fromKey] ?? null,
+          to:    updates[t.key] !== undefined ? (updates[t.key] ?? null) : (t.toVal ?? null),
+        }));
+
       const expenseRef = doc(db, "expenses", expense.id);
       await updateDoc(expenseRef, updates);
+
+      // Log movements after successful save (fire-and-forget)
+      if (movementDiff.length > 0 && currentUser) {
+        logMovements(expense.id, movementDiff, {
+          uid: currentUser.uid,
+          name: currentUser.displayName || currentUser.email || currentUser.uid,
+        });
+      }
+
+      // Notify new assignee if userId changed, or notify current user on project/event change
+      const userIdChange = movementDiff.find(d => d.field === 'Asignado a' && d.to && d.to !== expense.userId);
+      const hasProjectOrEvent = movementDiff.some(d => d.field === 'Centro de Costo' || d.field === 'Evento');
+      if (userIdChange) {
+        // Find the new userId from the original updates (userId field not in form but check expense)
+        const newUserId = updates.userId || expense.userId;
+        if (newUserId && newUserId !== currentUser?.uid) {
+          notify({
+            toUid: newUserId,
+            type: 'assignment',
+            title: 'Nueva asignación',
+            body: `Una rendición de ${expense.merchant || 'sin comercio'} fue asignada a ti.`,
+            expenseId: expense.id,
+          });
+        }
+      } else if (hasProjectOrEvent && expense.userId && expense.userId !== currentUser?.uid) {
+        notify({
+          toUid: expense.userId,
+          type: 'assignment',
+          title: 'Nueva asignación',
+          body: `Tu rendición de ${expense.merchant || 'sin comercio'} fue reasignada a un nuevo centro de costo o evento.`,
+          expenseId: expense.id,
+        });
+      }
 
       // Adjust balance if amount changed
       const oldAmount = Number(expense.amount);
@@ -266,7 +323,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="eem-cardLast4" className={labelClass}>Tarjeta (Últimos 4)</label>
+                      <label htmlFor="eem-cardLast4" className={labelClass}>
+                        Tarjeta (Últimos 4){form.cardBrand === 'amex' && <span className="font-normal ml-1">(opcional)</span>}
+                      </label>
                       <input
                         id="eem-cardLast4"
                         type="text"
@@ -276,6 +335,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                         onChange={set('cardLast4')}
                         placeholder="1234"
                       />
+                      {form.cardBrand === 'amex' && (
+                        <p className="text-xs text-blue-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
+                      )}
                     </div>
                   </div>
                 </div>
