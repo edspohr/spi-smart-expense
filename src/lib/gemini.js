@@ -100,25 +100,52 @@ export async function parseExpenseDocuments(
       JSON output only:
     `;
 
+    const isTransient = (error) => {
+      const msg = error?.message || "";
+      return (
+        msg.includes("503") ||
+        msg.includes("502") ||
+        msg.includes("500") ||
+        msg.includes("504") ||
+        msg.includes("429") ||
+        msg.includes("Quota exceeded") ||
+        msg.includes("Resource has been exhausted") ||
+        msg.includes("high demand") ||
+        msg.includes("overloaded")
+      );
+    };
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    const tryModel = async (modelName, maxAttempts = 3) => {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      let lastError;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          return await model.generateContent([prompt, ...parts]);
+        } catch (err) {
+          lastError = err;
+          if (!isTransient(err) || attempt === maxAttempts) throw err;
+          const delay = 800 * Math.pow(2, attempt - 1) + Math.random() * 400;
+          console.warn(
+            `Gemini ${modelName} transient error (attempt ${attempt}/${maxAttempts}), retrying in ${Math.round(delay)}ms:`,
+            err.message,
+          );
+          await sleep(delay);
+        }
+      }
+      throw lastError;
+    };
+
     let result;
     try {
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
-      });
-      result = await model.generateContent([prompt, ...parts]);
+      result = await tryModel("gemini-2.5-flash");
     } catch (error) {
-      const isQuotaError =
-        error.message.includes("429") ||
-        error.message.includes("Quota exceeded") ||
-        error.message.includes("Resource has been exhausted");
-      if (isQuotaError) {
+      if (isTransient(error)) {
         console.warn(
-          "Gemini 2.0 quota exceeded, falling back to gemini-1.5-pro",
+          "Gemini 2.5-flash unavailable after retries, falling back to gemini-2.0-flash",
         );
-        const modelFallback = genAI.getGenerativeModel({
-          model: "gemini-1.5-pro",
-        });
-        result = await modelFallback.generateContent([prompt, ...parts]);
+        result = await tryModel("gemini-2.0-flash", 2);
       } else {
         throw error;
       }
@@ -152,13 +179,22 @@ export async function parseExpenseDocuments(
     return parsed;
   } catch (error) {
     console.error("Error parsing documents with Gemini:", error);
-    // Provide a more user-friendly error if it's still quota issues
+    const msg = error?.message || "";
     if (
-      error.message.includes("429") ||
-      error.message.includes("Quota exceeded")
+      msg.includes("503") ||
+      msg.includes("502") ||
+      msg.includes("500") ||
+      msg.includes("504") ||
+      msg.includes("high demand") ||
+      msg.includes("overloaded")
     ) {
       throw new Error(
-        "El sistema de IA está saturado momentáneamente. Por favor intente en 1 minuto o ingrese el gasto manualmente.",
+        "El servicio de IA está saturado momentáneamente. Intente nuevamente en 30-60 segundos o ingrese el gasto manualmente.",
+      );
+    }
+    if (msg.includes("429") || msg.includes("Quota exceeded")) {
+      throw new Error(
+        "Se alcanzó el límite de uso de IA. Por favor intente en 1 minuto o ingrese el gasto manualmente.",
       );
     }
     throw error;
