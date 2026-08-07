@@ -35,3 +35,7 @@ node_modules/.cache/
 
 # Firebase CLI cache
 .firebase/
+
+# Firebase Admin service account key (nunca commitear)
+scripts/serviceAccountKey.json
+scripts/serviceAccountKey*.json
