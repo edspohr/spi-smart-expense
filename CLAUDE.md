@@ -55,7 +55,7 @@ Hardcoded admin emails (`edmundo@spohr.cl`, `admin@spi.cl`, `gerencia@spi.cl`) g
 **Expense submission** (professional):
 
 1. `ExpenseForm.jsx` — user uploads receipt image
-2. `src/lib/gemini.js` calls Gemini (`gemini-2.5-flash-lite`, fallback `gemini-1.5-pro`) to extract date, merchant, amount, currency, NIT, payment method
+2. `src/lib/gemini.js` calls Gemini (`gemini-3.6-flash`, fallback `gemini-3.5-flash-lite`) to extract date, merchant, amount, currency, NIT, payment method
 3. User fills/corrects the pre-filled form and selects cost center(s)
 4. On submit: image uploaded to Firebase Storage, expense doc written to Firestore `expenses` collection
 

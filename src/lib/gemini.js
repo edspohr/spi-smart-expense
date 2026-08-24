@@ -139,13 +139,13 @@ export async function parseExpenseDocuments(
 
     let result;
     try {
-      result = await tryModel("gemini-2.5-flash");
+      result = await tryModel("gemini-3.6-flash");
     } catch (error) {
       if (isTransient(error)) {
         console.warn(
-          "Gemini 2.5-flash unavailable after retries, falling back to gemini-2.0-flash",
+          "Gemini 3.6-flash unavailable after retries, falling back to gemini-3.5-flash-lite",
         );
-        result = await tryModel("gemini-2.0-flash", 2);
+        result = await tryModel("gemini-3.5-flash-lite", 2);
       } else {
         throw error;
       }
