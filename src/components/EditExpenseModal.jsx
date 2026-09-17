@@ -3,7 +3,9 @@ import { X, FileText, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+
+const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
 import { formatCurrency } from '../utils/format';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import FocusableModal from './FocusableModal';
@@ -36,16 +38,16 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
 
   const [trmState, setTrmState] = useState({ trm: null, source: null, fetchedAt: null, loading: false });
 
-  // Fetch TRM when editing a USD expense (or when currency/date changes)
+  // Fetch conversion rate when editing a USD or EUR expense (or when currency/date changes)
   useEffect(() => {
-    if (!isOpen || form.currency !== 'USD') {
+    if (!isOpen || !NEEDS_RATE(form.currency)) {
       setTrmState({ trm: null, source: null, fetchedAt: null, loading: false });
       return;
     }
     let cancelled = false;
     setTrmState(prev => ({ ...prev, loading: true }));
-    fetchTRM(form.date).then(result => {
-      if (!cancelled) setTrmState({ ...result, loading: false });
+    fetchRate(form.currency, form.date).then(result => {
+      if (!cancelled) setTrmState({ trm: result.rate, source: result.source, fetchedAt: result.fetchedAt, loading: false });
     });
     return () => { cancelled = true; };
   }, [isOpen, form.currency, form.date]);
@@ -85,9 +87,9 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         cardCompany: form.cardCompany || null,
         description: form.description,
         eventName: form.eventName ? form.eventName.toUpperCase() : '',
-        trm: form.currency === 'USD' ? (trmState.trm || null) : null,
-        amountCOP: form.currency === 'USD' ? calculateCOPEquivalent(newAmount, trmState.trm) : null,
-        trmSource: form.currency === 'USD' ? (trmState.source || null) : null,
+        trm: NEEDS_RATE(form.currency) ? (trmState.trm || null) : null,
+        amountCOP: NEEDS_RATE(form.currency) ? calculateCOPEquivalent(newAmount, trmState.trm) : null,
+        trmSource: NEEDS_RATE(form.currency) ? (trmState.source || null) : null,
       };
 
       // Compute movement diff before saving (tracked fields only)
@@ -370,19 +372,19 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
               </div>
             </div>
 
-            {/* TRM Info Box (USD expenses only) */}
-            {form.currency === 'USD' && (
+            {/* TRM Info Box (USD and EUR expenses) */}
+            {NEEDS_RATE(form.currency) && (
               <div className={`p-3 rounded-lg border text-sm ${trmState.trm ? 'bg-blue-50 border-blue-100' : trmState.loading ? 'bg-blue-50 border-blue-100' : 'bg-yellow-50 border-yellow-200'}`}>
                 {trmState.loading ? (
                   <div className="flex items-center gap-2 text-blue-700">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span className="text-xs">Obteniendo TRM...</span>
+                    <span className="text-xs">Obteniendo tasa de cambio...</span>
                   </div>
                 ) : trmState.trm ? (
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-0.5">
                       <p className="text-blue-800 text-xs font-medium">
-                        TRM del día: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> COP/USD
+                        Tasa {form.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> COP/{form.currency}
                       </p>
                       {form.amount > 0 && (
                         <p className="text-blue-700 text-xs">
@@ -394,15 +396,15 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                       type="button"
                       onClick={() => {
                         setTrmState(prev => ({ ...prev, loading: true }));
-                        fetchTRM(form.date).then(r => setTrmState({ ...r, loading: false }));
+                        fetchRate(form.currency, form.date).then(r => setTrmState({ trm: r.rate, source: r.source, fetchedAt: r.fetchedAt, loading: false }));
                       }}
                       className="text-xs text-blue-600 font-bold hover:underline whitespace-nowrap"
                     >
-                      Actualizar TRM
+                      Actualizar tasa
                     </button>
                   </div>
                 ) : (
-                  <p className="text-yellow-800 text-xs">⚠️ No se pudo obtener la TRM. El gasto se guardará sin conversión.</p>
+                  <p className="text-yellow-800 text-xs">⚠️ No se pudo obtener la tasa de cambio. El gasto se guardará sin conversión.</p>
                 )}
               </div>
             )}

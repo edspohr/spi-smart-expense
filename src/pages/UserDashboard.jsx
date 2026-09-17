@@ -165,7 +165,7 @@ export default function UserDashboard() {
                                };
                            });
 
-                           const currencyOrder = ['COP', 'USD', 'CLP'];
+                           const currencyOrder = ['COP', 'USD', 'EUR', 'CLP'];
 
                            if (rows.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-gray-400">No hay actividad registrada.</td></tr>;
 

@@ -25,7 +25,7 @@ export function groupByCurrency(expenses) {
  * @returns {string[]}
  */
 export function formatMultiCurrencyTotal(currencyGroups) {
-  const order = ['COP', 'USD', 'CLP'];
+  const order = ['COP', 'USD', 'EUR', 'CLP'];
   const currencies = [
     ...order.filter(c => currencyGroups[c]),
     ...Object.keys(currencyGroups).filter(c => !order.includes(c))

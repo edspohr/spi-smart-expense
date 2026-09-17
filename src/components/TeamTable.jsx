@@ -24,7 +24,7 @@ function relativeDays(dateStr) {
 }
 
 function renderCurrencyTotals(byCurrency) {
-  const order = ['COP', 'USD', 'CLP'];
+  const order = ['COP', 'USD', 'EUR', 'CLP'];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),

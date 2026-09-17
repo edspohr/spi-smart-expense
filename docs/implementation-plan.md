@@ -49,7 +49,7 @@ TASK 1 — Create shared constants file
     `diners`/"Diners Club", `other`/"Otra".
   - `CARD_COMPANIES` — array of `{ value, label }` for "SPI Americas" and
     "SPI Advisors" (keeping current values).
-  - `CURRENCIES` — array of `{ value, label }` for COP, USD, CLP.
+  - `CURRENCIES` — array of `{ value, label }` for COP, USD, EUR, CLP.
 
 TASK 2 — Update ExpenseForm.jsx
 - Import from `../lib/constants`. Delete the local CATEGORIES_COMMON and
@@ -169,13 +169,14 @@ Compute:
 - `totalApprovedThisMonth` — sum grouped by currency where status
   in ['approved','pending'] and date in current month.
 - `totalApprovedLastMonth` — same, last calendar month, for delta %.
-- `trmGaps` — count of USD expenses where `trm` is null.
+- `trmGaps` — count of USD/EUR expenses where `trm` is null.
 - `staleApprovals` — pending expenses with `createdAt` older than 7
   days. Provide the raw list so we can show top 3 in the alerts.
 - `overBudgetUsers` — users whose total rendered (sum of non-rejected
   expense amounts in COP equivalent — use amountCOP when currency is
-  USD, else amount) exceeds 2x their total allocations in the last 30
-  days. Use `allocations` collection (new fetch) for this.
+  USD or EUR, else amount; CLP is excluded) exceeds 2x their total
+  allocations in the last 30 days. Use `allocations` collection (new
+  fetch) for this.
 - `trend30d` — array of 30 objects `{ date: 'YYYY-MM-DD', value: N }`
   counting expenses created per day.
 
@@ -195,8 +196,8 @@ ALERT CONSTRUCTION
 Build alerts in priority order:
 1. For each stale approval >14 days old (severity: danger):
    `{ title: "Rendición sin revisar", description: "$USER — hace $N días", href: "/admin/approvals" }`
-2. trmGaps > 0 → one warning alert: `{ title: "Gastos USD sin TRM",
-   description: "$N gastos perdieron la captura automática", href: "/admin/reports?currency=USD" }`.
+2. trmGaps > 0 → one warning alert: `{ title: "Gastos FX sin tasa",
+   description: "$N gastos USD/EUR perdieron la captura automática", href: "/admin/reports?currency=USD" }`.
 3. overBudgetUsers → one warning per user.
 Max 5 alerts shown; show "Ver todas (N)" link if more.
 

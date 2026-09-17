@@ -313,7 +313,7 @@ export default function AdminProjectDetails() {
              const activeExpenses = expenses.filter(e => e.status !== 'rejected');
              const renderedByCurrency = groupByCurrency(activeExpenses.filter(e => !e.isCompanyExpense));
              const totalByCurrency = groupByCurrency(activeExpenses);
-             const currencies = ['COP', 'USD', 'CLP'];
+             const currencies = ['COP', 'USD', 'EUR', 'CLP'];
 
              return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

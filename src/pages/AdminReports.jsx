@@ -9,7 +9,7 @@ import { Download, Search, FileSpreadsheet, Loader2, Filter, ImageDown } from 'l
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { toast } from 'sonner';
-import { CARD_BRANDS, CARD_BRAND_LABELS } from '../lib/constants';
+import { CARD_BRANDS, CARD_BRAND_LABELS, CURRENCIES } from '../lib/constants';
 
 const STATUS_LABELS = {
   approved: 'Aprobado',
@@ -67,7 +67,7 @@ function expenseToRow(e, forExcel = false, projectsMap = {}) {
   ];
   if (forExcel) {
     let diff = '';
-    if (e.currency === 'USD' && e.trm && e.amountCOP) {
+    if ((e.currency === 'USD' || e.currency === 'EUR') && e.trm && e.amountCOP) {
       diff = e.amountCOP - Math.round(Number(e.amount) * Number(e.trm));
     }
     base.push(diff);
@@ -284,7 +284,7 @@ export default function AdminReports() {
     const dataRows = results.map(e => expenseToRow(e, true, projectsMap));
     const allData = [XLSX_HEADERS, ...dataRows];
 
-    ['COP', 'USD'].forEach(cur => {
+    ['COP', 'USD', 'EUR', 'CLP'].forEach(cur => {
       const subset = results.filter(e => e.currency === cur && e.status !== 'rejected');
       if (subset.length === 0) return;
       const total = subset.reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -497,7 +497,7 @@ export default function AdminReports() {
   // ── Totals ────────────────────────────────────────────────────────────────
 
   const totals = {};
-  let usdCOPEquiv = 0;
+  let fxCOPEquiv = 0;
   if (results) {
     results.forEach(e => {
       const cur = e.currency || 'COP';
@@ -505,7 +505,7 @@ export default function AdminReports() {
       totals[cur].count += 1;
       if (e.status !== 'rejected') {
         totals[cur].total += Number(e.amount) || 0;
-        if (cur === 'USD' && e.amountCOP) usdCOPEquiv += Number(e.amountCOP);
+        if ((cur === 'USD' || cur === 'EUR') && e.amountCOP) fxCOPEquiv += Number(e.amountCOP);
       }
     });
   }
@@ -654,8 +654,9 @@ export default function AdminReports() {
             <label className={labelClass}>Moneda</label>
             <select className={inputClass} value={filters.currency} onChange={setFilter('currency')}>
               <option value="">Todas</option>
-              <option value="COP">COP</option>
-              <option value="USD">USD</option>
+              {CURRENCIES.map(c => (
+                <option key={c.value} value={c.value}>{c.value}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -687,7 +688,7 @@ export default function AdminReports() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Totales</p>
               <div className="flex flex-col mt-1">
-                {['COP', 'USD'].filter(c => totals[c]).map((c, i) => (
+                {['COP', 'USD', 'EUR', 'CLP'].filter(c => totals[c]).map((c, i) => (
                   <span
                     key={c}
                     className={i === 0 ? 'text-xl font-bold text-blue-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}
@@ -703,16 +704,16 @@ export default function AdminReports() {
               <p className="text-xs text-gray-400 mt-2 italic">Los rechazados no suman.</p>
             </div>
 
-            {usdCOPEquiv > 0 ? (
+            {fxCOPEquiv > 0 ? (
               <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-5 flex flex-col justify-center">
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Equiv. COP (USD)</p>
-                <p className="text-xl font-bold text-blue-700">{formatCurrency(usdCOPEquiv)}</p>
-                <p className="text-xs text-blue-400 mt-0.5">Según TRM capturada al registro</p>
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Equiv. COP (USD + EUR)</p>
+                <p className="text-xl font-bold text-blue-700">{formatCurrency(fxCOPEquiv)}</p>
+                <p className="text-xs text-blue-400 mt-0.5">Según tasa capturada al registro</p>
               </div>
             ) : (
               <div className="bg-gray-50 rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Equiv. COP (USD)</p>
-                <p className="text-sm text-gray-400 italic">Sin gastos USD con TRM</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Equiv. COP (USD + EUR)</p>
+                <p className="text-sm text-gray-400 italic">Sin gastos USD/EUR con tasa</p>
               </div>
             )}
           </div>

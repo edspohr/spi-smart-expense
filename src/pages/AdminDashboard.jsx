@@ -41,7 +41,7 @@ function parseDate(s) {
 
 function copEquivalent(exp) {
   const c = exp.currency || 'COP';
-  if (c === 'USD') return Number(exp.amountCOP) || null;
+  if (c === 'USD' || c === 'EUR') return Number(exp.amountCOP) || null;
   if (c === 'CLP') return null;
   return Number(exp.amount) || 0;
 }
@@ -96,7 +96,7 @@ function sumCopEquivalent(list) {
 }
 
 function renderStack(byCurrency) {
-  const order = ['COP', 'USD', 'CLP'];
+  const order = ['COP', 'USD', 'EUR', 'CLP'];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),
@@ -301,15 +301,16 @@ function buildAnomalies(expenses) {
     }
   });
 
-  // 2: USD without TRM
+  // 2: USD/EUR without conversion rate
   nonRejected.forEach(e => {
-    if (e.currency !== 'USD' || e.trm) return;
+    const cur = e.currency;
+    if ((cur !== 'USD' && cur !== 'EUR') || e.trm) return;
     anomalies.push({
       id: `trm-${e.id}`,
       type: 'trm-missing',
       priority: 2,
       date: e.date,
-      description: `${e.userName || 'Usuario'} — ${formatCurrency(Number(e.amount) || 0, 'USD')} USD — ${e.date || 'sin fecha'}`,
+      description: `${e.userName || 'Usuario'} — ${formatCurrency(Number(e.amount) || 0, cur)} ${cur} — ${e.date || 'sin fecha'}`,
       expense: e,
     });
   });

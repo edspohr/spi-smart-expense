@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/useAuth';
-import { parseExpenseDocuments } from '../lib/gemini';
+import { parseExpenseDocuments, checkGeminiHealth } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
 import { collection, getDocs, query, where, doc, increment, writeBatch } from 'firebase/firestore';
 import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle, CreditCard, Calendar, MousePointer2 } from 'lucide-react';
@@ -10,7 +10,9 @@ import { formatCurrency } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
-import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+
+const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
 
@@ -155,8 +157,19 @@ export default function ExpenseForm() {
   const duplicateAcknowledged = useRef(false);
   const reviewFormRef = useRef(null);
 
-  // TRM State (USD→COP exchange rate)
+  // TRM State (foreign→COP exchange rate for USD and EUR)
   const [trmState, setTrmState] = useState({ trm: null, source: null, fetchedAt: null, loading: false });
+
+  // Probe Gemini API on mount; warn the user if it's down so they can capture manually.
+  useEffect(() => {
+    let cancelled = false;
+    checkGeminiHealth().then(res => {
+      if (!cancelled && !res.ok) {
+        toast.warning('El servicio de IA no responde. Puedes seguir e ingresar el gasto manualmente.');
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const [files, setFiles] = useState({ receipt: null, voucher: null });
   const [previews, setPreviews] = useState({ receipt: null, voucher: null });
@@ -231,16 +244,16 @@ export default function ExpenseForm() {
       }
   }, [userRole]);
 
-  // Fetch TRM automatically when currency is USD, date is set, and user is on review step
+  // Fetch conversion rate automatically for USD or EUR when date is set and user is on review step
   useEffect(() => {
-    if (formData.currency !== 'USD' || !formData.date || step !== 'review') {
+    if (!NEEDS_RATE(formData.currency) || !formData.date || step !== 'review') {
       setTrmState({ trm: null, source: null, fetchedAt: null, loading: false });
       return;
     }
     let cancelled = false;
     setTrmState(prev => ({ ...prev, loading: true }));
-    fetchTRM(formData.date).then(result => {
-      if (!cancelled) setTrmState({ ...result, loading: false });
+    fetchRate(formData.currency, formData.date).then(result => {
+      if (!cancelled) setTrmState({ trm: result.rate, source: result.source, fetchedAt: result.fetchedAt, loading: false });
     });
     return () => { cancelled = true; };
   }, [formData.currency, formData.date, step]);
@@ -476,9 +489,9 @@ export default function ExpenseForm() {
                 createdAt: new Date().toISOString(),
                 isCompanyExpense: isProjectExpense,
                 splitGroupId: splitGroupId,
-                trm: formData.currency === 'USD' ? (trmState.trm || null) : null,
-                amountCOP: formData.currency === 'USD' ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
-                trmSource: formData.currency === 'USD' ? (trmState.source || null) : null,
+                trm: NEEDS_RATE(formData.currency) ? (trmState.trm || null) : null,
+                amountCOP: NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
+                trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
             });
 
             if (!isProjectExpense) {
@@ -1006,19 +1019,19 @@ export default function ExpenseForm() {
                         </div>
                     </div>
 
-                    {/* TRM Info Box (USD expenses only) */}
-                    {formData.currency === 'USD' && (
+                    {/* TRM Info Box (USD and EUR expenses) */}
+                    {NEEDS_RATE(formData.currency) && (
                       <div className={`p-4 rounded-xl border text-sm ${trmState.trm ? 'bg-blue-50 border-blue-100' : trmState.loading ? 'bg-blue-50 border-blue-100' : 'bg-yellow-50 border-yellow-200'}`}>
                         {trmState.loading ? (
                           <div className="flex items-center gap-2 text-blue-700">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Obteniendo TRM...</span>
+                            <span>Obteniendo tasa de cambio...</span>
                           </div>
                         ) : trmState.trm ? (
                           <div className="flex items-start justify-between gap-4">
                             <div className="space-y-0.5">
                               <p className="text-blue-800 font-medium">
-                                TRM del día: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-blue-600">COP/USD</span>
+                                Tasa {formData.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-blue-600">COP/{formData.currency}</span>
                               </p>
                               {formData.amount > 0 && (
                                 <p className="text-blue-700">
@@ -1030,15 +1043,15 @@ export default function ExpenseForm() {
                               type="button"
                               onClick={() => {
                                 setTrmState(prev => ({ ...prev, loading: true }));
-                                fetchTRM(formData.date).then(r => setTrmState({ ...r, loading: false }));
+                                fetchRate(formData.currency, formData.date).then(r => setTrmState({ trm: r.rate, source: r.source, fetchedAt: r.fetchedAt, loading: false }));
                               }}
                               className="text-xs text-blue-600 font-bold hover:underline whitespace-nowrap"
                             >
-                              Actualizar TRM
+                              Actualizar tasa
                             </button>
                           </div>
                         ) : (
-                          <p className="text-yellow-800">⚠️ No se pudo obtener la TRM. El gasto se guardará sin conversión.</p>
+                          <p className="text-yellow-800">⚠️ No se pudo obtener la tasa de cambio. El gasto se guardará sin conversión.</p>
                         )}
                       </div>
                     )}

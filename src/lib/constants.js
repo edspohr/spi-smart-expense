@@ -55,6 +55,7 @@ export const CARD_COMPANIES = [
 export const CURRENCIES = [
   { value: "COP", label: "COP ($)" },
   { value: "USD", label: "USD (u$s)" },
+  { value: "EUR", label: "EUR (€)" },
   { value: "CLP", label: "CLP ($)" },
 ];
 

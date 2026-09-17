@@ -7,6 +7,32 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
+// Models: validated 2026-09-17 against the /v1beta/models listing.
+// - PRIMARY: `gemini-3.6-flash` is the current stable multimodal flash tier
+//   (Google's own migration notice for 2.5-flash points here).
+// - FALLBACK: `gemini-3.5-flash-lite` for retry under saturation (cheaper, faster).
+// Newer previews `gemini-3.7-flash` / `gemini-3.8-flash` exist but returned 503
+// (high-demand) during validation; the retry+fallback pattern handles that.
+export const PRIMARY_MODEL = "gemini-3.6-flash";
+export const FALLBACK_MODEL = "gemini-3.5-flash-lite";
+
+/**
+ * Lightweight health probe for the Gemini API. Cheap text-only call.
+ * Callers can use it to warn users before uploading images.
+ * @returns {Promise<{ ok: boolean, model: string, reason?: string }>}
+ */
+export async function checkGeminiHealth() {
+  if (!API_KEY) return { ok: false, model: PRIMARY_MODEL, reason: 'missing-key' };
+  try {
+    const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
+    const result = await model.generateContent('ping');
+    const text = (await result.response).text();
+    return { ok: !!text, model: PRIMARY_MODEL };
+  } catch (err) {
+    return { ok: false, model: PRIMARY_MODEL, reason: err?.message || 'unknown' };
+  }
+}
+
 export async function parseExpenseDocuments(
   receiptFile,
   voucherFile,
@@ -52,31 +78,33 @@ export async function parseExpenseDocuments(
         : `\n- category: suggest a category if possible, or null.`;
 
     const prompt = `
-      Act as an expert accounting data extractor for receipts from Colombia and the USA.
+      Act as an expert accounting data extractor for receipts from Colombia, the USA, and Europe (EUR).
       Analyze Image 1 (Receipt/Invoice) and Image 2 (Voucher if available).
-      
+
       CRITICAL EXTRACTION RULES:
-      1. Tax ID (taxId): 
+      1. Tax ID (taxId):
          - For Colombia: Look for "NIT". Include the verification digit (e.g., 900.123.456-7).
          - For USA: Look for "Tax ID", "EIN", or "Business ID".
+         - For Europe: Look for "NIF", "CIF", "VAT", "IVA", or country-specific tax IDs.
       2. Amount (amount): Extract ONLY the final total. Ignore sub-totals or tips unless they are part of the final balance.
-      3. Currency & Location: 
+      3. Currency & Location:
          - Set currency to 'COP' if you find "NIT", "RUT", "COP", or Colombian addresses.
-         - Set currency to 'USD' if you find US addresses, "USD", or "$".
+         - Set currency to 'USD' if you find US addresses, "USD", or a lone "$" without other currency cues.
+         - Set currency to 'EUR' if you find "€", "EUR", "IVA" (Spanish/EU VAT), "NIF", "CIF", or European addresses (España, Alemania, Francia, Italia, Portugal, Países Bajos, Bélgica, Irlanda, Austria, Grecia, Finlandia, etc.).
          - Infer the City from the merchant's address or Tax ID region.
       4. Language: The "description" field MUST be written in Spanish.
-      
+
       Return a JSON with these fields:
       - date: YYYY-MM-DD
       - time: HH:MM (24h)
       - invoiceNumber: The invoice or ticket number.
       - merchant: Name of the vendor.
-      - taxId: NIT, EIN, or equivalent Tax ID.
+      - taxId: NIT, EIN, NIF/CIF/VAT, or equivalent Tax ID.
       - address: Full address.
       - phone: Vendor phone.
       - city: City of transaction.
       - amount: Total amount as a number.
-      - currency: 'COP' or 'USD'.
+      - currency: 'COP', 'USD', or 'EUR'.
       - paymentMethod: 'Credit Card', 'Debit Card', 'Cash', 'Transfer', 'Wallet', or 'Other'.
       - description: Brief summary in SPANISH (e.g., "Almuerzo de trabajo").
       - cardLast4: Last 4 digits of the card used.
@@ -139,13 +167,13 @@ export async function parseExpenseDocuments(
 
     let result;
     try {
-      result = await tryModel("gemini-3.6-flash");
+      result = await tryModel(PRIMARY_MODEL);
     } catch (error) {
       if (isTransient(error)) {
         console.warn(
-          "Gemini 3.6-flash unavailable after retries, falling back to gemini-3.5-flash-lite",
+          `Gemini ${PRIMARY_MODEL} unavailable after retries, falling back to ${FALLBACK_MODEL}`,
         );
-        result = await tryModel("gemini-3.5-flash-lite", 2);
+        result = await tryModel(FALLBACK_MODEL, 2);
       } else {
         throw error;
       }

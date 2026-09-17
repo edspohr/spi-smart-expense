@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
-import { parseExpenseDocuments } from '../lib/gemini';
+import { parseExpenseDocuments, checkGeminiHealth } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
 import {
   collection, getDocs, query, where,
@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
-import { fetchTRM, calculateCOPEquivalent } from '../lib/exchangeRate';
-import { CATEGORIES_COMMON, CARD_COMPANIES } from '../lib/constants';
+import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { CATEGORIES_COMMON, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
+
+const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
 import { toast } from 'sonner';
 
 const MAX_FILES = 25;
@@ -112,6 +114,19 @@ export default function BulkUpload() {
   // Keep ref in sync so cleanup effect doesn't stale-close over items
   useEffect(() => { itemsRef.current = items; }, [items]);
 
+  const [aiHealthy, setAiHealthy] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    checkGeminiHealth().then(res => {
+      if (cancelled) return;
+      setAiHealthy(res.ok);
+      if (!res.ok) {
+        toast.warning('El servicio de IA no responde. La extracción automática está deshabilitada; puedes editar los campos manualmente.');
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   // Revoke all blob URLs on unmount
   useEffect(() => () => {
     itemsRef.current.forEach(i => URL.revokeObjectURL(i.preview));
@@ -202,13 +217,13 @@ export default function BulkUpload() {
       if (item.status !== 'queued') continue;
       await runOCR(item);
     }
-    // After OCR, flag potential duplicates and fetch TRM for USD expenses
+    // After OCR, flag potential duplicates and fetch conversion rate for USD/EUR expenses
     try {
       const expSnap = await getDocs(
         query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
       );
       const existing = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
+
       setItems(prev => {
         const next = [...prev];
         return next.map(item => {
@@ -217,16 +232,16 @@ export default function BulkUpload() {
         });
       });
 
-      // Fetch TRM for USD items
+      // Fetch conversion rate for USD and EUR items
       const currentItems = itemsRef.current;
       for (const item of currentItems) {
-        if (item.currency === 'USD' && item.date && !item.trm) {
-          const res = await fetchTRM(item.date);
-          if (res.trm) {
-            setItem(item.id, { 
-              trm: res.trm, 
+        if (NEEDS_RATE(item.currency) && item.date && !item.trm) {
+          const res = await fetchRate(item.currency, item.date);
+          if (res.rate) {
+            setItem(item.id, {
+              trm: res.rate,
               trmSource: res.source,
-              amountCOP: calculateCOPEquivalent(item.amount, res.trm)
+              amountCOP: calculateCOPEquivalent(item.amount, res.rate)
             });
           }
         }
@@ -341,7 +356,7 @@ export default function BulkUpload() {
           isCompanyExpense: false,
           splitGroupId:  null,
           trm:           item.trm || null,
-          amountCOP:     item.amountCOP || (item.currency === 'USD' ? calculateCOPEquivalent(item.amount, item.trm) : null),
+          amountCOP:     item.amountCOP || (NEEDS_RATE(item.currency) ? calculateCOPEquivalent(item.amount, item.trm) : null),
           trmSource:     item.trmSource || null,
           bulkUpload:    true,
         });
@@ -466,7 +481,9 @@ export default function BulkUpload() {
                   {phase === 'drop' && (
                     <button
                       onClick={handleAnalyzeAll}
-                      className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-black transition"
+                      disabled={!aiHealthy}
+                      title={aiHealthy ? undefined : 'El servicio de IA no responde en este momento.'}
+                      className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-black transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Zap className="w-4 h-4" aria-hidden="true" />
                       Analizar con IA
@@ -740,13 +757,14 @@ export default function BulkUpload() {
                                 disabled={isDisabled}
                               />
                               <select
-                                className={`${sel} w-16`}
+                                className={`${sel} w-20`}
                                 value={item.currency}
                                 onChange={e => setItem(item.id, { currency: e.target.value })}
                                 disabled={isDisabled}
                               >
-                                <option value="COP">COP</option>
-                                <option value="USD">USD</option>
+                                {CURRENCIES.map(c => (
+                                  <option key={c.value} value={c.value}>{c.value}</option>
+                                ))}
                               </select>
                             </div>
                           </td>

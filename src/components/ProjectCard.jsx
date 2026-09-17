@@ -14,7 +14,7 @@ function colorForCategory(name) {
 }
 
 function renderTotals(totalByCurrency) {
-  const order = ['COP', 'USD', 'CLP'];
+  const order = ['COP', 'USD', 'EUR', 'CLP'];
   const keys = [
     ...order.filter(c => totalByCurrency[c] !== undefined),
     ...Object.keys(totalByCurrency).filter(c => !order.includes(c)),

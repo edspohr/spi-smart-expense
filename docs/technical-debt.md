@@ -78,3 +78,15 @@ The `cors.json` config is in the project root.
 **Problem:** Bulk-uploaded USD expenses are stored without TRM / `amountCOP` fields because fetching TRM per-row during OCR would add latency and API calls.
 
 **Recommended fix:** After OCR, fetch TRM once for the current date and apply it to all USD rows in the review table (Stage 2 / Task 39).
+
+---
+
+## TD-007 — EUR→COP has no official historical series
+
+**Severity:** Low (accepted)  
+**File:** `src/lib/exchangeRate.js`  
+**Discovered:** Adding EUR as first-class currency (2026-09-17)
+
+**Problem:** Banco de la República publishes an official historical TRM only for USD→COP. EUR→COP rates are fetched from `open.er-api.com` at the moment of the request, so past EUR expenses capture the spot rate at edit time rather than the value that was in effect on the expense date.
+
+**Recommended fix:** If accounting requires historical accuracy for EUR, switch to a paid API with historical EUR/COP series (e.g. exchangerate.host, currencylayer) and mirror the USD BanRep/fallback pattern.
