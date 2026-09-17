@@ -90,3 +90,245 @@ The `cors.json` config is in the project root.
 **Problem:** Banco de la República publishes an official historical TRM only for USD→COP. EUR→COP rates are fetched from `open.er-api.com` at the moment of the request, so past EUR expenses capture the spot rate at edit time rather than the value that was in effect on the expense date.
 
 **Recommended fix:** If accounting requires historical accuracy for EUR, switch to a paid API with historical EUR/COP series (e.g. exchangerate.host, currencylayer) and mirror the USD BanRep/fallback pattern.
+
+---
+
+# Items registered from full-app review (2026-09-17)
+
+The three high-priority findings from that review (secrets/PIN in `AdminUserSeeder`,
+non-transactional balance updates, empty catches) were fixed in the same commit
+that created this section. The items below are the deferred ones — logged here
+so nothing gets lost.
+
+## TD-008 — Full historical trail of TRM per expense
+
+**Severity:** Medium (auditoría)  
+**Impact:** Medium · **Effort:** Low  
+**File:** `src/lib/exchangeRate.js` + expense docs
+
+**Problem:** Foreign-currency expenses store `trm` and `trmSource` but not the
+capture timestamp nor whether the rate is historical (BanRep) or live (fallback).
+Accounting audits need to reconstruct which rate was applied and why.
+
+**Recommended fix:** Add `trmCapturedAt` (ISO), `trmDate` (fecha del gasto usada
+para la consulta), and `trmType: 'historical' | 'live'` to every expense that
+has a non-null `trm`. Backfill for existing rows is optional.
+
+---
+
+## TD-009 — Bounded queries + paginación cursor en pantallas admin
+
+**Severity:** High (rendimiento/costo)  
+**Impact:** High · **Effort:** Medium  
+**Files:** `src/pages/AdminApprovals.jsx` (limit 500 arbitrario),
+`src/pages/AdminDashboard.jsx` (`getDocs(collection(db,'expenses'))` sin límite),
+`src/pages/UserExpenses.jsx:31` (falta índice, se ordena en cliente)
+
+**Problem:** Con "cientos de gastos/mes" el crecimiento es lineal. Ya recorremos
+la colección entera en varios lugares — costo Firestore + memoria del cliente.
+
+**Recommended fix:** Definir índices compuestos (`status + createdAt DESC`,
+`userId + createdAt DESC`) y añadir `orderBy` + `limit(50)` + cursor pagination.
+Para KPIs del dashboard, calcular agregados en Cloud Function on-write y leer
+un solo doc `stats/monthly-YYYY-MM`.
+
+---
+
+## TD-010 — Lazy-load de rutas + auditar peso de `framer-motion`
+
+**Severity:** Medium (rendimiento inicial)  
+**Impact:** Medium · **Effort:** Low  
+**File:** `src/App.jsx`, `package.json`
+
+**Problem:** Todas las páginas se importan eagerly; el bundle admin viaja al
+login. `framer-motion` (~40kb gzip) se usa solo en un par de sitios (motion.div
+en `BulkActionBar`, transitions puntuales).
+
+**Recommended fix:** Migrar rutas a `React.lazy(() => import('./pages/X'))` +
+`Suspense` con `TableSkeleton` como fallback. Auditar con `vite-bundle-visualizer`
+y considerar CSS transitions donde `framer-motion` es overkill.
+
+---
+
+## TD-011 — Memoización de cálculos pesados en AdminDashboard
+
+**Severity:** Medium  
+**Impact:** Medium · **Effort:** Low  
+**File:** `src/pages/AdminDashboard.jsx` (detección de anomalías, agregados por proyecto)
+
+**Problem:** Solo hay ~36 usos de `useMemo`/`useCallback`/`memo` en toda la
+app. Los cálculos de anomalías (outliers, weekend spend, over-budget) corren
+en cada render sin memoización.
+
+**Recommended fix:** Envolver los `useMemo` con dependencias explícitas por
+cada agregación pesada. Perfilar con React DevTools antes/después.
+
+---
+
+## TD-012 — ErrorBoundary por ruta (no un solo global)
+
+**Severity:** Low-Medium  
+**Impact:** Low · **Effort:** Low  
+**File:** `src/main.jsx`, `src/App.jsx`
+
+**Problem:** Un solo `ErrorBoundary` en `main.jsx` envuelve toda la app. Un
+crash en `/admin/reports` tumba la navegación completa.
+
+**Recommended fix:** Añadir un `ErrorBoundary` por `Route` (o al menos uno para
+admin y otro para dashboard) que muestre fallback local y permita "reintentar".
+
+---
+
+## TD-013 — Test suite (Vitest + emulador Firebase)
+
+**Severity:** High (calidad)  
+**Impact:** High · **Effort:** High  
+**Status:** consolidates TD-005
+
+**Problem:** Cero tests. La lógica de dinero (aprobar, rechazar, editar
+allocation, currency conversion) no tiene red de seguridad.
+
+**Recommended fix:** Vitest + `@firebase/rules-unit-testing` para arrancar
+emulador. Suites objetivo: `fixBalances` con datasets sintéticos, aprobar →
+verificar balance/project.expenses/movements, currency conversion USD/EUR/COP.
+Cobertura mínima 60% en `src/lib/` y `src/utils/`, 100% de flujos
+aprobar/rechazar/editar.
+
+---
+
+## TD-014 — Refactor de componentes monolíticos
+
+**Severity:** Medium (mantenibilidad)  
+**Impact:** Medium · **Effort:** High  
+**Files:** `AdminApprovals.jsx` (1292 loc), `ExpenseForm.jsx` (1164 loc),
+`BulkUpload.jsx` (877 loc)
+
+**Problem:** Componentes gigantes acumulan responsabilidades y hacen cualquier
+cambio arriesgado.
+
+**Recommended fix:** Descomponer por responsabilidad, no por líneas.
+`AdminApprovals` → `useApprovalsQuery` (data), `useApprovalsFilters` (state),
+`<ApprovalsTable/>` (render), `<BulkActionsController/>` (mutations).
+`ExpenseForm` → `UploadStep`, `ReviewStep`, `ClassifyStep` + hook
+`useReceiptExtraction`.
+
+---
+
+## TD-015 — Reporte de variación presupuestaria
+
+**Severity:** Medium (valor negocio)  
+**Impact:** High · **Effort:** Medium
+
+**Gap:** `AdminReports.jsx` es un exporte crudo; no hay vista "presupuesto vs.
+ejecutado" por proyecto/usuario/mes.
+
+**Recommended fix:** Nueva ruta `/admin/analytics/budget-variance`. Tabla
+pivote (filas = proyecto/usuario, columnas = meses, celdas = allocated / spent
+/ variance %). Alertas cuando variance > 80% o < -20%. Reutilizar
+`DonutCategories`, `LineChartMonthly`, `AlertsPanel`, `format.js`.
+
+---
+
+## TD-016 — Historial de aprobaciones enriquecido en modal de detalle
+
+**Severity:** Medium (auditoría)  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `src/lib/audit.js`, `src/components/ExpenseDetailsModal.jsx`
+
+**Gap:** `audit.js` registra movimientos en subcolección `expenses/{id}/movements`
+pero no hay UI que los muestre; tampoco se captura `actorUid`/`actorName` ni
+comentario opcional de aprobación.
+
+**Recommended fix:** Extender `movements` con `{actorUid, actorName, action,
+comment, timestamp, previousStatus, newStatus}`. Nuevo componente
+`AuditTimeline` renderizado dentro de `ExpenseDetailsModal`. Campo opcional
+"comentario de aprobación" en `AdminApprovals`.
+
+---
+
+## TD-017 — Virtualización de tabla de aprobaciones
+
+**Severity:** Medium (rendimiento con datos grandes)  
+**Impact:** Medium · **Effort:** Medium  
+**File:** `src/pages/AdminApprovals.jsx`
+
+**Problem:** Con paginación (TD-009) puede no ser urgente. Reevaluar si tablas
+alcanzan >200 filas en pantalla.
+
+**Recommended fix:** `@tanstack/react-virtual` (más ligero que `react-window`).
+
+---
+
+## TD-018 — Cloud Function para recalcular balances (cron semanal + alerta)
+
+**Severity:** Medium (integridad)  
+**Impact:** Medium · **Effort:** Medium  
+**File:** `src/utils/fixBalances.js`
+
+**Gap:** El reconciliador existe pero solo corre manual. Si un día una
+transacción falla parcialmente o se hace una escritura por script sin pasar
+por la app, no hay detección.
+
+**Recommended fix:** Cloud Function `scheduled` (Cloud Scheduler) que corra
+`recalculateAllUserBalances` semanalmente en modo dry-run, compare con
+`user.balance` actual, y dispare notificación (email + Notification bell) si
+detecta drift > 100 COP.
+
+---
+
+## TD-019 — Integrar Sentry sobre `logger.js`
+
+**Severity:** Medium (observabilidad)  
+**Impact:** Medium · **Effort:** Low  
+**File:** `src/lib/logger.js`
+
+**Gap:** El logger centralizado ya existe pero solo delega en `console`.
+
+**Recommended fix:** Añadir `@sentry/react` con DSN por env (`VITE_SENTRY_DSN`),
+enviar `logger.error` (y opcionalmente `warn`) a Sentry solo en producción,
+scrub PII (email, nombre). Wrap `ErrorBoundary` con `Sentry.ErrorBoundary`.
+
+---
+
+## TD-020 — Validar variables de entorno al arranque
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low  
+**File:** `src/lib/firebase.js`
+
+**Problem:** `isConfigured` solo verifica `apiKey`; si falta cualquier otra
+var, la app arranca y falla en runtime con mensajes crípticos.
+
+**Recommended fix:** Al arrancar, validar la presencia de todas las vars
+`VITE_FIREBASE_*` y `VITE_GEMINI_API_KEY`. Mostrar pantalla de error clara si
+falta alguna.
+
+---
+
+## TD-021 — Índice Firestore + `orderBy` en UserExpenses
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low  
+**File:** `src/pages/UserExpenses.jsx:31`
+
+**Problem:** Comentario del propio autor indica falta de índice; se ordena en
+cliente.
+
+**Recommended fix:** Definir índice compuesto `userId + createdAt DESC`,
+añadir `orderBy('createdAt', 'desc')` a la query, quitar sort cliente.
+
+---
+
+## TD-022 — Proxy de Gemini vía Cloud Function
+
+**Severity:** High (seguridad/costo)  
+**Impact:** High · **Effort:** High  
+**Status:** consolidates TD-002 with more detail
+
+**Problem:** `VITE_GEMINI_API_KEY` viaja en el bundle. Cualquier autenticado
+(o alguien que decompile) puede consumir cuota.
+
+**Recommended fix:** Cloud Function `POST /extractReceipt` que reciba imagen
+(base64 o Storage path), valide auth, llame Gemini con secret server-side,
+aplique rate-limit por UID (ej. 30/día). Frontend consume vía `httpsCallable` —
+`src/lib/gemini.js` pasa a ser thin client. Secret en Secret Manager.

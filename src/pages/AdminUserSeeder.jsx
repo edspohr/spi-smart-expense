@@ -4,6 +4,17 @@ import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase
 import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
+import { logger } from '../lib/logger';
+
+// Cryptographically-random password. 12 chars, alphanumeric + common
+// symbols. Shown to the admin exactly once at creation time; the user is
+// forced to reset it on first login (forcePasswordChange flag).
+function generateInitialPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+  const bytes = new Uint32Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (n) => chars[n % chars.length]).join('');
+}
 
 // 1. Re-initialize a SECONDARY app instance to avoid logging out the current admin
 // We use the same config from environment variables
@@ -16,40 +27,41 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Singleton-ish pattern for secondary app
+// Named secondary app so we can call createUserWithEmailAndPassword without
+// signing the current admin out. Re-initialization throws during Vite HMR;
+// swallowing that error is deliberate control flow, not silence.
 let secondaryApp;
 try {
     secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
-} catch {
-    // If already initialized (hot reload)
-    // We can't easily get existing named app from client SDK v9 modular like legacy
-    // But this try-catch usually handles the 'already exists' from hot-reload
+} catch (err) {
+    logger.debug('AdminUserSeeder: SecondaryApp already initialized (HMR)', err);
 }
 
 export default function AdminUserSeeder() {
   const [logs, setLogs] = useState([]);
   const [processing, setProcessing] = useState(false);
+  const [credentials, setCredentials] = useState([]);
 
   const addLog = (msg) => setLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
 
   const handleCreateAccounts = async () => {
-    if (!confirm("Esto creará cuentas de Authentication para los usuarios en la Base de Datos (si no existen). La contraseña será 'gastos2026'. ¿Continuar?")) return;
-    
-    const pin = prompt("Ingrese la clave de seguridad para confirmar:");
-    if (pin !== "1234") {
-        addLog("Operación cancelada: Clave incorrecta.");
-        return;
-    }
-    
+    if (!confirm(
+      "Esto creará cuentas de Authentication para los usuarios sin cuenta.\n" +
+      "A cada uno se le asignará una contraseña temporal aleatoria y deberán " +
+      "cambiarla en su primer inicio de sesión. ¿Continuar?"
+    )) return;
+
     setProcessing(true);
     setLogs([]);
+    setCredentials([]);
     addLog("Iniciando creación de cuentas...");
+    const createdCreds = [];
 
     try {
         // 1. Get Users from Firestore (The profiles we just seeded)
         const snap = await getDocs(collection(db, "users"));
         const users = snap.docs.map(d => ({id: d.id, ...d.data()}));
-        
+
         addLog(`Encontrados ${users.length} perfiles en base de datos.`);
 
         // 2. Get Auth instance of SECONDARY app
@@ -64,9 +76,12 @@ export default function AdminUserSeeder() {
 
             try {
                 addLog(`Creando cuenta para: ${user.email}...`);
-                
-                // 1. Create User
-                const credential = await createUserWithEmailAndPassword(secondaryAuth, user.email, "gastos2026");
+
+                // 1. Create User with per-user random password
+                const tempPassword = generateInitialPassword();
+                const credential = await createUserWithEmailAndPassword(
+                    secondaryAuth, user.email, tempPassword,
+                );
                 const authUser = credential.user;
 
                 // 2. Update Profile (Display Name)
@@ -74,29 +89,26 @@ export default function AdminUserSeeder() {
                     await updateProfile(authUser, { displayName: user.displayName });
                 }
 
-                // 3. Migrate Firestore Doc
+                // 3. Migrate Firestore Doc — mark forcePasswordChange so the
+                //    user is required to rotate on first login.
                 const realUid = authUser.uid;
-                const userRef = doc(db, "users", user.id); // Old Doc Ref
+                const userRef = doc(db, "users", user.id);
 
                 addLog(`Migrando Doc ID de ${user.id} a ${realUid}...`);
-                
-                // Write New Doc
+
                 const newDocRef = doc(db, "users", realUid);
-                // Be careful not to overwrite if it exists? (Maybe they already logged in?)
-                // Just overwrite or merge.
-                await updateDoc(newDocRef, { ...user, uid: realUid }).catch(async () => {
-                     // If update fails (doc doesn't exist), use set
-                     await setDoc(newDocRef, { ...user, uid: realUid });
+                const migratedProfile = { ...user, uid: realUid, forcePasswordChange: true };
+                await updateDoc(newDocRef, migratedProfile).catch(async () => {
+                     await setDoc(newDocRef, migratedProfile);
                 });
 
-                // Delete Old Doc
                 if (user.id !== realUid) {
                     await deleteDoc(userRef);
                 }
 
                 // 4. Migrate References (Expenses, Allocations)
                 const batchOps = writeBatch(db);
-                
+
                 const allocQ = query(collection(db, "allocations"), where("userId", "==", user.id));
                 const allocSnap = await getDocs(allocQ);
                 allocSnap.docs.forEach(d => batchOps.update(d.ref, { userId: realUid }));
@@ -106,25 +118,27 @@ export default function AdminUserSeeder() {
                 expSnap.docs.forEach(d => batchOps.update(d.ref, { userId: realUid }));
 
                 await batchOps.commit();
-                
+
+                createdCreds.push({ email: user.email, password: tempPassword });
                 addLog(`✅ ÉXITO: ${user.email} creado y migrado.`);
-                
+
             } catch (authError) {
                 if (authError.code === 'auth/email-already-in-use') {
                     addLog(`⚠ YA EXISTE: ${user.email} (Auth). No se modificó.`);
                 } else {
                     addLog(`❌ ERROR: ${user.email} - ${authError.message}`);
-                    console.error(authError);
+                    logger.error('AdminUserSeeder: create failed', authError, { email: user.email });
                 }
             }
         }
-        
+
         secondaryAuth.signOut(); // Cleanup
 
     } catch (e) {
         addLog(`CRITICAL ERROR: ${e.message}`);
-        console.error(e);
+        logger.error('AdminUserSeeder: run failed', e);
     } finally {
+        setCredentials(createdCreds);
         setProcessing(false);
     }
   };
@@ -172,19 +186,62 @@ export default function AdminUserSeeder() {
                 <p className="font-bold">Instrucciones:</p>
                 <ol className="list-decimal ml-5 mt-2 space-y-1">
                     <li>Asegúrate de haber presionado "Generar Datos de Prueba" antes de esto (para tener los perfiles base).</li>
-                    <li>Este proceso creará cuentas de Email/Password ("gastos2026") en Firebase Authentication.</li>
+                    <li>Este proceso creará cuentas de Email/Password con una contraseña temporal aleatoria por usuario.</li>
                     <li>Migrará automáticamente los perfiles de Firestore para coincidir con los nuevos UIDs.</li>
-                    <li>Puede tardar unos segundos. No cierres la ventana.</li>
+                    <li>Al terminar, aparecerán las credenciales <b>una sola vez</b>. Cópialas antes de recargar.</li>
+                    <li>Cada usuario deberá cambiar su contraseña en el primer inicio de sesión.</li>
                 </ol>
             </div>
 
-            <button 
+            <button
                 onClick={handleCreateAccounts}
                 disabled={processing}
                 className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 disabled:opacity-50"
             >
-                {processing ? 'Procesando...' : 'Crear Cuentas y Unificar (gastos2026)'}
+                {processing ? 'Procesando...' : 'Crear Cuentas y Unificar'}
             </button>
+
+            {credentials.length > 0 && (
+                <div className="mt-6 border border-red-300 bg-red-50 rounded p-4">
+                    <p className="text-sm font-bold text-red-800 mb-2">
+                        Credenciales temporales (visibles una sola vez):
+                    </p>
+                    <p className="text-xs text-red-700 mb-3">
+                        Cópialas ahora — al recargar la página desaparecen. Envíalas por un canal seguro; cada usuario deberá rotarlas al iniciar sesión.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const text = credentials
+                                .map(c => `${c.email}\t${c.password}`)
+                                .join('\n');
+                            navigator.clipboard.writeText(text).catch(err =>
+                                logger.warn('AdminUserSeeder: clipboard write failed', err));
+                        }}
+                        className="mb-3 text-xs px-3 py-1 bg-white border border-red-300 rounded hover:bg-red-100"
+                    >
+                        Copiar todo (email TAB password)
+                    </button>
+                    <div className="bg-white border border-red-200 rounded max-h-48 overflow-y-auto">
+                        <table className="w-full text-xs">
+                            <thead className="bg-red-100 text-red-900">
+                                <tr>
+                                    <th className="text-left px-2 py-1">Email</th>
+                                    <th className="text-left px-2 py-1">Contraseña temporal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="font-mono">
+                                {credentials.map((c) => (
+                                    <tr key={c.email} className="border-t border-red-100">
+                                        <td className="px-2 py-1">{c.email}</td>
+                                        <td className="px-2 py-1">{c.password}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
             
             <div className="mt-8 pt-8 border-t border-gray-200">
                 <h3 className="font-bold text-gray-700 mb-4">Agregar Nuevo Usuario (Firestore)</h3>

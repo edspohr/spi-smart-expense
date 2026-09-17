@@ -1,13 +1,24 @@
 /**
- * Script to verify and fix user balances.
- * This script recalculates the balance for all users based on their Allocations and Expenses history.
+ * Canonical formula for user.balance (source of truth):
  *
- * Logic:
- * Balance = Sum(Allocations) - Sum(Expenses)
+ *   balance(U) = Σ expenses.amount  where userId == U
+ *                                     AND status IN ('pending', 'approved')
+ *                                     AND isCompanyExpense != true
+ *              − Σ allocations.amount  where userId == U
  *
- * Usage:
- * Import this function in a component (e.g. AdminDashboard or a temp repair page) and run it.
- * It uses console.log for output.
+ * Semantics: balance is "what the company owes the user". Submitting an
+ * expense CREDITS balance (+amount); receiving an allocation DEBITS it
+ * (−amount). Rejecting an expense reverses the credit. Approving does NOT
+ * change balance (the pending credit already stands). Deleting reverses
+ * whatever change the doc previously made.
+ *
+ * When mutating balance in app code, ALWAYS wrap the change in the same
+ * Firestore transaction as the underlying doc write. See AdminApprovals,
+ * AdminProjectDetails, AdminUserDetails.
+ *
+ * `recalculateAllUserBalances` below is the reconciliation escape hatch.
+ * Run manually when balances drift. TD-018 tracks turning it into a
+ * scheduled Cloud Function.
  */
 
 import { collection, getDocs, doc, writeBatch } from "firebase/firestore";

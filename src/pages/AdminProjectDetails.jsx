@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, deleteDoc, runTransaction } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import { groupByCurrency } from '../utils/currencyHelpers';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Calendar, User, Trash2, Pencil, Ban } from 'lucide-react';
@@ -39,62 +39,55 @@ export default function AdminProjectDetails() {
   const handleUpdateAllocation = async (e) => {
       e.preventDefault();
       if (!editingAllocation) return;
-      
-      const oldAmount = Number(editingAllocation.amount);
+
       const newAmount = Number(editForm.amount);
-      const oldUserId = editingAllocation.userId;
       const newUserId = editForm.userId;
+      const userObj = users.find(u => u.id === newUserId);
+      const isoDate = new Date(editForm.date).toISOString();
 
       try {
-          // 1. Handle Balance Updates
-          if (oldUserId !== newUserId) {
-              // Revert Old User (Credit back the diff)
-              if (oldUserId) {
-                  const oldUserRef = doc(db, "users", oldUserId);
-                  const oldUserSnap = await getDoc(oldUserRef);
-                  if (oldUserSnap.exists()) {
-                      await updateDoc(oldUserRef, {
-                          balance: increment(oldAmount) 
-                      });
-                  } else {
-                      console.warn("Old user not found, skipping reversal.");
-                  }
-              }
-              
-              // Charge New User
-              if (newUserId) {
-                  const newUserRef = doc(db, "users", newUserId);
-                  const newUserSnap = await getDoc(newUserRef); // Sanity check
-                  if (newUserSnap.exists()) {
-                      await updateDoc(newUserRef, {
-                          balance: increment(-newAmount)
-                      });
-                  }
-              }
-          } else {
-              // Same User, Diff Adjustment
-              const diff = newAmount - oldAmount; 
-              if (diff !== 0 && oldUserId) {
-                   const userRef = doc(db, "users", oldUserId);
-                   const userSnap = await getDoc(userRef);
-                   if (userSnap.exists()) {
-                       await updateDoc(userRef, {
-                           balance: increment(-diff)
-                       });
-                   }
-              }
-          }
+          await runTransaction(db, async (tx) => {
+              const allocRef = doc(db, "allocations", editingAllocation.id);
+              const allocSnap = await tx.get(allocRef);
+              if (!allocSnap.exists()) throw new Error("Asignación no encontrada.");
+              const alloc = allocSnap.data();
+              const oldAmount = Number(alloc.amount);
+              const oldUserId = alloc.userId;
 
-          // 2. Update Allocation Doc
-          const userObj = users.find(u => u.id === newUserId);
-          await updateDoc(doc(db, "allocations", editingAllocation.id), {
-              userId: newUserId,
-              userName: userObj ? userObj.displayName : 'Unknown',
-              amount: newAmount,
-              date: new Date(editForm.date).toISOString()
+              // Pre-read all user docs the transaction will touch (Firestore
+              // requires reads-before-writes and same-doc reads to happen
+              // exactly once per transaction).
+              const oldUserRef = oldUserId ? doc(db, "users", oldUserId) : null;
+              const newUserRef = newUserId ? doc(db, "users", newUserId) : null;
+              const oldUserSnap = oldUserRef ? await tx.get(oldUserRef) : null;
+              const newUserSnap =
+                  newUserRef && newUserRef.path !== oldUserRef?.path
+                      ? await tx.get(newUserRef)
+                      : oldUserSnap;
+
+              if (oldUserId !== newUserId) {
+                  if (oldUserRef && oldUserSnap?.exists()) {
+                      tx.update(oldUserRef, { balance: increment(oldAmount) });
+                  }
+                  if (newUserRef && newUserSnap?.exists()) {
+                      tx.update(newUserRef, { balance: increment(-newAmount) });
+                  }
+              } else {
+                  const diff = newAmount - oldAmount;
+                  if (diff !== 0 && oldUserRef && oldUserSnap?.exists()) {
+                      tx.update(oldUserRef, { balance: increment(-diff) });
+                  }
+              }
+
+              tx.update(allocRef, {
+                  userId: newUserId,
+                  userName: userObj ? userObj.displayName : 'Unknown',
+                  amount: newAmount,
+                  date: isoDate,
+              });
           });
 
-          // 3. Update Local State
+          // Update Local State
           setAllocations(prev => prev.map(a => {
               if (a.id === editingAllocation.id) {
                   return {
@@ -266,26 +259,23 @@ export default function AdminProjectDetails() {
       if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar esta ASIGNACIÓN?\nSe descontará del saldo del profesional.")) return;
 
       try {
-          // 1. Revert User Balance
-          if (allocation.userId) {
-              const userRef = doc(db, "users", allocation.userId);
-              // Check if user exists before updating
-              const userSnap = await getDoc(userRef);
-              if (userSnap.exists()) {
-                   await updateDoc(userRef, {
-                      balance: increment(Number(allocation.amount))
-                  }); 
-              } else {
-                  console.warn("User not found, skipping balance reversal for allocation deletion.");
+          await runTransaction(db, async (tx) => {
+              const allocRef = doc(db, "allocations", allocation.id);
+              const allocSnap = await tx.get(allocRef);
+              if (!allocSnap.exists()) return;
+              const data = allocSnap.data();
+              const amt = Number(data.amount) || 0;
+              if (data.userId) {
+                  const userRef = doc(db, "users", data.userId);
+                  const userSnap = await tx.get(userRef);
+                  if (userSnap.exists()) {
+                      tx.update(userRef, { balance: increment(amt) });
+                  }
               }
-          }
+              tx.delete(allocRef);
+          });
 
-          // 2. Delete Document
-          await deleteDoc(doc(db, "allocations", allocation.id));
-
-          // 3. Update State
           setAllocations(prev => prev.filter(a => a.id !== allocation.id));
-          
           toast.success("Asignación eliminada.");
       } catch(e) {
           console.error("Error deleting allocation", e);

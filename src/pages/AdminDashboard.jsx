@@ -18,6 +18,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import { TrendingUp, CheckCircle, Activity, Folder, Clock, FolderOpen, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '../lib/logger';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -389,14 +390,20 @@ export default function AdminDashboard() {
     try {
       const raw = localStorage.getItem(FILTERS_STORAGE);
       if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
-    } catch { /* ignore */ }
+    } catch (err) {
+      logger.warn('AdminDashboard: malformed filters cache', err);
+    }
     return DEFAULT_FILTERS;
   });
   const navigate = useNavigate();
 
   // Persist filters
   useEffect(() => {
-    try { localStorage.setItem(FILTERS_STORAGE, JSON.stringify(filters)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(FILTERS_STORAGE, JSON.stringify(filters));
+    } catch (err) {
+      logger.warn('AdminDashboard: could not persist filters', err);
+    }
   }, [filters]);
 
   async function fetchAll() {

@@ -11,7 +11,7 @@ import {
   getDocs,
   updateDoc,
   increment,
-  deleteDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { formatCurrency } from "../utils/format";
 import {
@@ -259,40 +259,33 @@ export default function AdminUserDetails() {
   const handleDeleteExpense = async (expense) => {
       if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar este gasto definitivamente?\nSe revertirán los saldos asociados.")) return;
 
+      let balanceChange = 0;
       try {
-          // Reversal Logic
-          const isCredited = expense.status === 'pending' || expense.status === 'approved';
-          const isProjectCharged = expense.status === 'approved';
+          await runTransaction(db, async (tx) => {
+              const expRef = doc(db, "expenses", expense.id);
+              const snap = await tx.get(expRef);
+              if (!snap.exists()) return;
+              const data = snap.data();
+              const amt = Number(data.amount) || 0;
+              const balanceCredited = data.status !== 'rejected';
+              const projectCharged = data.status === 'approved';
+              if (balanceCredited && !data.isCompanyExpense) {
+                  tx.update(doc(db, "users", id), { balance: increment(-amt) });
+                  balanceChange = -amt;
+              }
+              if (projectCharged && data.projectId) {
+                  tx.update(doc(db, "projects", data.projectId), {
+                      expenses: increment(-amt),
+                  });
+              }
+              tx.delete(expRef);
+          });
 
-          let balanceChange = 0;
-
-          // 1. Revert User Balance (if it was credited and not company expense)
-          if (isCredited && !expense.isCompanyExpense) {
-              const userRef = doc(db, "users", id);
-              await updateDoc(userRef, {
-                  balance: increment(-expense.amount)
-              });
-              balanceChange = -expense.amount;
-          }
-
-          // 2. Revert Project Total (if it was charged)
-          if (isProjectCharged && expense.projectId) {
-              await updateDoc(doc(db, "projects", expense.projectId), {
-                  expenses: increment(-expense.amount)
-              });
-          }
-
-          // 3. Delete Document
-          await deleteDoc(doc(db, "expenses", expense.id));
-          
           setExpenses(prev => prev.filter(e => e.id !== expense.id));
-          
           if (balanceChange !== 0) {
               setUser(prev => ({ ...prev, balance: (prev.balance || 0) + balanceChange }));
           }
-
           toast.success("Gasto eliminado y saldos revertidos.");
-
       } catch (e) {
           console.error("Error deleting expense:", e);
           toast.error("Error al eliminar gasto.");
@@ -302,28 +295,27 @@ export default function AdminUserDetails() {
   const handleDeleteAllocation = async (allocation) => {
       if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar esta ASIGNACIÓN?\nSe descontará del saldo del profesional.")) return;
 
+      let localDelta = 0;
       try {
-          // 1. Revert User Balance (Allocation adds to balance, so we subtract)
-          const userRef = doc(db, "users", id);
-          
-          // Verify user exists (sanity check)
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-             await updateDoc(userRef, {
-                balance: increment(Number(allocation.amount))
-             });
-             // Update Local User State
-             setUser(prev => ({ ...prev, balance: (prev.balance || 0) - Number(allocation.amount) }));
-          } else {
-             console.warn("User not found, skipping balance update.");
+          await runTransaction(db, async (tx) => {
+              const allocRef = doc(db, "allocations", allocation.id);
+              const allocSnap = await tx.get(allocRef);
+              if (!allocSnap.exists()) return;
+              const data = allocSnap.data();
+              const amt = Number(data.amount) || 0;
+              const userRef = doc(db, "users", id);
+              const userSnap = await tx.get(userRef);
+              if (userSnap.exists()) {
+                  tx.update(userRef, { balance: increment(amt) });
+                  localDelta = -amt;
+              }
+              tx.delete(allocRef);
+          });
+
+          if (localDelta !== 0) {
+              setUser(prev => ({ ...prev, balance: (prev.balance || 0) + localDelta }));
           }
-
-          // 2. Delete Document
-          await deleteDoc(doc(db, "allocations", allocation.id));
-
-          // 3. Update Allocations State
           setAllocations(prev => prev.filter(a => a.id !== allocation.id));
-
           toast.success("Asignación eliminada.");
       } catch (e) {
           console.error("Error deleting allocation:", e);

@@ -27,6 +27,11 @@ export default defineConfig([
         varsIgnorePattern: '^[A-Z_]',
         argsIgnorePattern: '^[A-Z_]|^_',
       }],
+      // Truly empty `catch {}` blocks fail lint. Catches with a comment
+      // are allowed per ESLint's own semantics (comments count as content),
+      // so the convention is: either call `logger.*` or leave a comment
+      // explaining why silence is safe.
+      'no-empty': ['error', { allowEmptyCatch: false }],
     },
   },
 ])
