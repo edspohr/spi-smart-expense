@@ -1,61 +1,30 @@
 # docs/
 
-Documentación operacional del proyecto **SPI Smart Expense**. Los archivos de
-esta carpeta son insumos para trabajo con agentes (Claude Code, Antigravity)
-y para onboarding del equipo.
+Documentación operacional de **Expense Buddy** (plataforma genérica de
+rendición de gastos) y de su primer tenant, **SPI Smart Expense**. Los
+archivos de esta carpeta son insumos para trabajo con agentes (Claude Code)
+y para onboarding y handover a clientes.
 
 No contienen código ejecutable. No se importan desde `src/`.
 
 ---
 
-## Archivos actuales
+## Mapa de documentos
 
-### `implementation-plan.md`
+| Archivo / carpeta | Qué contiene | Cuándo se actualiza |
+|-------------------|--------------|---------------------|
+| `implementation-plan.md` | Plan v3 por olas (0-9): objetivo, scope, prompt ejecutable, dependencias e impacto en SPI. Tabla de estado al inicio. | Al cerrar cada ola |
+| `adr/` | Architecture Decision Records (0001-0009) con plantilla e índice en `adr/README.md`. | Cuando se toma o reemplaza una decisión de arquitectura |
+| `technical-debt.md` | Deuda técnica conocida (TD-NNN) con severidad, impacto y fix recomendado. | Al cerrar o descubrir deuda en cada ola |
+| `backlog.md` | Fuera de alcance deliberado, con razón y ola tras la cual reevaluar. | Al cerrar cada ola (podar lo que entró) |
+| `validation/ola-N.md` | Doc de validación por ola: qué cambió / cómo probarlo / estado esperado. | Al cerrar cada ola |
+| `runbooks/` | Procedimientos operativos (bootstrap de tenant, handover a cliente, deploy por tenant, secretos, restore). Se crean en Olas 7-8. | Cuando cambia la operación |
+| `testing-backlog-deploy.md` | Checklist de pruebas pre-deploy heredado del plan v2. | Según uso |
+| `archive/` | Documentos obsoletos con banner de fecha (plan v2, fases 1-6). | Nunca se editan |
 
-Plan activo de mejoras multi-fase. Cada fase es un prompt auto-contenido
-en inglés, listo para pegar en Claude Code. Fases entregables de forma
-independiente (cada una se puede `firebase deploy` sin romper la anterior).
-
-**Estado por fase** (actualizar al terminar cada una):
-
-| Fase | Scope | Estado |
-|------|-------|--------|
-| 1 | Constantes compartidas + `cardBrand` (AmEx, Citi, etc.) | ✅ Deployada 2026-04-16 |
-| 2 | Dashboard admin con KPIs + alertas + tendencia 30d | ✅ Deployada 2026-04-16 |
-| 3 | Approvals estilo ETFA (filtros, sort, bulk, atajos) | ✅ Deployada 2026-04-16 |
-| 4 | Mobile-first + PWA install prompt | ✅ Deployada 2026-04-16 |
-| 5 | Polish pass (skeletons, empty states, a11y, optimistic) | ✅ Deployada 2026-04-16 |
-| 6 † | Rediseño del dashboard (hero proyectos, anomalías, equipo) | ✅ Deployada 2026-04-16 |
-
-† Micro-fase post-plan, rediseño del dashboard.
-
-Marcar cada fila como ✅ al deployar a producción.
-
----
-
-## Parking lot — mejoras futuras
-
-- **Firestore transactions en escrituras relacionadas.** Las operaciones
-  que modifican balance del usuario y estado del gasto en paralelo no son
-  atómicas. Si la primera write succeed y la segunda falla, Firestore queda
-  inconsistente. Fix real requiere `runTransaction` con read-modify-write
-  atómico. Bug latente desde el código original, no introducido por el plan.
-
-- **Migración de `confirm()` nativos a `ConfirmDialog`.** Quedan 14 call
-  sites en `src/` usando el `confirm()` del navegador. La app ya tiene un
-  componente `ConfirmDialog` (Fase 3) con estilo consistente. Migrar cada
-  call site a state + component wiring unifica la UX de confirmaciones.
-
-- **Iconos PWA cuadrados.** El manifest (`public/manifest.webmanifest`)
-  referencia `/logo.png` (1024×433) para 192x192 y 512x512. Chrome los
-  estira. Reemplazar con assets cuadrados (`icon-192.png`, `icon-512.png`)
-  elimina la distorsión y habilita `"maskable"` como segunda entrada para
-  Android adaptive icons. Ver `_todo` en el manifest.
-
-- **Focus-ring sweep pendiente.** La utility `.focus-ring` se aplicó en
-  las páginas y modales del plan original. Falta aplicar en `AdminReports`,
-  `AdminUserSeeder`, `AdminModuleSelector` y cualquier nueva página futura.
-  Es un find-replace, no requiere nueva lógica.
+**Estado por ola:** ver la tabla al inicio de `implementation-plan.md`.
+El historial de deploys del plan v2 (fases 1-6, 2026-04-16) está al final de
+este archivo.
 
 ---
 
@@ -69,16 +38,18 @@ Desde la raíz del repo:
 claude
 \`\`\`
 
-Luego, para arrancar una fase:
+Luego, para arrancar una ola:
 
 \`\`\`
-Read docs/implementation-plan.md and execute Phase N exactly as
-specified. Show me a summary of changed files when done and wait for
-my approval before running npm run build.
+Read docs/implementation-plan.md and the ADRs it references, then execute
+Ola N exactly as specified. Show me a summary of changed files when done
+and wait for my approval before running npm run build.
 \`\`\`
 
-**Regla de oro:** una fase por turno. No ejecutar múltiples fases en la
-misma sesión sin revisar el diff entre cada una.
+**Regla de oro:** una ola por turno. No ejecutar múltiples olas en la
+misma sesión sin revisar el diff entre cada una. Cada ola cierra con su
+`validation/ola-N.md` y la actualización de `technical-debt.md`,
+`backlog.md` y `adr/` si corresponde.
 
 ---
 
@@ -99,6 +70,14 @@ Backend / infra: **Felipe Soto Santibáñez**
 ---
 
 ## Historial
+
+### Plan v3 — olas
+
+| Ola | Commit | Deployada |
+|-----|--------|-----------|
+| 0 | — | En curso |
+
+### Plan v2 — fases (archivado)
 
 | Fase | Commit | Deployada |
 |------|--------|-----------|

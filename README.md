@@ -6,6 +6,21 @@ This application leverages **Artificial Intelligence (Google Gemini)** to automa
 
 ---
 
+## 🧱 v3 foundations — Expense Buddy (Ola 0, 2026-10-24)
+
+SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-client expense-report platform where each client runs its own Firebase project from this single codebase.
+
+- **Tenant config**: `tenants/<id>.json` (branding, locale, auth, modules) injected at build time via `VITE_TENANT`; `index.html` title/description/theme colour and the Tailwind `brand` palette (CSS variables) follow the tenant.
+- **Env validation at boot**: `src/lib/env.ts` + `EnvError` list exactly which `VITE_*` variables are missing.
+- **TypeScript (gradual)**: `tsconfig.json` with `allowJs`, typed Firestore models in `src/types/models.ts`, new libs in TS.
+- **Tests**: Vitest + Testing Library (`npm test -- --run`), first suites on permissions, currency formatting, tenant and env.
+- **Cloud Functions workspace**: `functions/` (TypeScript, Node 22) with a `healthcheck` callable, wired in `firebase.json`.
+- **Firestore indexes versioned**: `firestore.indexes.json` (notifications, user expenses).
+- **CI**: GitHub Actions runs lint, typecheck, tests and builds for the `spi` and `demo` tenants.
+- **Docs**: `docs/implementation-plan.md` (Olas 0–9), `docs/adr/`, `docs/backlog.md`, `docs/technical-debt.md`.
+
+---
+
 ## 🆕 Recent Features (v2.0)
 
 - **Multi-currency totals**: All dashboard views now separate COP and USD expense totals, displayed as stacked currency blocks.
@@ -195,6 +210,9 @@ flowchart TD
 
     # Google Gemini AI
     VITE_GEMINI_API_KEY=your_gemini_api_key
+
+    # Tenant to build (tenants/<id>.json). Defaults to spi.
+    VITE_TENANT=spi
     ```
 
 4.  **Run the Development Server:**
@@ -220,8 +238,14 @@ spi-smart-expense/
 │   ├── utils/           # Helper functions
 │   ├── App.jsx          # Main Router configuration
 │   └── main.jsx         # Entry point
+│   ├── types/           # Firestore document types (models.ts)
+│   └── lib/tenant.ts    # Tenant config loader + theming
+├── tenants/             # One JSON per client (spi.json, demo.json)
+├── functions/           # Cloud Functions (TypeScript, Node 22)
+├── docs/                # Implementation plan, ADRs, backlog, technical debt
+├── scripts/             # Admin SDK scripts and data migrations
 ├── public/              # Static assets
-└── ...config files      # (vite.config.js, tailwind.config.js, etc.)
+└── ...config files      # (vite.config.js, tailwind.config.js, tsconfig.json, etc.)
 ```
 
 ---
@@ -230,16 +254,19 @@ spi-smart-expense/
 
 The project is configured for deployment on **Firebase Hosting**.
 
-1.  **Build the project:**
+1.  **Build the project for a tenant:**
 
     ```bash
-    npm run build
+    npm run build            # spi (default)
+    npm run build:demo       # Expense Buddy demo
     ```
 
-2.  **Deploy to Firebase:**
+2.  **Deploy to that tenant's Firebase project:**
     ```bash
-    firebase deploy
+    firebase deploy --project <tenant-project-id>
     ```
+
+    Hosting, Firestore rules and indexes, Storage rules and Cloud Functions deploy together. Deploy indexes before shipping any query that depends on them.
 
 ---
 

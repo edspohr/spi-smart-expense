@@ -7,17 +7,16 @@ export default {
         sans: ["Inter", "sans-serif"],
       },
       colors: {
-        // Keeping 'brand' but re-palette to something professional if needed,
-        // or just rely on Slate for the UI structure.
-        // Removed manual slate to allow all colors (zinc, etc)
+        // Values come from `--brand-*` CSS variables (index.css) so the
+        // palette can be swapped per tenant at runtime via applyTenantTheme().
         brand: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
         },
       },
       borderRadius: {

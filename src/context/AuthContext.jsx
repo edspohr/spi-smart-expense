@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { AuthContext } from "./AuthContextDefinition";
 import { resolvePermissions } from "../lib/permissions";
+import { tenant } from "../lib/tenant";
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -121,13 +122,9 @@ export function AuthProvider({ children }) {
       await batch.commit();
     } else {
       // New User
-      // AUTO-ADMIN FIX: Check if email belongs to initial admins to break Catch-22
-      const adminEmails = [
-        "edmundo@spohr.cl",
-        "admin@spi.cl",
-        "gerencia@spi.cl",
-      ];
-      const initialRole = adminEmails.includes(user.email)
+      // Bootstrap admins come from tenant config until the superadmin
+      // bootstrap script (Ola 3) replaces this path.
+      const initialRole = tenant.auth.bootstrapAdminEmails.includes(user.email)
         ? "admin"
         : "professional";
 

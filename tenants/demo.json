@@ -1,0 +1,40 @@
+{
+  "id": "demo",
+  "name": "Expense Buddy",
+  "shortName": "Expense Buddy",
+  "description": "Rendición de gastos inteligente para equipos en terreno.",
+  "branding": {
+    "logo": "/logo.png",
+    "themeColor": "#059669",
+    "palette": {
+      "50": "#ecfdf5",
+      "100": "#d1fae5",
+      "500": "#10b981",
+      "600": "#059669",
+      "700": "#047857",
+      "800": "#065f46",
+      "900": "#064e3b"
+    }
+  },
+  "locale": {
+    "country": "CL",
+    "language": "es-CL",
+    "baseCurrency": "CLP",
+    "currencies": ["CLP", "USD", "EUR"],
+    "taxIdLabel": "RUT",
+    "fxProvider": "mindicador"
+  },
+  "auth": {
+    "googleLogin": false,
+    "bootstrapAdminEmails": []
+  },
+  "modules": {
+    "bulkUpload": true,
+    "reports": true,
+    "reconciliation": false,
+    "balances": true
+  },
+  "security": {
+    "pinEnabled": false
+  }
+}

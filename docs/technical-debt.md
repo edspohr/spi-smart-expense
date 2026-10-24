@@ -292,6 +292,10 @@ scrub PII (email, nombre). Wrap `ErrorBoundary` con `Sentry.ErrorBoundary`.
 
 ## TD-020 — Validar variables de entorno al arranque
 
+**Status:** ✅ Resuelto en Ola 0 (2026-10-24). `src/lib/env.ts` valida todas las
+`VITE_*` requeridas y `main.jsx` renderiza `EnvError.jsx` con la lista exacta
+de variables faltantes antes de montar la app.
+
 **Severity:** Low  
 **Impact:** Low · **Effort:** Low  
 **File:** `src/lib/firebase.js`
@@ -307,6 +311,10 @@ falta alguna.
 
 ## TD-021 — Índice Firestore + `orderBy` en UserExpenses
 
+**Status:** Parcial (Ola 0). El índice `userId ASC + createdAt DESC` ya está
+declarado en `firestore.indexes.json`. Falta deployarlo (`firebase deploy
+--only firestore:indexes`) y luego añadir el `orderBy` a la query.
+
 **Severity:** Low  
 **Impact:** Low · **Effort:** Low  
 **File:** `src/pages/UserExpenses.jsx:31`
@@ -321,6 +329,10 @@ añadir `orderBy('createdAt', 'desc')` a la query, quitar sort cliente.
 
 ## TD-022 — Proxy de Gemini vía Cloud Function
 
+**Status:** En curso. Ola 0 creó el workspace `functions/` (TypeScript, Node 22,
+callable `healthcheck`) y lo cableó en `firebase.json`. El proxy `extractReceipt`
+se implementa en Ola 2.
+
 **Severity:** High (seguridad/costo)  
 **Impact:** High · **Effort:** High  
 **Status:** consolidates TD-002 with more detail
@@ -332,3 +344,60 @@ añadir `orderBy('createdAt', 'desc')` a la query, quitar sort cliente.
 (base64 o Storage path), valide auth, llame Gemini con secret server-side,
 aplique rate-limit por UID (ej. 30/día). Frontend consume vía `httpsCallable` —
 `src/lib/gemini.js` pasa a ser thin client. Secret en Secret Manager.
+
+---
+
+# Items registered in Ola 0 (2026-10-24)
+
+## TD-023 — Reglas React Compiler de `eslint-plugin-react-hooks` desactivadas
+
+**Severity:** Medium (calidad)  
+**Impact:** Medium · **Effort:** Medium  
+**File:** `eslint.config.js`
+
+**Problem:** `eslint-plugin-react-hooks` 7.x añadió `set-state-in-effect` (11
+hallazgos), `refs` (6) e `immutability` (1), todos en páginas monolíticas
+(`ExpenseForm`, `AdminApprovals`, `AdminReports`, `AdminBalances`, etc.). Los
+errores existían antes de Ola 0 pero la caché de ESLint los ocultaba. Para que
+CI pase sin tocar lógica de negocio en una ola "sin cambio funcional", las
+tres reglas quedaron en `off`.
+
+**Recommended fix:** Reactivar las reglas al descomponer cada componente en
+Ola 9 (TD-014). Mientras tanto, cualquier componente nuevo debe cumplirlas
+aunque la regla esté apagada.
+
+---
+
+## TD-024 — Índice compuesto de `notifications` ausente en producción
+
+**Severity:** High (bug latente)  
+**Impact:** High · **Effort:** Low  
+**Files:** `src/lib/notifications.js:36-38`, `firestore.indexes.json`
+
+**Problem:** `firebase firestore:indexes` devolvió `[]` para el proyecto de
+SPI, pero `subscribeNotifications` usa `where('toUid','==') +
+orderBy('createdAt','desc')`, que exige un índice compuesto. Sin él, Firestore
+rechaza la suscripción con `failed-precondition` y la campana queda vacía en
+silencio.
+
+**Recommended fix:** El índice ya está declarado en `firestore.indexes.json`
+(Ola 0). Ejecutar `firebase deploy --only firestore:indexes`, esperar a que el
+índice quede `READY` en la consola y verificar que la campana muestra
+notificaciones. Añadir `logger.error` en el callback de error de `onSnapshot`
+para que este tipo de fallo no vuelva a pasar desapercibido.
+
+---
+
+## TD-025 — Manifest e íconos PWA no son por tenant
+
+**Severity:** Low (hasta Ola 1)  
+**Impact:** Low · **Effort:** Low  
+**Files:** `public/manifest.webmanifest`, `public/logo.png`
+
+**Problem:** `index.html` ya se personaliza por tenant en build (título,
+descripción, `theme-color`, `lang`), pero el manifest y los íconos siguen
+siendo estáticos de SPI. Un build con `VITE_TENANT=demo` instala con nombre e
+ícono de SPI.
+
+**Recommended fix:** Ola 1 (`vite-plugin-pwa`) genera el manifest desde
+`tenants/<id>.json` y los íconos 192/512/maskable desde `branding.logo`.

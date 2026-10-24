@@ -33,6 +33,11 @@ vercel_env.txt
 # ESLint cache
 node_modules/.cache/
 
+# Test coverage & compiled Cloud Functions
+coverage/
+functions/lib/
+functions/node_modules/
+
 # Firebase CLI cache
 .firebase/
 
