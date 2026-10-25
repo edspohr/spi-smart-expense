@@ -58,10 +58,8 @@ Su escala Tailwind `brand` usa `600` para botones, así que el mapeo
 
 ## Ícono de app
 
-Monograma tipográfico sobre tile sólido **tinta** `ink-950`, en Instrument
-Serif: las letras en `ink-50` y la inicial de "buddy" en itálica `teal-400`
-`#00B5D6` (sobre oscuro el turquesa claro tiene más fuerza que `teal-600`).
-Monograma al ~54 % del ancho, espaciado ajustado a mano, sin degradados ni
-bordes. Expense Buddy: **ExB** (`scripts/brand/expense-buddy-icon.py`, lee
-los contornos de `scripts/brand/fonts`). Decisión:
-`docs/adr/0013-paleta-growth-buddies-light.md`.
+Un símbolo propio por app, no iniciales: silueta sólida blanca sobre tile
+turquesa `teal-600` (sin degradados ni bordes), trazos de ~100/1024 y
+legible a 40 px. Expense Buddy: la **"B-recibo"** (una B cuya base es el
+borde dentado de una boleta), `scripts/brand/expense-buddy-icon.py`.
+Decisión: `docs/adr/0013-paleta-growth-buddies-light.md`.
