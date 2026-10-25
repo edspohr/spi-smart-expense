@@ -39,3 +39,17 @@ semana), después enforce.
 - Costo adicional por tenant pequeño (Functions + Secret Manager + App
   Check), dentro del free tier a la escala de SPI.
 - Requiere emuladores en CI para tests de callables y rules.
+
+## Estado de implementación (2026-10-25, Ola 2)
+
+- Desplegables: `extractReceipt` (Gemini vía Vertex AI con IAM, ADR 0011; rate limit por
+  usuario y tenant), `reviewExpense`, `healthcheck`, triggers
+  `onExpenseWritten` y `onUserWritten`. Los callables de dinero
+  `editExpense`/`deleteExpense` se reemplazaron por el trigger de agregados
+  (ADR 0010).
+- App Check en modo monitor: `enforceAppCheck: false` en los `onCall`; el
+  cliente inicializa reCAPTCHA Enterprise solo con `VITE_RECAPTCHA_SITE_KEY`.
+  La fecha de enforce se anota en `docs/backlog.md`.
+- Hallazgo: además de la key de Gemini, `validateEnv(import.meta.env)`
+  incrustaba todas las `VITE_*` en el bundle. Corregido con lecturas
+  explícitas; la key de Gemini debe rotarse tras el deploy.

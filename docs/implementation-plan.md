@@ -24,7 +24,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 |-----|--------|----------------|--------|
 | 0 | Fundaciones (tenant config, TS, tests, Functions scaffold, CI) | Transparente | Deployada 2026-10-25 (`3a7b8e2`) |
 | 1 | PWA instalable | Visible positivo | Deployada 2026-10-25 (`f2ff128`) |
-| 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Pendiente |
+| 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | En curso |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Pendiente |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Pendiente |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Pendiente |
@@ -277,6 +277,21 @@ rápidas, estrictas y testeadas.
 **Impacto en SPI:** Fricción mitigada: (a) re-login transparente vía
 `getIdToken(true)`; (b) cold start de Gemini 1-3 s con skeleton claro,
 `minInstances` evaluado en backlog; (c) App Check en monitor antes de enforce.
+
+**Desviaciones implementadas (2026-10-25):**
+- En vez de `approveExpense`/`rejectExpense`/`editExpense`/`deleteExpense`,
+  un solo callable `reviewExpense` (aprobar/rechazar/reabrir) y un trigger
+  `onExpenseWritten` que deriva `users.balance` y `projects.expenses` de
+  cualquier escritura en `expenses` (ADR 0010). El cliente ya no escribe
+  dinero en ningún lado; crear/editar/borrar siguen siendo escrituras
+  directas validadas por rules.
+- Bootstrap de admins por script (`scripts/bootstrap-admins.mjs`) desde ya,
+  porque las rules nuevas impiden la auto-promoción cliente-side.
+- Gemini vía Vertex AI con `@google/genai` e IAM en lugar de Developer API +
+  Secret Manager (ADR 0011): no hay key que rotar y cada tenant procesa sus
+  recibos dentro de su propio proyecto GCP.
+- Orden de salida y cutover documentados en `docs/runbooks/deploy-ola-2.md`;
+  validación en `docs/validation/ola-2.md`.
 
 ### Prompt 2 (paste into Claude Code)
 

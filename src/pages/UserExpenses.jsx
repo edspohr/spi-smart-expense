@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import { Trash2, AlertCircle, Eye, Pencil, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,11 +51,6 @@ export default function UserExpenses() {
 
       try {
           await deleteDoc(doc(db, "expenses", expense.id));
-
-          if (!expense.isCompanyExpense) {
-               const userRef = doc(db, "users", currentUser.uid);
-               await updateDoc(userRef, { balance: increment(-expense.amount) });
-          }
 
           snapshotRef.current = null;
           toast.success("Rendición eliminada.");

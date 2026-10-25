@@ -1,103 +1,139 @@
 rules_version = '2';
 
+// Authorisation reads custom claims (role, active, permission flags) that the
+// onUserWritten Cloud Function mirrors from users/{uid}. No get()/exists()
+// lookups: rules stay cheap and cannot diverge from the user doc.
+//
+// Money fields (users.balance, projects.expenses) and status transitions are
+// written only by Cloud Functions: clients may create/edit/delete expenses
+// but never change `status`, and may not touch aggregates.
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if user is admin
-    function isAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+    // ---------- Identity helpers
+    function isAuth() { return request.auth != null; }
+    function claims() { return request.auth.token; }
+    function role() { return isAuth() && ('role' in claims()) ? claims().role : null; }
+    function isActive() { return isAuth() && claims().get('active', true) != false; }
+    function isAdmin() { return isActive() && role() in ['admin', 'superadmin']; }
+    function isAssistant() { return isActive() && role() == 'assistant'; }
+    function hasFlag(name) { return isActive() && claims().get(name, false) == true; }
+    function isSelf(uid) { return isAuth() && request.auth.uid == uid; }
+
+    function incoming() { return request.resource.data; }
+    function changedKeys() { return incoming().diff(resource.data).affectedKeys(); }
+    function unchanged(field) { return incoming().get(field, null) == resource.data.get(field, null); }
+
+    // ---------- Schema
+    function validStatus(s) { return s in ['pending', 'approved', 'rejected']; }
+    function validCurrency(c) { return c in ['COP', 'USD', 'EUR', 'CLP']; }
+    function nullableNumber(d, f) { return !(f in d) || d[f] == null || d[f] is number; }
+    function nullableString(d, f) { return !(f in d) || d[f] == null || d[f] is string; }
+
+    function validExpense(d) {
+      return d.userId is string && d.userId.size() > 0
+        && d.amount is number && d.amount > 0
+        && validCurrency(d.get('currency', 'COP'))
+        && validStatus(d.get('status', 'pending'))
+        && d.date is string && d.date.size() > 0
+        && d.createdAt is string
+        && nullableString(d, 'projectId')
+        && nullableNumber(d, 'amountCOP')
+        && nullableNumber(d, 'trm')
+        && (!('isCompanyExpense' in d) || d.isCompanyExpense is bool);
     }
 
-    // Helper function to check if user is assistant
-    function isAssistant() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'assistant';
+    function isColombiaExpense() { return resource.data.get('currency', 'COP') == 'COP'; }
+    function canReviewCurrent() {
+      return isAdmin()
+        || (hasFlag('canApprove') && !isColombiaExpense())
+        || (hasFlag('isColombiaApprover') && isColombiaExpense());
     }
 
-    // Helper: user has canApprove permission flag explicitly set to true
-    function hasCanApprove() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('permissions', {}).get('canApprove', false) == true;
-    }
-
-    // Helper: user has isColombiaApprover permission flag explicitly set to true
-    function hasColombiaApprover() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('permissions', {}).get('isColombiaApprover', false) == true;
-    }
-
-    // Helper: expense is a Colombia (COP) expense
-    function isColombiaExpense() {
-      return resource.data.get('currency', 'COP') == 'COP';
-    }
-
-    // Users: 
-    // - Read: Authenticated users (to find others for 'on behalf' logic if needed, or profile).
-    // - Create: User can create own doc, but role defaults to professional/cannot be admin.
-    // - Update: User can update own doc but CANNOT change role. Admin can update everything.
+    // ---------- users
     match /users/{userId} {
-      allow read: if request.auth != null;
-      
-      allow create: if request.auth != null && request.auth.uid == userId &&
-        (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'professional');
-        
-      allow update: if request.auth != null && (
-        (request.auth.uid == userId && (
-           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
-        )) || 
-        isAdmin()
-      );
+      allow read: if isActive();
+      // Self-registration: always a professional with a zero balance. Roles,
+      // permissions and bootstrap admins are set server-side (scripts/Functions).
+      allow create: if isSelf(userId)
+        && incoming().get('role', 'professional') == 'professional'
+        && !('permissions' in incoming())
+        && incoming().get('balance', 0) == 0;
+      allow update: if isAdmin()
+        || (isSelf(userId)
+            && changedKeys().hasOnly(['displayName', 'photoURL', 'forcePasswordChange', 'fcmTokens', 'updatedAt']));
+      allow delete: if isAdmin();
     }
-    
-    // Projects: Read assigned/authenticated, Write Admin only
+
+    // ---------- projects (cost centers)
     match /projects/{projectId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
-    }
-    
-    // Expenses: Create/Read own, Admin read/write all
-    match /expenses/{expenseId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if request.auth != null && (request.resource.data.userId == request.auth.uid || isAdmin() || isAssistant());
-      // Admin can update/delete any expense; submitter can update their own pending expenses;
-      // users with canApprove may update non-COP expenses; isColombiaApprover may update COP expenses.
-      allow update: if isAdmin() ||
-        (request.auth != null && resource.data.userId == request.auth.uid && resource.data.status == 'pending') ||
-        (hasCanApprove() && !isColombiaExpense()) ||
-        (hasColombiaApprover() && isColombiaExpense());
+      allow read: if isActive();
+      allow create, update: if isAdmin() && unchangedOrAbsentExpenses();
       allow delete: if isAdmin();
 
-      // Movements subcollection: append-only audit log.
-      // Any authenticated user may create (log a change); nobody may edit or delete.
+      function unchangedOrAbsentExpenses() {
+        // `expenses` is maintained by onExpenseWritten; admins may seed it at
+        // creation (0) but not edit it afterwards.
+        return resource == null || unchanged('expenses');
+      }
+    }
+
+    // ---------- expenses
+    match /expenses/{expenseId} {
+      allow read: if isActive()
+        && (resource.data.userId == request.auth.uid || canReviewCurrent());
+
+      allow create: if isActive()
+        && validExpense(incoming())
+        && incoming().get('status', 'pending') == 'pending'
+        && (incoming().userId == request.auth.uid || isAdmin() || isAssistant());
+
+      allow update: if isActive()
+        && validExpense(incoming())
+        && unchanged('status')
+        && unchanged('createdAt')
+        && (canReviewCurrent()
+            || (resource.data.userId == request.auth.uid
+                && resource.data.get('status', 'pending') == 'pending'
+                && unchanged('userId')));
+
+      allow delete: if isActive()
+        && (isAdmin()
+            || (resource.data.userId == request.auth.uid
+                && resource.data.get('status', 'pending') == 'pending'));
+
+      // Append-only audit trail; Functions write the status entries.
       match /movements/{movementId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
+        allow read: if isActive();
+        allow create: if isActive() && incoming().byUid == request.auth.uid;
         allow update, delete: if false;
       }
     }
 
-    // Allocations: Read own (or associated project?), Write Admin only
+    // ---------- allocations
     match /allocations/{allocationId} {
-      allow read: if request.auth != null;
+      allow read: if isActive();
       allow write: if isAdmin();
     }
 
-    // Invoices: Admin only
+    // ---------- invoices
     match /invoices/{invoiceId} {
       allow read, write: if isAdmin();
     }
 
-    // Notifications: users read/update their own; any signed-in user may create
-    // (approvers notify submitters); no deletes.
+    // ---------- notifications
     match /notifications/{notifId} {
-      allow read, update: if request.auth != null && resource.data.toUid == request.auth.uid;
-      allow create: if request.auth != null;
+      allow read: if isActive() && resource.data.toUid == request.auth.uid;
+      allow update: if isActive() && resource.data.toUid == request.auth.uid
+        && changedKeys().hasOnly(['read']);
+      allow create: if isActive()
+        && incoming().toUid is string
+        && incoming().get('read', false) == false;
       allow delete: if false;
     }
+
+    // ---------- server-only collections
+    match /rateLimits/{doc} { allow read, write: if false; }
+    match /aggregateLedger/{doc} { allow read, write: if false; }
   }
 }

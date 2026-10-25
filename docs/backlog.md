@@ -15,7 +15,10 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Reporte de variación presupuestaria (presupuesto vs. ejecutado por proyecto/usuario/mes) — TD-015 | Valor de negocio alto pero independiente del endurecimiento; mejor diseñarlo con feedback de SPI y Elecnor. | Ola 8 |
 | Renombrar el repo a `expense-buddy` | Cosmético; romper URLs de GitHub, CI y Firebase Hosting sin beneficio hasta que exista el tenant demo. | Ola 7 |
 | UX de login sin Google por tenant (`auth.googleLogin: false`) | El flag existe desde Ola 0, pero la pantalla de login solo se ajusta visualmente (ocultar botón). Falta revisar onboarding solo-password y mensajes de error. | Ola 3 |
-| `minInstances: 1` en Functions de Gemini | Elimina el cold start de 1-3 s pero cuesta ~USD 3-5/mes por tenant. Medir primero la latencia real con Sentry. | Ola 8 |
+| `minInstances: 1` en `extractReceipt` | Elimina el cold start (2-10 s en la primera lectura del día) pero cuesta ~USD 3-5/mes por tenant. Medir primero la latencia real con Sentry. | Ola 8 |
+| Fecha de enforce de App Check | Desplegado en monitor en Ola 2. Requiere registrar la key reCAPTCHA Enterprise (manual), una semana de métricas limpias y luego `enforceAppCheck: true` en los `onCall`. Anotar aquí la fecha cuando se active. | Tras el deploy de Ola 2 + 1 semana |
+| Service account dedicada para Functions | Hoy las Functions corren con la service account por defecto de Compute (rol Editor amplio). Crear `expense-buddy-functions@<proyecto>` con `datastore.user`, `firebaseauth.admin`, `aiplatform.user`, `logging.logWriter`, `eventarc.eventReceiver` y fijarla en `setGlobalOptions({ serviceAccount })`. | Ola 8 (operación) o al dar de alta el tenant demo |
+| Eliminar la key de Google AI Studio | Estuvo pública en el bundle hasta Ola 2 y ya nada la usa (Vertex AI con IAM). Borrarla en AI Studio / GCP Credenciales. | Inmediatamente después del deploy de Ola 2 |
 | Series históricas EUR→COP / EUR→CLP — TD-007 | Requiere API pagada; solo si contabilidad exige exactitud histórica en EUR. | Ola 7 |
 | PIN al abrir la app (`AppLock` de Comandas) | Se decidió PIN por acción (ADR 0005). Puede ofrecerse como opción por tenant si un cliente lo pide. | Ola 4 |
 | Mover la app a `app/` (estructura tipo Comandas) | Se mantiene la app en la raíz para evitar mover cientos de archivos (ADR 0002). | Ola 9 |

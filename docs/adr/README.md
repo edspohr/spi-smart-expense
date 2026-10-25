@@ -37,3 +37,5 @@ nombre en kebab-case en español.
 | [0007](0007-pais-y-moneda-por-tenant.md) | País y moneda por tenant | Aceptada | 7 |
 | [0008](0008-email-firebase-auth-mas-brevo.md) | Email: Firebase Auth nativo + Brevo | Aceptada | 3, 5 |
 | [0009](0009-migraciones-idempotentes-dry-run.md) | Migraciones idempotentes con dry-run | Aceptada | 0 |
+| [0010](0010-agregados-por-trigger.md) | Agregados de dinero por trigger, no por callables | Aceptada | 2 |
+| [0011](0011-gemini-via-vertex-ai.md) | Gemini vía Vertex AI (IAM, sin API key) | Aceptada | 2 |

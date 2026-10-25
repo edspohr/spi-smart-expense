@@ -24,6 +24,23 @@ import { AuthContext } from "./AuthContextDefinition";
 import { resolvePermissions } from "../lib/permissions";
 import { tenant } from "../lib/tenant";
 
+// Security rules read role/permissions from custom claims that a Cloud
+// Function mirrors from users/{uid}. When the cached ID token lags behind the
+// document (first login after a role change, or right after the migration),
+// force a refresh so the user never has to log out by hand.
+async function syncClaims(user, data) {
+  try {
+    const token = await user.getIdTokenResult();
+    const stale =
+      token.claims.role !== data.role ||
+      token.claims.tenantId !== tenant.id ||
+      (data.active === false) !== (token.claims.active === false);
+    if (stale) await user.getIdToken(true);
+  } catch (e) {
+    console.warn("Could not refresh ID token claims:", e);
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -122,17 +139,13 @@ export function AuthProvider({ children }) {
       await batch.commit();
     } else {
       // New User
-      // Bootstrap admins come from tenant config until the superadmin
-      // bootstrap script (Ola 3) replaces this path.
-      const initialRole = tenant.auth.bootstrapAdminEmails.includes(user.email)
-        ? "admin"
-        : "professional";
-
+      // Self-registration is always a professional: rules reject anything
+      // else. Admins are promoted server-side (scripts/bootstrap-admins.mjs).
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || user.email.split("@")[0],
-        role: initialRole,
+        role: "professional",
         balance: 0,
       });
     }
@@ -161,6 +174,7 @@ export function AuthProvider({ children }) {
               const data = userSnap.data();
               setUserRole(data.role);
               setPermissions(resolvePermissions(data));
+              await syncClaims(user, data);
             }
           }
         } catch (e) {

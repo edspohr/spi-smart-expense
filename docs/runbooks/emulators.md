@@ -64,8 +64,11 @@ Los rechazos de rules quedan en `firestore-debug.log`.
 
 ## Límites
 
-- Gemini sigue llamando a la API real con `VITE_GEMINI_API_KEY` del `.env`.
-  Usa "Ingresar Manualmente" para no consumir cuota.
+- `extractReceipt` llama a Vertex AI real (proyecto `spi-smart-expense`,
+  centavos por lectura) usando tus Application Default Credentials:
+  `gcloud auth application-default login` con una cuenta que tenga
+  `roles/aiplatform.user` en el proyecto. Usa "Ingresar Manualmente" para no
+  consumir cuota.
 - El proyecto de los emuladores es `spi-smart-expense` para que coincida con
   el `.env`, pero nada sale de localhost. El script de seed se niega a correr
   si `FIRESTORE_EMULATOR_HOST` no es local.

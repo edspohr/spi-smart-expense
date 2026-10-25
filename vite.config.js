@@ -81,13 +81,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/app-check'],
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
             'vendor-motion': ['framer-motion'],
             'vendor-ui': ['lucide-react', 'sonner'],
             'vendor-charts': ['recharts'],
             'vendor-xlsx': ['xlsx'],
-            'vendor-utils': ['jszip', '@google/generative-ai'],
+            'vendor-utils': ['jszip'],
           },
         },
       },
@@ -96,7 +96,7 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       setupFiles: ['./vitest.setup.ts'],
-      include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+      include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}', 'functions/src/**/*.test.ts'],
       css: false,
       mode,
     },

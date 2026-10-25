@@ -8,7 +8,7 @@ import RejectionModal from '../components/RejectionModal';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import { db } from '../lib/firebase';
-import { collection, query, getDocs, doc, increment, runTransaction, orderBy, limit } from 'firebase/firestore';
+import { collection, query, getDocs, doc, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import {
   CheckCircle, XCircle, Download, FileText, Eye, Pencil, Trash2,
@@ -21,17 +21,8 @@ import { canUserApprove } from '../lib/permissions';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../context/useAuth';
-import { notify } from '../lib/notifications';
 import { logger } from '../lib/logger';
-import { logMovements } from '../lib/audit';
-
-function stampReview(reviewer) {
-  return {
-    reviewedAt: new Date().toISOString(),
-    reviewedByUid: reviewer.uid,
-    reviewedByName: reviewer.name,
-  };
-}
+import { approveExpense, rejectExpense } from '../lib/expenseActions';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -120,17 +111,7 @@ function formatTotalsLine(byCurrency) {
 }
 
 export default function AdminApprovals() {
-  const { permissions, currentUser } = useAuth();
-
-  // Ref (not state) so the approve/reject handlers stay free of captured
-  // values and the keyboard-shortcut effect below need not depend on them.
-  const reviewerRef = useRef({ uid: 'unknown', name: 'unknown' });
-  useEffect(() => {
-    reviewerRef.current = {
-      uid: currentUser?.uid || 'unknown',
-      name: currentUser?.displayName || currentUser?.email || 'unknown',
-    };
-  }, [currentUser]);
+  const { permissions } = useAuth();
 
   // Data
   const [pendingExpenses, setPendingExpenses] = useState([]);
@@ -412,37 +393,14 @@ export default function AdminApprovals() {
   // Single approve
   const handleApprove = async (expense) => {
     try {
-      await runTransaction(db, async (tx) => {
-        const expRef = doc(db, "expenses", expense.id);
-        const snap = await tx.get(expRef);
-        if (!snap.exists()) throw new Error("Rendición no encontrada.");
-        const data = snap.data();
-        if (data.status === 'approved') return;
-        if (data.status === 'rejected') throw new Error("La rendición ya fue rechazada.");
-        tx.update(expRef, { status: "approved", ...stampReview(reviewerRef.current) });
-        if (expense.projectId) {
-          tx.update(doc(db, "projects", expense.projectId), {
-            expenses: increment(Number(expense.amount) || 0),
-          });
-        }
-      });
-      logMovements(expense.id, [{ field: 'status', from: 'pending', to: 'approved' }], reviewerRef.current);
+      await approveExpense(expense.id);
       toast.success("Gasto aprobado.");
       setPendingExpenses(prev => prev.filter(e => e.id !== expense.id));
       setHistoryExpenses(prev => [{ ...expense, status: 'approved' }, ...prev]);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(expense.id); return n; });
-      if (expense.userId && !expense.isCompanyExpense) {
-        notify({
-          toUid: expense.userId,
-          type: 'status_change',
-          title: 'Rendición aprobada',
-          body: `Tu rendición de ${expense.merchant || 'sin comercio'} fue aprobada.`,
-          expenseId: expense.id,
-        });
-      }
     } catch (error) {
-      console.error("Error approving:", error);
-      toast.error("Error al aprobar");
+      logger.error("Error approving:", error);
+      toast.error(error.message || "Error al aprobar");
     }
   };
 
@@ -454,24 +412,7 @@ export default function AdminApprovals() {
 
   const handleConfirmRejection = async (expense, reason) => {
     try {
-      await runTransaction(db, async (tx) => {
-        const expRef = doc(db, "expenses", expense.id);
-        const snap = await tx.get(expRef);
-        if (!snap.exists()) throw new Error("Rendición no encontrada.");
-        const data = snap.data();
-        if (data.status === 'rejected') return;
-        if (data.status === 'approved') throw new Error("La rendición ya fue aprobada.");
-        tx.update(expRef, { status: "rejected", rejectionReason: reason, ...stampReview(reviewerRef.current) });
-        if (expense.userId && !expense.isCompanyExpense) {
-          tx.update(doc(db, "users", expense.userId), {
-            balance: increment(-(Number(expense.amount) || 0)),
-          });
-        }
-      });
-      logMovements(expense.id, [
-        { field: 'status', from: 'pending', to: 'rejected' },
-        { field: 'rejectionReason', from: null, to: reason },
-      ], reviewerRef.current);
+      await rejectExpense(expense.id, reason);
       toast.success("Gasto rechazado y saldo devuelto.");
       setRejectionModalOpen(false);
       setSelectedExpenseToReject(null);
@@ -480,18 +421,9 @@ export default function AdminApprovals() {
         { ...expense, status: 'rejected', rejectionReason: reason }, ...prev,
       ]);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(expense.id); return n; });
-      if (expense.userId && !expense.isCompanyExpense) {
-        notify({
-          toUid: expense.userId,
-          type: 'rejection',
-          title: 'Rendición rechazada',
-          body: `Tu rendición de ${expense.merchant || 'sin comercio'} fue rechazada. Motivo: ${reason}`,
-          expenseId: expense.id,
-        });
-      }
     } catch (e) {
-      console.error("Error rejecting:", e);
-      toast.error("Error al rechazar");
+      logger.error("Error rejecting:", e);
+      toast.error(e.message || "Error al rechazar");
     }
   };
 
@@ -523,21 +455,7 @@ export default function AdminApprovals() {
 
     for (const c of chunk(toProcess, BULK_CHUNK_SIZE)) {
       const results = await Promise.allSettled(c.map(async (exp) => {
-        await runTransaction(db, async (tx) => {
-          const expRef = doc(db, "expenses", exp.id);
-          const snap = await tx.get(expRef);
-          if (!snap.exists()) throw new Error("Rendición no encontrada.");
-          const data = snap.data();
-          if (data.status === 'approved') return;
-          if (data.status === 'rejected') throw new Error("Rendición ya rechazada.");
-          tx.update(expRef, { status: "approved", ...stampReview(reviewerRef.current) });
-          if (exp.projectId) {
-            tx.update(doc(db, "projects", exp.projectId), {
-              expenses: increment(Number(exp.amount) || 0),
-            });
-          }
-        });
-        logMovements(exp.id, [{ field: 'status', from: 'pending', to: 'approved' }], reviewerRef.current);
+        await approveExpense(exp.id);
         return exp;
       }));
       results.forEach((r, i) => {
@@ -568,18 +486,6 @@ export default function AdminApprovals() {
         `Aprobadas ${successes.length} de ${toProcess.length}. Fallaron ${errors.size} — quedan seleccionadas.`
       );
     }
-    // Fire-and-forget notifications for each approved submitter
-    successes.forEach(exp => {
-      if (exp.userId && !exp.isCompanyExpense) {
-        notify({
-          toUid: exp.userId,
-          type: 'status_change',
-          title: 'Rendición aprobada',
-          body: `Tu rendición de ${exp.merchant || 'sin comercio'} fue aprobada.`,
-          expenseId: exp.id,
-        });
-      }
-    });
     setBulkBusy(false);
   };
 
@@ -605,24 +511,7 @@ export default function AdminApprovals() {
 
     for (const c of chunk(toProcess, BULK_CHUNK_SIZE)) {
       const results = await Promise.allSettled(c.map(async (exp) => {
-        await runTransaction(db, async (tx) => {
-          const expRef = doc(db, "expenses", exp.id);
-          const snap = await tx.get(expRef);
-          if (!snap.exists()) throw new Error("Rendición no encontrada.");
-          const data = snap.data();
-          if (data.status === 'rejected') return;
-          if (data.status === 'approved') throw new Error("Rendición ya aprobada.");
-          tx.update(expRef, { status: "rejected", rejectionReason: reason, ...stampReview(reviewerRef.current) });
-          if (exp.userId && !exp.isCompanyExpense) {
-            tx.update(doc(db, "users", exp.userId), {
-              balance: increment(-(Number(exp.amount) || 0)),
-            });
-          }
-        });
-        logMovements(exp.id, [
-          { field: 'status', from: 'pending', to: 'rejected' },
-          { field: 'rejectionReason', from: null, to: reason },
-        ], reviewerRef.current);
+        await rejectExpense(exp.id, reason);
         return exp;
       }));
       results.forEach((r, i) => {
@@ -651,18 +540,6 @@ export default function AdminApprovals() {
         `Rechazadas ${successes.length} de ${toProcess.length}. Fallaron ${errors.size} — quedan seleccionadas.`
       );
     }
-    // Fire-and-forget notifications for each rejected submitter
-    successes.forEach(exp => {
-      if (exp.userId && !exp.isCompanyExpense) {
-        notify({
-          toUid: exp.userId,
-          type: 'rejection',
-          title: 'Rendición rechazada',
-          body: `Tu rendición de ${exp.merchant || 'sin comercio'} fue rechazada. Motivo: ${reason}`,
-          expenseId: exp.id,
-        });
-      }
-    });
     setBulkRejectReason('');
     setBulkBusy(false);
   };
@@ -745,30 +622,9 @@ export default function AdminApprovals() {
     if (!selectedExpenseToDelete) return;
     try {
       const e = selectedExpenseToDelete;
-      await runTransaction(db, async (tx) => {
-        const expRef = doc(db, "expenses", e.id);
-        const snap = await tx.get(expRef);
-        if (!snap.exists()) return;
-        const data = snap.data();
-        const amt = Number(data.amount) || 0;
-        // Reversal depends on the current server-side status, not the stale
-        // client copy. Balance was credited when the doc was created (pending)
-        // and stays credited through approval. Only 'rejected' has already
-        // reversed the balance credit.
-        const balanceCredited = data.status !== 'rejected';
-        const projectCharged = data.status === 'approved';
-        tx.delete(expRef);
-        if (projectCharged && data.projectId) {
-          tx.update(doc(db, "projects", data.projectId), {
-            expenses: increment(-amt),
-          });
-        }
-        if (balanceCredited && data.userId && !data.isCompanyExpense) {
-          tx.update(doc(db, "users", data.userId), {
-            balance: increment(-amt),
-          });
-        }
-      });
+      // Balance and project reversals are derived server-side by the
+      // onExpenseWritten trigger from the deleted document's status.
+      await deleteDoc(doc(db, "expenses", e.id));
       toast.success("Rendición eliminada.");
       setPendingExpenses(prev => prev.filter(item => item.id !== e.id));
       setHistoryExpenses(prev => prev.filter(item => item.id !== e.id));

@@ -1,25 +1,22 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function token() { return request.auth.token; }
+    function isActive() { return request.auth != null && token().get('active', true) != false; }
+    function isAdmin() { return isActive() && token().get('role', '') in ['admin', 'superadmin']; }
+    function isApprover() {
+      return isActive()
+        && (token().get('canApprove', false) == true || token().get('isColombiaApprover', false) == true);
+    }
+
     match /receipts/{userId}/{fileName} {
-      // Read allowed for:
-      //   - the owner (path segment matches auth uid)
-      //   - admins (role == 'admin' in Firestore users doc)
-      //   - explicit approvers (permissions.canApprove == true), covering
-      //     the assistant/professional accounts that finance has granted
-      //     approval rights via permissions.js.
-      // The previous rule granted read to any authenticated user, exposing
-      // every uploaded receipt to the entire org.
-      allow read: if request.auth != null && (
-        request.auth.uid == userId ||
-        firestore.get(
-          /databases/(default)/documents/users/$(request.auth.uid)
-        ).data.role == 'admin' ||
-        firestore.get(
-          /databases/(default)/documents/users/$(request.auth.uid)
-        ).data.permissions.canApprove == true
-      );
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Owner, admins and designated approvers may read; roles come from
+      // custom claims (see functions/src/claims.ts), not a Firestore lookup.
+      allow read: if isActive() && (request.auth.uid == userId || isAdmin() || isApprover());
+      allow write: if isActive()
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf');
     }
   }
 }

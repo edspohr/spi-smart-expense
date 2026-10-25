@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
 import {
   initializeFirestore,
@@ -30,11 +31,32 @@ const firebaseConfig = {
 const isConfigured =
   firebaseConfig.apiKey && firebaseConfig.apiKey !== "your_api_key";
 
-let app, auth, googleProvider, db, storage;
+/** @type {import('firebase/app').FirebaseApp | undefined} */
+let app;
+/** @type {import('firebase/auth').Auth | undefined} */
+let auth;
+/** @type {GoogleAuthProvider | undefined} */
+let googleProvider;
+/** @type {import('firebase/firestore').Firestore | undefined} */
+let db;
+/** @type {import('firebase/storage').FirebaseStorage | undefined} */
+let storage;
 
 if (isConfigured) {
   try {
     app = initializeApp(firebaseConfig);
+    // App Check (reCAPTCHA Enterprise). Optional until the site key is
+    // registered in the Firebase console; enforcement is toggled there.
+    const recaptchaKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    if (recaptchaKey && !useEmulators) {
+      if (import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+      }
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
     auth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
     // IndexedDB cache: already-loaded expenses and projects render offline
@@ -70,4 +92,4 @@ export async function uploadReceiptImage(file, userId) {
   return downloadURL;
 }
 
-export { auth, googleProvider, db, storage, isConfigured };
+export { app, auth, googleProvider, db, storage, isConfigured, useEmulators };

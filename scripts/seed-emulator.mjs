@@ -230,11 +230,8 @@ async function main() {
     batch.set(db.doc(`expenses/${id}`), { ...baseExpense, ...data });
   }
   await batch.commit();
-
-  // Pending reimbursements credit the professional's balance on submission.
-  const pendingBalance = EXPENSES.filter((e) => e.userId === 'test-professional' && e.status !== 'rejected' && e.currency === 'COP')
-    .reduce((sum, e) => sum + e.amount, 0);
-  await db.doc('users/test-professional').set({ balance: pendingBalance }, { merge: true });
+  // users.balance and projects.expenses are derived by the onExpenseWritten
+  // trigger (functions emulator must be running), never written by seeds.
 
   console.log(`Users: ${TEST_USERS.map((u) => u.email).join(', ')}`);
   console.log(`Password for all test users: ${TEST_PASSWORD}`);

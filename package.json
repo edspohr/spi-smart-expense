@@ -14,13 +14,16 @@
     "build:demo": "VITE_TENANT=demo vite build",
     "functions:build": "npm --prefix functions run build",
     "icons": "python3 scripts/generate-icons.py spi && python3 scripts/generate-icons.py demo",
-    "emulators": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage --project spi-smart-expense --export-on-exit ./emulator-data",
-    "emulators:resume": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage --project spi-smart-expense --import ./emulator-data --export-on-exit ./emulator-data",
+    "emulators": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" npm run functions:build && PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage,functions --project spi-smart-expense --export-on-exit ./emulator-data",
+    "emulators:resume": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" npm run functions:build && PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage,functions --project spi-smart-expense --import ./emulator-data --export-on-exit ./emulator-data",
     "seed:emu": "node scripts/seed-emulator.mjs",
-    "dev:emu": "VITE_USE_EMULATORS=true vite"
+    "dev:emu": "VITE_USE_EMULATORS=true vite",
+    "test:rules": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:exec --only firestore --project rules-test-expense-buddy \"vitest --run --config vitest.rules.config.ts\"",
+    "claims:backfill": "node scripts/migrations/002-backfill-claims.mjs",
+    "admins:bootstrap": "node scripts/bootstrap-admins.mjs",
+    "vertex:check": "node scripts/vertex-check.mjs"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "firebase": "^12.6.0",
     "framer-motion": "^12.26.1",
     "jszip": "^3.10.1",
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",

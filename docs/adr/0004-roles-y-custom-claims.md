@@ -44,3 +44,18 @@ reemplazando la lista hardcodeada (patrón ETFA `user_invitations` +
 - `AdminUserSeeder` desaparece en favor de `/admin/users`.
 - Desactivar un usuario (`active: false`) cierra su sesión al instante.
 - Tests de rules deben cubrir cada rol x colección x operación.
+
+## Estado de implementación (2026-10-25, Ola 2)
+
+- Claims espejados por `onUserWritten`: `role`, `tenantId`, `active`,
+  `canApprove`, `canDelete`, `canExport`, `isColombiaApprover`
+  (`functions/src/claims.logic.ts`, compartido con el script de backfill
+  `scripts/migrations/002-backfill-claims.mjs`).
+- `AuthContext.syncClaims()` fuerza `getIdToken(true)` cuando el token
+  difiere del documento; no hay re-login manual.
+- El registro propio siempre crea `professional`; la auto-promoción por
+  email en el cliente se eliminó y la reemplaza
+  `scripts/bootstrap-admins.mjs` (lee `tenants/<id>.json`). El
+  `bootstrap-superadmin` y `/admin/users` llegan en Ola 3.
+- `firestore.rules` y `storage.rules` ya leen solo claims; 15 tests en
+  `tests/rules/firestore.rules.test.ts`.

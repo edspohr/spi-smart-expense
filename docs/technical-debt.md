@@ -27,6 +27,12 @@ The `cors.json` config is in the project root.
 
 ## TD-002 — Client-side Gemini API key exposure
 
+**Status:** ✅ Resuelto en Ola 2 (2026-10-25). Gemini se llama desde el callable
+`extractReceipt` con la key como secreto de Functions; `@google/generative-ai`
+salió del bundle. Se detectó además que `validateEnv(import.meta.env)` hacía
+incrustar todas las `VITE_*` (corregido). Pendiente operativo: rotar la key,
+que estuvo pública (runbook `deploy-ola-2.md`, paso 7).
+
 **Severity:** Medium  
 **File:** `src/lib/gemini.js` (line 7)
 
@@ -231,11 +237,11 @@ pivote (filas = proyecto/usuario, columnas = meses, celdas = allocated / spent
 
 ## TD-016 — Historial de aprobaciones enriquecido en modal de detalle
 
-**Status:** Parcial (2026-10-25). Aprobar y rechazar (individual y masivo) ya
-escriben `reviewedAt`, `reviewedByUid`, `reviewedByName` en el gasto y
-registran el cambio de `status` (y `rejectionReason`) en `movements` con el
-actor. Falta el componente `AuditTimeline` y el comentario opcional de
-aprobación (Ola 5).
+**Status:** Parcial (2026-10-25). El callable `reviewExpense` escribe
+`reviewedAt`, `reviewedByUid`, `reviewedByName` y las entradas de `movements`
+(`status`, `rejectionReason`) en la misma transacción server-side, para
+aprobar, rechazar y reabrir desde cualquier pantalla. Falta el componente
+`AuditTimeline` y el comentario opcional de aprobación (Ola 5).
 
 **Severity:** Medium (auditoría)  
 **Impact:** Medium · **Effort:** Medium  
@@ -335,9 +341,10 @@ añadir `orderBy('createdAt', 'desc')` a la query, quitar sort cliente.
 
 ## TD-022 — Proxy de Gemini vía Cloud Function
 
-**Status:** En curso. Ola 0 creó el workspace `functions/` (TypeScript, Node 22,
-callable `healthcheck`) y lo cableó en `firebase.json`. El proxy `extractReceipt`
-se implementa en Ola 2.
+**Status:** ✅ Resuelto en Ola 2 (2026-10-25). `functions/src/extractReceipt.ts`:
+Gemini vía Vertex AI con IAM (sin API key, ADR 0011), fallback de modelo con reintentos, rate limit diario
+por usuario (60) y por tenant (1500) en `rateLimits/`, `mode: 'health'`.
+Verificado en emuladores con un recibo sintético.
 
 **Severity:** High (seguridad/costo)  
 **Impact:** High · **Effort:** High  
@@ -439,3 +446,42 @@ server-side, acumular siempre en moneda base del tenant usando `amountCOP`
 (o el equivalente que defina `country.ts`) y rechazar la aprobación si un
 gasto FX no tiene tasa. Script de migración `recalculate-aggregates` con
 dry-run para corregir los acumulados históricos.
+
+**Update 2026-10-25 (Ola 2):** la regla vive ahora en un solo lugar
+(`functions/src/aggregates.logic.ts`, ADR 0010), así que el fix es un cambio
+en esa función pura más la migración de recálculo.
+
+---
+
+# Items registered in Ola 2 (2026-10-25)
+
+## TD-027 — Actualizar `firebase-functions` 6.x → 7.x
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low-Medium  
+**File:** `functions/package.json`
+
+**Problem:** El emulador avisa "package.json indicates an outdated version of
+firebase-functions". La 7.x trae breaking changes (Comandas ya la usa); no se
+hizo en Ola 2 para no mezclarlo con la primera salida a producción del backend.
+
+**Recommended fix:** Subir a `firebase-functions@^7` con los emuladores
+andando, revisar `onCall`/`onDocumentWritten` y `params`, correr los tests de
+`functions/` y `test:rules`.
+
+---
+
+## TD-028 — El saldo del dashboard puede llegar ~1 s tarde tras enviar
+
+**Severity:** Low (UX)  
+**Impact:** Low · **Effort:** Low  
+**Files:** `src/pages/UserDashboard.jsx`, `src/pages/AdminUserDetails.jsx`
+
+**Problem:** `users.balance` lo escribe el trigger `onExpenseWritten` (ADR
+0010). Tras enviar una rendición la app navega al dashboard y lee el saldo con
+`getDoc`; si llega antes que el trigger muestra el valor anterior hasta la
+próxima carga. En emuladores la latencia fue < 1 s; en producción con cold
+start puede ser mayor.
+
+**Recommended fix:** Suscribir el saldo con `onSnapshot` en `UserDashboard`
+(y en `AdminUserDetails`), lo que además encaja con el modo offline de Ola 6.

@@ -10,10 +10,12 @@ import {
   where,
   getDocs,
   updateDoc,
+  deleteDoc,
   increment,
   runTransaction,
 } from "firebase/firestore";
 import { formatCurrency } from "../utils/format";
+import { reviewExpense } from "../lib/expenseActions";
 import {
   ArrowLeft,
   CheckCircle,
@@ -200,26 +202,32 @@ export default function AdminUserDetails() {
   const statusSnapshotRef = useRef(null);
 
   const handleUpdateStatus = async (expenseId, newStatus, amount) => {
-    if (
-      !confirm(
-        `¿Estás seguro de cambiar el estado a ${newStatus.toUpperCase()}?`
-      )
-    )
+    const action = { approved: "approve", rejected: "reject", pending: "reopen" }[newStatus];
+    if (!action) return;
+
+    let reason;
+    if (action === "reject") {
+      reason = prompt("Motivo del rechazo:");
+      if (!reason || !reason.trim()) return;
+      reason = reason.trim();
+    } else if (!confirm(`¿Estás seguro de cambiar el estado a ${newStatus.toUpperCase()}?`)) {
       return;
+    }
 
     const exp = expenses.find((e) => e.id === expenseId);
     if (!exp) return;
 
-    // Optimistic: snapshot current expenses and user before mutating.
+    // Optimistic UI; the server (reviewExpense + onExpenseWritten) owns the
+    // real status, audit trail and balance.
     statusSnapshotRef.current = { expenses, user };
-
     let balanceChange = 0;
-    if (newStatus === "rejected" && !exp.isCompanyExpense) {
-      balanceChange = -amount;
+    if (!exp.isCompanyExpense) {
+      if (newStatus === "rejected" && exp.status !== "rejected") balanceChange = -amount;
+      if (newStatus !== "rejected" && exp.status === "rejected") balanceChange = amount;
     }
 
     setExpenses((prev) =>
-      prev.map((e) => (e.id === expenseId ? { ...e, status: newStatus } : e))
+      prev.map((e) => (e.id === expenseId ? { ...e, status: newStatus, rejectionReason: reason ?? null } : e))
     );
     if (balanceChange !== 0) {
       setUser((prev) => ({
@@ -229,57 +237,28 @@ export default function AdminUserDetails() {
     }
 
     try {
-      if (newStatus === "rejected" && !exp.isCompanyExpense) {
-        const userRef = doc(db, "users", id);
-        await updateDoc(userRef, { balance: increment(-amount) });
-      }
-
-      await updateDoc(doc(db, "expenses", expenseId), { status: newStatus });
-
-      if (newStatus === "approved" && exp.projectId) {
-        await updateDoc(doc(db, "projects", exp.projectId), {
-          expenses: increment(amount),
-        });
-      }
-
+      await reviewExpense(expenseId, action, reason);
       statusSnapshotRef.current = null;
       toast.success("Estado actualizado.");
     } catch (e) {
       console.error("Error updating status:", e);
-      // Rollback
       if (statusSnapshotRef.current) {
         setExpenses(statusSnapshotRef.current.expenses);
         setUser(statusSnapshotRef.current.user);
       }
       statusSnapshotRef.current = null;
-      toast.error("Error al actualizar. Se restauró el estado anterior.");
+      toast.error(e.message || "Error al actualizar. Se restauró el estado anterior.");
     }
   };
 
   const handleDeleteExpense = async (expense) => {
       if (!confirm("ADVERTENCIA: ¿Estás seguro de eliminar este gasto definitivamente?\nSe revertirán los saldos asociados.")) return;
 
-      let balanceChange = 0;
+      // Balance/project reversals are applied server-side by onExpenseWritten.
+      const balanceChange =
+          expense.status !== 'rejected' && !expense.isCompanyExpense ? -(Number(expense.amount) || 0) : 0;
       try {
-          await runTransaction(db, async (tx) => {
-              const expRef = doc(db, "expenses", expense.id);
-              const snap = await tx.get(expRef);
-              if (!snap.exists()) return;
-              const data = snap.data();
-              const amt = Number(data.amount) || 0;
-              const balanceCredited = data.status !== 'rejected';
-              const projectCharged = data.status === 'approved';
-              if (balanceCredited && !data.isCompanyExpense) {
-                  tx.update(doc(db, "users", id), { balance: increment(-amt) });
-                  balanceChange = -amt;
-              }
-              if (projectCharged && data.projectId) {
-                  tx.update(doc(db, "projects", data.projectId), {
-                      expenses: increment(-amt),
-                  });
-              }
-              tx.delete(expRef);
-          });
+          await deleteDoc(doc(db, "expenses", expense.id));
 
           setExpenses(prev => prev.filter(e => e.id !== expense.id));
           if (balanceChange !== 0) {

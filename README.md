@@ -26,6 +26,15 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Per-tenant manifest and icons**: manifest generated from `tenants/<id>.json`; square 192/512/maskable/apple-touch icons in `public/icons/<id>/` (`npm run icons`, Python + Pillow).
 - **Offline reads**: Firestore `persistentLocalCache` keeps already-loaded data available without network.
 
+### Ola 2 — Secure backend (2026-10-25)
+
+- **Money is written server-side only**: the `onExpenseWritten` Cloud Function derives `users.balance` and `projects.expenses` from every expense create/edit/delete/status change (idempotent via `aggregateLedger`). No page writes balances anymore.
+- **Approvals through `reviewExpense`**: approve / reject / reopen run in one server transaction that authorises by claims, stamps the reviewer, appends the audit movement and notifies the submitter.
+- **Gemini behind `extractReceipt`, on Vertex AI**: Functions call Gemini through Vertex AI with IAM (`@google/genai`), so there is no API key anywhere; model fallback, retries and daily rate limits (per user and per tenant) live on the server. The web bundle no longer contains a key nor the Gemini SDK.
+- **Custom claims**: `onUserWritten` mirrors role/permissions into the ID token; `firestore.rules` and `storage.rules` authorise from claims with field-level schema validation (15 rules tests, `npm run test:rules`). Self-registration is always `professional`; `scripts/bootstrap-admins.mjs` promotes a tenant's bootstrap admins.
+- **App Check** (reCAPTCHA Enterprise) wired behind `VITE_RECAPTCHA_SITE_KEY`, monitor mode first.
+- Deploy order and cutover: `docs/runbooks/deploy-ola-2.md`.
+
 ---
 
 ## 🆕 Recent Features (v2.0)
@@ -216,7 +225,6 @@ flowchart TD
     VITE_FIREBASE_APP_ID=your_app_id
 
     # Google Gemini AI
-    VITE_GEMINI_API_KEY=your_gemini_api_key
 
     # Tenant to build (tenants/<id>.json). Defaults to spi.
     VITE_TENANT=spi

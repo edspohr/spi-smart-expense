@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, FileText, Loader2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
 
@@ -148,14 +148,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         });
       }
 
-      // Adjust balance if amount changed
-      const oldAmount = Number(expense.amount);
-      const diff = newAmount - oldAmount;
-      if (diff !== 0 && !expense.isCompanyExpense && expense.userId) {
-        const userRef = doc(db, "users", expense.userId);
-        await updateDoc(userRef, { balance: increment(diff) });
-      }
-
+      // Balance follows the amount change via the onExpenseWritten trigger.
       toast.success("Rendición actualizada exitosamente.");
       onSave({ ...expense, ...updates });
       onClose();

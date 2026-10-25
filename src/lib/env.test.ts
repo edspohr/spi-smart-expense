@@ -17,9 +17,9 @@ describe('validateEnv', () => {
   it('treats .env.example placeholders and blanks as missing', () => {
     const result = validateEnv({
       ...complete,
-      VITE_GEMINI_API_KEY: 'your_gemini_api_key',
+      VITE_FIREBASE_PROJECT_ID: 'your_project_id',
       VITE_FIREBASE_APP_ID: '   ',
     });
-    expect(result.missing).toEqual(['VITE_FIREBASE_APP_ID', 'VITE_GEMINI_API_KEY']);
+    expect(result.missing).toEqual(['VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_APP_ID']);
   });
 });

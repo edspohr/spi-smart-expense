@@ -6,7 +6,7 @@ import { parseExpenseDocuments, checkGeminiHealth } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
 import {
   collection, getDocs, query, where,
-  doc, increment, writeBatch,
+  doc, writeBatch,
 } from 'firebase/firestore';
 import {
   Upload, Loader2, X, CheckCircle, AlertTriangle,
@@ -360,8 +360,6 @@ export default function BulkUpload() {
           trmSource:     item.trmSource || null,
           bulkUpload:    true,
         });
-        const userRef = doc(db, 'users', currentUser.uid);
-        batch.set(userRef, { balance: increment(Number(item.amount)) }, { merge: true });
       }
       await batch.commit();
     }

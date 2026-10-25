@@ -4,7 +4,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/useAuth';
 import { parseExpenseDocuments, checkGeminiHealth } from '../lib/gemini';
 import { db, uploadReceiptImage } from '../lib/firebase';
-import { collection, getDocs, query, where, doc, increment, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, writeBatch } from 'firebase/firestore';
 import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle, CreditCard, Calendar, MousePointer2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format'; 
 import { useNavigate } from 'react-router-dom';
@@ -501,17 +501,6 @@ export default function ExpenseForm() {
                 amountCOP: NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
             });
-
-            if (!isProjectExpense) {
-                const userRef = doc(db, "users", targetUid);
-                // For pending expenses, we typically DO NOT credit balance immediately, 
-                // but if the architecture credits upon CLAIM (not approval), then assume yes.
-                // However, user usually wants balance = "amount waiting to be reimbursed".
-                // If the app credits balance upon submission:
-                batch.set(userRef, {
-                    balance: increment(item.amount)
-                }, { merge: true });
-            }
         }
 
         await batch.commit();
