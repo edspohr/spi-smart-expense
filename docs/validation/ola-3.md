@@ -103,4 +103,9 @@ solo superadmin. Nueva colección `settings`. 17 tests de rules, 51 unitarios.
 
 ## Estado del deploy
 
-- Pendiente. Ver `docs/runbooks/deploy-ola-3.md`.
+- 2026-10-25: deploy completo en `spi-smart-expense`: 10 Functions (5 nuevas
+  `admin*`), migración 003 aplicada a los 12 usuarios, `edmundo@spohr.cl`
+  promovido a superadmin (claims verificados), hosting + rules liberados.
+  El bundle en vivo incluye la gestión de usuarios; `adminListUsers` sin
+  sesión devuelve `UNAUTHENTICATED`.
+- Pendiente: verificación con sesión real (ver `docs/pendientes.md`).

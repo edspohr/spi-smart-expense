@@ -8,6 +8,11 @@ Marcar `[x]` con la fecha al cerrar.
 
 ## Abiertos
 
+- [ ] **Probar la Ola 3 en producción** (5 min): recargar la app (o cerrar y
+  abrir sesión) y confirmar que ves Configuración → Usuarios y Ajustes;
+  revisar que la lista muestra a los 12 usuarios; invitar un correo propio de
+  prueba, completar el correo, entrar y luego eliminarlo. Confirmar con un
+  admin de SPI que no ve esa sección.
 - [ ] **Verificar Ola 2 en producción** (5 min): entrar como admin a
   https://spi-smart-expense.web.app, revisar que la consola del navegador no
   muestre `permission-denied`, subir un recibo en "Nueva Rendición", aprobar
