@@ -6,6 +6,8 @@ import { defineInt, defineString } from 'firebase-functions/params';
 // FUNCTIONS_REGION must match the tenant's Firestore location (triggers are
 // routed there) and the client's `functionsRegion` in tenants/<id>.json.
 export const FUNCTIONS_REGION = defineString('FUNCTIONS_REGION', { default: 'us-central1' });
+// Region for scheduled functions; must offer Cloud Scheduler (southamerica-west1 does not).
+export const SCHEDULER_REGION = defineString('SCHEDULER_REGION', { default: 'us-central1' });
 export const TENANT_ID = defineString('TENANT_ID', { default: 'spi' });
 // Tenant base currency; foreign-currency expenses compare `amountCOP` (the
 // stored base-currency equivalent, TD-026) against PIN thresholds.

@@ -4,7 +4,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
-import { BASE_CURRENCY, COUNTRY, nowIso, requireAuth } from './common';
+import { BASE_CURRENCY, COUNTRY, SCHEDULER_REGION, nowIso, requireAuth } from './common';
 import { activeDelegate, approvalPolicyFrom, pendingApproverUids, planOnCreate, type ApprovalFlow, type Delegation } from './approval.logic';
 import { notifyUser } from './notify';
 
@@ -158,7 +158,7 @@ export const setDelegation = onCall(async (req) => {
       toUid: delegation.toUid,
       type: 'assignment',
       title: 'Te delegaron aprobaciones',
-      body: `${actor.name} te delegó sus aprobaciones hasta el ${new Date(delegation.until).toLocaleDateString('es-CO')}.`,
+      body: `${actor.name} te delegó sus aprobaciones hasta el ${new Date(delegation.until).toLocaleDateString(COUNTRY.value() === 'CL' ? 'es-CL' : 'es-CO')}.`,
     });
   }
   return { ok: true, delegation, updated };
@@ -166,7 +166,9 @@ export const setDelegation = onCall(async (req) => {
 
 // Daily reminder (weekdays, 08:00 tenant time) for expenses pending longer
 // than staleDays. Opt-in per tenant (approvalPolicy.staleReminders).
-export const staleApprovalReminders = onSchedule({ schedule: '0 8 * * 1-5', timeZone: TIMEZONE }, async () => {
+// Runs in SCHEDULER_REGION: Cloud Scheduler is not offered in every region
+// (e.g. southamerica-west1); the function still reads the tenant's Firestore.
+export const staleApprovalReminders = onSchedule({ schedule: '0 8 * * 1-5', timeZone: TIMEZONE, region: SCHEDULER_REGION }, async () => {
   const policy = await loadApprovalPolicy();
   if (!policy.staleReminders) return;
   const db = getFirestore();

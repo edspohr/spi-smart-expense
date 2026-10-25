@@ -7,7 +7,7 @@
 //
 //   npm run seed:demo                                   # emulators (project expense-buddy-demo)
 //   npm run reset:demo                                  # wipe demo data (keeps accounts) and reseed
-//   node scripts/seed-demo.mjs --prod --key path/to/sa.json [--password X] [--reset]
+//   node scripts/seed-demo.mjs --prod [--key path/to/sa.json] [--password X] [--reset]   (ADC when no --key)
 //
 // Accounts use the password from --password (or DEMO_PASSWORD); in the
 // emulators it defaults to Demo2026!. In production a random password is
@@ -30,23 +30,26 @@ if (!prod) {
   process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8080';
   process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
 }
-const { initializeApp, cert } = await import('firebase-admin/app');
+const { initializeApp, cert, applicationDefault } = await import('firebase-admin/app');
 const { getAuth } = await import('firebase-admin/auth');
 const { getFirestore } = await import('firebase-admin/firestore');
 
 if (prod) {
+  // Either a service-account key (--key) or your gcloud Application Default
+  // Credentials (`gcloud auth application-default login` + set-quota-project).
   const keyPath = opt('--key');
-  if (!keyPath || !existsSync(keyPath)) {
-    console.error('--prod needs --key <service-account.json> of the demo project');
+  if (keyPath && !existsSync(keyPath)) {
+    console.error(`Key file not found: ${keyPath}`);
     process.exit(1);
   }
-  const sa = JSON.parse(readFileSync(keyPath, 'utf8'));
-  if (!/demo/i.test(sa.project_id)) {
-    console.error(`Refusing: ${sa.project_id} does not look like a demo project.`);
+  const sa = keyPath ? JSON.parse(readFileSync(keyPath, 'utf8')) : null;
+  const target = sa?.project_id ?? projectId;
+  if (!/demo/i.test(target)) {
+    console.error(`Refusing: ${target} does not look like a demo project.`);
     process.exit(1);
   }
-  initializeApp({ credential: cert(sa), projectId: sa.project_id });
-  console.log(`Target: PRODUCTION ${sa.project_id}`);
+  initializeApp({ ...(sa ? { credential: cert(sa) } : { credential: applicationDefault() }), projectId: target });
+  console.log(`Target: PRODUCTION ${target} (${sa ? 'service account key' : 'gcloud ADC'})`);
 } else {
   initializeApp({ projectId });
   console.log(`Target: emulators (${projectId})`);

@@ -53,8 +53,30 @@ gcloud projects add-iam-policy-binding elecnor-gastos \
   --role="roles/aiplatform.user" --condition=None
 ```
 
-Si el primer deploy de Functions falla por el agente de Eventarc, esperar
-5 minutos y reintentar (ver `deploy-ola-2.md`).
+Si el primer deploy de Functions falla por el agente de Eventarc o con
+"Could not create Cloud Run service" (500), esperar 1-5 minutos y
+reintentar con `--force` (también fija la política de limpieza de
+imágenes). Pasó con SPI y con el demo.
+
+Lo que se puede hacer sin consola (hecho así en el demo):
+
+```bash
+gcloud firestore databases create --location=southamerica-west1 --type=firestore-native --project <proyecto>
+# bucket por defecto de Firebase Storage
+curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <proyecto>" -H "Content-Type: application/json" \
+  -d '{"location":"southamerica-west1","storageClass":"REGIONAL"}' \
+  https://firebasestorage.googleapis.com/v1alpha/projects/<proyecto>/defaultBucket
+```
+
+Authentication sí requiere el clic "Comenzar" en la consola (la API que
+lo inicializa convierte el proyecto en Identity Platform). Después, el
+registro se apaga con `PATCH .../admin/v2/projects/<proyecto>/config` y
+`client.permissions.disabledUserSignup: true`.
+
+**Cloud Scheduler no existe en `southamerica-west1`:** el script deja
+`SCHEDULER_REGION=southamerica-east1` en `functions/.env.<proyecto>` para
+la función programada.
 
 ## 4. Marca
 
@@ -97,8 +119,12 @@ expense-buddy-demo` (los archivos ya existen). Para cargar los datos
 ficticios en producción:
 
 ```bash
-node scripts/seed-demo.mjs --prod --key path/to/demo-sa.json --password '<clave para mostrar>'
+gcloud auth application-default login
+gcloud auth application-default set-quota-project expense-buddy-demo
+node scripts/seed-demo.mjs --prod > scripts/demo-credentials.local   # genera la clave; archivo ignorado por git
 ```
+
+(`--key <sa.json>` sigue disponible si se prefiere una service account.)
 
 `--reset` lo devuelve al estado inicial antes de cada presentación.
 

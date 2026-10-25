@@ -83,7 +83,7 @@ Backend / infra: **Felipe Soto Santibáñez**
 | 4 | `23bfff1` | 2026-10-25 |
 | 5 | `ed26b9c` | 2026-10-25 |
 | 6 | `1f5d0af` | 2026-10-25 |
-| 7 | `6378638` | 2026-10-25 (SPI; demo pendiente) |
+| 7 | `6378638` | 2026-10-25 (SPI y demo) |
 
 ### Plan v2 — fases (archivado)
 

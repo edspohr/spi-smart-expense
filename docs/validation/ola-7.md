@@ -125,5 +125,15 @@ contienen secretos).
   y con BanRep; `healthcheck` responde `ok`; login sin errores de consola,
   "Regístrate aquí" visible. El claim `baseCurrency` llega a cada usuario en
   su próxima escritura; mientras tanto las reglas asumen `COP`.
-- Demo (`expense-buddy-demo`): pendiente de que exista el proyecto Firebase
-  (ver `docs/pendientes.md`).
+- 2026-10-25: demo (`expense-buddy-demo`, https://expense-buddy-demo.web.app).
+  Firestore y Storage en `southamerica-west1`, Auth con correo/contraseña y
+  registro desactivado en el servidor, APIs y rol Vertex, reglas, índices,
+  18 Functions y hosting. Datos sembrados con ADC. Verificado: 10 pendientes
+  con flujo, 13 aprobados, 2 rechazados; saldos iguales a los emuladores;
+  claims `tenantId: demo` / `baseCurrency: CLP`; Gemini responde vía Vertex
+  en el proyecto; `healthcheck` ok; login verde sin errores de consola y
+  manifest `Expense Buddy` / `es-CL` / `#059669`. Falta: ingresar con una
+  cuenta real desde el navegador y el teléfono (pendiente del responsable).
+- Ajuste: `staleApprovalReminders` corre en `SCHEDULER_REGION` porque Cloud
+  Scheduler no existe en `southamerica-west1` (demo: `southamerica-east1`;
+  SPI no cambia).

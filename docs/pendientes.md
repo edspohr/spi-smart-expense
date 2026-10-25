@@ -50,15 +50,19 @@ Marcar `[x]` con la fecha al cerrar.
   tu PIN en Mi Espacio → Seguridad y activarlo en Ajustes; avisar a los
   admins para que creen el suyo (verán un aviso amarillo).
 
-- [ ] **Crear el proyecto Firebase del demo** `expense-buddy-demo` (para
-  mostrar a Elecnor), siguiendo `docs/runbooks/bootstrap-tenant.md` pasos
-  2-3: Blaze, Firestore y Storage en `southamerica-west1`, Email/contraseña
-  con registro **desactivado**, app Web (pásame la config o llena
-  `.env.demo` desde `.env.demo.example`), y los dos comandos `gcloud`
-  (APIs + rol Vertex). Luego yo deployo, siembro los datos y te paso las
-  cuentas. Opcional: clave reCAPTCHA para App Check.
+- [ ] **Probar el demo** en https://expense-buddy-demo.web.app (10 min):
+  entrar como `rodrigo.pizarro@andesenergia.demo` (admin) con la clave de
+  `scripts/demo-credentials.local`, aprobar algo; entrar como
+  `diego.munoz@…` y aprobar a su equipo en "Mis aprobaciones"; rendir con
+  foto de una boleta chilena desde el teléfono e instalar la PWA. Antes de
+  cada presentación: `node scripts/seed-demo.mjs --prod --reset`.
+- [ ] Opcional demo: clave reCAPTCHA Enterprise para App Check
+  (`expense-buddy-demo.web.app`) y clave Web Push si se quiere mostrar push.
 
 ## Cerrados
+
+- [x] 2026-10-25 — Crear el proyecto Firebase del demo `expense-buddy-demo`
+  (Blaze, app Web, Authentication con correo/contraseña).
 
 - [x] 2026-10-25 — Habilitar APIs de Functions/Vertex y rol IAM en
   `spi-smart-expense`.

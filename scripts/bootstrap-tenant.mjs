@@ -73,7 +73,7 @@ writeOnce(`tenants/${id}.json`, JSON.stringify(tenant, null, 2) + '\n');
 
 writeOnce(
   `functions/.env.${projectId}`,
-  `FUNCTIONS_REGION=${region}\nTENANT_ID=${id}\nBASE_CURRENCY=${COUNTRY.baseCurrency}\nCOUNTRY=${country}\nTIMEZONE=${COUNTRY.timezone}\nVERTEX_LOCATION=global\nGEMINI_DAILY_LIMIT_USER=60\nGEMINI_DAILY_LIMIT_TENANT=1500\nEMAIL_PROVIDER=none\nEMAIL_FROM=\nAPP_NAME=${name}\nAPP_URL=https://${projectId}.web.app\nBRAND_COLOR=${color}\n`,
+  `FUNCTIONS_REGION=${region}\nSCHEDULER_REGION=${region === 'southamerica-west1' ? 'southamerica-east1' : region}\nTENANT_ID=${id}\nBASE_CURRENCY=${COUNTRY.baseCurrency}\nCOUNTRY=${country}\nTIMEZONE=${COUNTRY.timezone}\nVERTEX_LOCATION=global\nGEMINI_DAILY_LIMIT_USER=60\nGEMINI_DAILY_LIMIT_TENANT=1500\nEMAIL_PROVIDER=none\nEMAIL_FROM=\nAPP_NAME=${name}\nAPP_URL=https://${projectId}.web.app\nBRAND_COLOR=${color}\n`,
 );
 
 writeOnce(
