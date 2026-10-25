@@ -124,8 +124,14 @@ Ola 0 pasa a "Deployada" en la tabla del plan al publicar. ☐
 
 ---
 
-## Pendientes para marcar la Ola 0 como deployada
+## Estado del deploy
 
-1. `firebase deploy --only hosting,firestore:indexes --project spi-smart-expense`
-2. Verificar punto 7 en producción.
-3. Actualizar la tabla de estado en `docs/implementation-plan.md`.
+- 2026-10-25: commit `3a7b8e2` pusheado a `main`; CI en verde (App spi, App
+  demo, Functions).
+- 2026-10-25: `firebase deploy --only hosting,firestore:indexes` ejecutado
+  contra `spi-smart-expense`. Hosting sirve el nuevo build (título,
+  `theme-color` y chunks nuevos verificados por HTTP). Los dos índices quedaron
+  creados; antes del deploy producción tenía cero índices compuestos
+  (TD-024 confirmado).
+- Pendiente de verificación manual: punto 7 (campana de notificaciones con un
+  usuario que tenga notificaciones) una vez el índice figure como `Enabled`.

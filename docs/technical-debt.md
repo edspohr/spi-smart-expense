@@ -370,6 +370,11 @@ aunque la regla esté apagada.
 
 ## TD-024 — Índice compuesto de `notifications` ausente en producción
 
+**Status:** Índice deployado el 2026-10-25 (confirmado con `firebase
+firestore:indexes`: antes del deploy producción tenía cero índices
+compuestos). Falta verificar la campana con un usuario real y añadir el
+`logger.error` en el callback de error de `onSnapshot`.
+
 **Severity:** High (bug latente)  
 **Impact:** High · **Effort:** Low  
 **Files:** `src/lib/notifications.js:36-38`, `firestore.indexes.json`

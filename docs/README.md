@@ -75,7 +75,7 @@ Backend / infra: **Felipe Soto Santibáñez**
 
 | Ola | Commit | Deployada |
 |-----|--------|-----------|
-| 0 | — | En curso |
+| 0 | `3a7b8e2` | 2026-10-25 |
 
 ### Plan v2 — fases (archivado)
 
