@@ -237,6 +237,10 @@ pivote (filas = proyecto/usuario, columnas = meses, celdas = allocated / spent
 
 ## TD-016 — Historial de aprobaciones enriquecido en modal de detalle
 
+**Status:** ✅ Resuelto en Ola 5 (2026-10-25). `AuditTimeline` en el detalle
+muestra acción, actor, comentario y overrides; los eventos de revisión los
+escribe el servidor.
+
 **Status:** Parcial (2026-10-25). El callable `reviewExpense` escribe
 `reviewedAt`, `reviewedByUid`, `reviewedByName` y las entradas de `movements`
 (`status`, `rejectionReason`) en la misma transacción server-side, para

@@ -27,7 +27,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Deployada 2026-10-25 (`cb7e8bf`) |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Deployada 2026-10-25 (`47a5827`) |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Deployada 2026-10-25 (`23bfff1`) |
-| 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Pendiente |
+| 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | En curso |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
 | 7 | País configurable + tenant demo | Transparente | Pendiente |
 | 8 | Observabilidad y operación | Transparente | Pendiente |
@@ -534,6 +534,18 @@ tenant, trazabilidad completa y notificaciones por email.
   umbrales, sin segunda firma).
 
 **Dependencies:** Ola 3 (managers, settings), Ola 4 (PIN sobre umbral).
+
+**Desviaciones implementadas (2026-10-25):**
+- Modelo de política simplificado (ADR 0012): modo simple o por niveles con
+  responsable → finanzas, doble firma por monto, auto-aprobación y
+  delegación, en vez de un arreglo genérico de niveles.
+- Correo con outbox (`mailQueue`) y remitente Brevo exportado solo con
+  `EMAIL_PROVIDER=brevo`, para que el deploy no dependa del secreto. Plantillas
+  en código (`mail.templates.ts`), no en Brevo. Resumen semanal pasa a
+  backlog; se implementó el recordatorio diario de pendientes (opt-in).
+- La delegación cubre el paso del responsable.
+- TD-026 (agregados con monedas mezcladas) no se tocó: cambiar la semántica
+  de `projects.expenses` afecta dashboards de SPI y merece decisión aparte.
 **Impacto en SPI:** Transparente mientras la política sea la por defecto.
 Timeline de auditoría visible en detalle de gasto (positivo).
 

@@ -66,7 +66,7 @@ service cloud.firestore {
       allow update: if (isSuperadmin() && !(isSelf(userId) && changesPrivileges()))
         || (isAdmin() && !changesPrivileges())
         || (isSelf(userId)
-            && changedKeys().hasOnly(['displayName', 'photoURL', 'forcePasswordChange', 'fcmTokens', 'updatedAt']));
+            && changedKeys().hasOnly(['displayName', 'photoURL', 'forcePasswordChange', 'fcmTokens', 'notificationPrefs', 'updatedAt']));
       allow delete: if isSuperadmin() && !isSelf(userId);
 
       function changesPrivileges() {
@@ -95,18 +95,25 @@ service cloud.firestore {
 
     // ---------- expenses
     match /expenses/{expenseId} {
+      // pendingApproverUids: the manager (and delegate) of the current
+      // approval step, set server-side when the tenant uses levels.
       allow read: if isActive()
-        && (resource.data.userId == request.auth.uid || canReviewCurrent());
+        && (resource.data.userId == request.auth.uid
+            || canReviewCurrent()
+            || request.auth.uid in resource.data.get('pendingApproverUids', []));
 
       allow create: if isActive()
         && validExpense(incoming())
         && incoming().get('status', 'pending') == 'pending'
+        && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid'])
         && (incoming().userId == request.auth.uid || isAdmin() || isAssistant());
 
       allow update: if isActive()
         && validExpense(incoming())
         && unchanged('status')
         && unchanged('createdAt')
+        && unchanged('approvalFlow')
+        && unchanged('pendingApproverUids')
         && (canReviewCurrent()
             || (resource.data.userId == request.auth.uid
                 && resource.data.get('status', 'pending') == 'pending'
@@ -152,6 +159,7 @@ service cloud.firestore {
     match /rateLimits/{doc} { allow read, write: if false; }
     match /userPins/{doc} { allow read, write: if false; }
     match /pinLog/{doc} { allow read, write: if false; }
+    match /mailQueue/{doc} { allow read, write: if false; }
     match /aggregateLedger/{doc} { allow read, write: if false; }
   }
 }

@@ -222,3 +222,23 @@ describe('notifications and server-only collections', () => {
     await assertFails(updateDoc(doc(pro(), 'users', PRO), { hasPin: true }));
   });
 });
+
+describe('approval flow (Ola 5)', () => {
+  it('lets the current approver read, and nobody forge the flow', async () => {
+    const boss = () => ctx('boss-1', { role: 'professional' });
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'expenses', 'flow-1'), expense({ pendingApproverUids: ['boss-1'], approvalFlow: { currentStep: 0, steps: [] } }));
+    });
+    await assertSucceeds(getDoc(doc(boss(), 'expenses', 'flow-1')));
+    await assertFails(getDoc(doc(boss(), 'expenses', 'own-pending')));
+    await assertSucceeds(getDocs(query(collection(boss(), 'expenses'), where('pendingApproverUids', 'array-contains', 'boss-1'))));
+    await assertFails(setDoc(doc(pro(), 'expenses', 'forged'), expense({ pendingApproverUids: ['pro-1'] })));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'flow-1'), { pendingApproverUids: [] }));
+    await assertFails(updateDoc(doc(admin(), 'expenses', 'flow-1'), { approvalFlow: { currentStep: 1, steps: [] } }));
+  });
+
+  it('users manage their own email preference; mailQueue is server-only', async () => {
+    await assertSucceeds(updateDoc(doc(pro(), 'users', PRO), { notificationPrefs: { email: false } }));
+    await assertFails(getDocs(collection(admin(), 'mailQueue')));
+  });
+});

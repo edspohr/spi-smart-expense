@@ -8,6 +8,7 @@ import { useAuth } from '../context/useAuth';
 import { PinCancelled, listPinLog, type PinLogEntry } from '../lib/pin';
 import { updateSettings } from '../lib/userAdmin';
 import { tenant } from '../lib/tenant';
+import ApprovalPolicyCard from '../components/ApprovalPolicyCard';
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -245,6 +246,8 @@ export default function AdminSettings() {
           </ul>
         </Card>
 
+        <ApprovalPolicyCard />
+
         <Card icon={Sparkles} title="Lectura de recibos con IA" description="Límite diario de lecturas automáticas. Vacío = valor por defecto del servidor (60 por persona, 1.500 por organización).">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="block text-sm">
@@ -279,9 +282,6 @@ export default function AdminSettings() {
           </div>
         </Card>
 
-        <p className="text-xs text-zinc-400">
-          La política de aprobación por montos y jerarquía se configurará aquí en una próxima actualización.
-        </p>
       </div>
     </Layout>
   );

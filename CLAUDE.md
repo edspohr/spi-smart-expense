@@ -68,6 +68,10 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 
 Server: `functions/src/pin.ts` (`requirePinFor(req, action, { amount })` at the top of sensitive callables; `userPins`/`pinLog` are server-only). Client: wrap any sensitive callable with `withPin(reason, (pin) => callFunction(name, { ...data, pin }))` from `src/lib/pin.ts`; browser-side actions (exports) call `ensureExportAllowed(settings.security)`. Never delete another user's expense with `deleteDoc` — use `deleteExpense` (rules forbid it). `PinCancelled` means the user dismissed the prompt: don't toast it as an error.
 
+### Approval workflow (Ola 5)
+
+`settings/tenant.approvalPolicy` (ADR 0012). `onExpenseCreated` applies it (no-op in `single` mode); expenses under `levels` carry `approvalFlow` and `pendingApproverUids` (server-only fields — rules reject client writes). `reviewExpense` returns `partial: true` while more signatures are needed; UIs must keep the expense pending. Managers use `/dashboard/approvals` (`useMyPendingApprovals`). Notifications go through `notifyUser()` in `functions/src/notify.ts`, which also queues email when `EMAIL_PROVIDER=brevo`.
+
 ### Tenant settings at runtime
 
 `settings/tenant` (written only via the `adminUpdateSettings` callable from `/admin/settings`) overrides the build-time `tenants/<id>.json` defaults for `security.pinEnabled`, `security.pinApprovalThreshold`, `security.pinActions.*`, `modules.*` and `ai.dailyLimit*`. `SettingsProvider` (`src/context/SettingsContext.tsx`) subscribes live; read it with `useTenantSettings()`. Gate routes with `<ProtectedRoute module="reports">` and hide menu entries from `settings.modules`. Granular flags live in `src/lib/permissions.js` (UI) and in the claims (rules + callables).

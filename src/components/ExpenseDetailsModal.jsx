@@ -5,6 +5,7 @@ import { CARD_BRAND_LABELS, PAYMENT_METHOD_LABELS } from '../lib/constants';
 import FocusableModal from './FocusableModal';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import AuditTimeline from './AuditTimeline';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
   const [movements, setMovements] = useState([]);
@@ -202,26 +203,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <History className="w-4 h-4 text-gray-400" aria-hidden="true" />
                Historial de movimientos
              </h4>
-             {movements.length === 0 ? (
-               <p className="text-xs text-gray-400 italic">Sin movimientos registrados.</p>
-             ) : (
-               <ul className="space-y-1">
-                 {movements.map(m => {
-                   const d = new Date(m.at);
-                   const dateStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                   const timeStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
-                   return (
-                     <li key={m.id} className="text-xs text-gray-600 font-mono bg-gray-50 rounded px-3 py-1.5">
-                       {dateStr} {timeStr} — <span className="font-semibold">{m.field}</span>:{' '}
-                       <span className="text-red-500">{m.from ?? '—'}</span>
-                       {' → '}
-                       <span className="text-green-700">{m.to ?? '—'}</span>
-                       <span className="text-gray-400"> (por {m.byName})</span>
-                     </li>
-                   );
-                 })}
-               </ul>
-             )}
+             <AuditTimeline movements={movements} />
            </div>
 
            {/* Files Links */}

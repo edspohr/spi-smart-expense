@@ -113,6 +113,19 @@ function formatTotalsLine(byCurrency) {
   return keys.map(c => `${formatCurrency(byCurrency[c], c)} ${c}`).join(' + ');
 }
 
+// Level badge for expenses under a multi-level approval flow (Ola 5).
+function flowBadge(e) {
+  const flow = e.approvalFlow;
+  if (!flow || ['approved', 'rejected'].includes(e.status)) return null;
+  const step = flow.steps?.[flow.currentStep];
+  if (!step) return null;
+  if (step.kind === 'manager') return { label: `Espera a ${step.approverName || 'responsable'}`, className: 'bg-amber-50 text-amber-700' };
+  const signed = step.signatures?.length || 0;
+  return step.signaturesRequired > 1
+    ? { label: `Finanzas · firma ${signed + 1} de ${step.signaturesRequired}`, className: 'bg-brand-50 text-brand-700' }
+    : { label: 'Lista para finanzas', className: 'bg-emerald-50 text-emerald-700' };
+}
+
 export default function AdminApprovals() {
   const tenantSettings = useTenantSettings();
   const allowExport = async () => {
@@ -249,7 +262,9 @@ export default function AdminApprovals() {
     }
   };
 
-  useEffect(() => { fetchPending(); }, []);
+  // reloadKey: bumped after a partial (multi-level) approval to refresh the list.
+  const [reloadKey, setReloadKey] = useState(0);
+  useEffect(() => { fetchPending(); }, [reloadKey]);
 
   const rawList = viewMode === 'pending' ? pendingExpenses : historyExpenses;
 
@@ -405,7 +420,13 @@ export default function AdminApprovals() {
   // Single approve
   const handleApprove = async (expense) => {
     try {
-      await approveExpense(expense.id);
+      const res = await approveExpense(expense.id);
+      if (res.partial) {
+        // Multi-level flow: the expense stays pending with a new step/signature.
+        toast.success("Firma registrada; falta otra aprobación.");
+        setReloadKey(k => k + 1);
+        return;
+      }
       toast.success("Gasto aprobado.");
       setPendingExpenses(prev => prev.filter(e => e.id !== expense.id));
       setHistoryExpenses(prev => [{ ...expense, status: 'approved' }, ...prev]);
@@ -464,10 +485,12 @@ export default function AdminApprovals() {
     const successes = [];
     const errors = new Map();
     let processed = 0;
+    let anyPartial = false;
 
     for (const c of chunk(toProcess, BULK_CHUNK_SIZE)) {
       const results = await Promise.allSettled(c.map(async (exp) => {
-        await approveExpense(exp.id);
+        const res = await approveExpense(exp.id);
+        if (res.partial) anyPartial = true;
         return exp;
       }));
       results.forEach((r, i) => {
@@ -498,6 +521,7 @@ export default function AdminApprovals() {
         `Aprobadas ${successes.length} de ${toProcess.length}. Fallaron ${errors.size} — quedan seleccionadas.`
       );
     }
+    if (anyPartial) setReloadKey(k => k + 1);
     setBulkBusy(false);
   };
 
@@ -1019,7 +1043,12 @@ export default function AdminApprovals() {
                       <td className="px-4 py-4 text-sm text-gray-600 align-top whitespace-nowrap">{e.date}</td>
                       <td className="px-4 py-4 font-medium text-gray-800 align-top whitespace-nowrap">{e.userName || 'N/A'}</td>
                       <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[130px] truncate">{e.eventName || '—'}</td>
-                      <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[150px] truncate">{e.merchant || '—'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[180px]">
+                        <div className="truncate">{e.merchant || '—'}</div>
+                        {flowBadge(e) && (
+                          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${flowBadge(e).className}`}>{flowBadge(e).label}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-4 align-top">
                         <div className="flex flex-col">
                           <span className="text-gray-600 text-sm font-medium">{e.projectName || 'N/A'}</span>

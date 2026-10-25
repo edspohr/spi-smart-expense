@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { FUNCTIONS_REGION } from './common';
+import { makeEmailSender } from './notify';
 
 initializeApp();
 
@@ -20,6 +21,12 @@ export const healthcheck = onCall((request) => ({
 export { extractReceipt } from './extractReceipt';
 export { reviewExpense, deleteExpense } from './expenses';
 export { setOwnPin, verifyPin, adminResetPin, adminListPinLog } from './pin';
+export { onExpenseCreated, setDelegation, staleApprovalReminders } from './approval';
+
+// The Brevo sender is only exported when the tenant enables email
+// (EMAIL_PROVIDER=brevo in functions/.env.<projectId>), so deploying a tenant
+// without the BREVO_API_KEY secret never fails.
+export const sendQueuedEmail = process.env.EMAIL_PROVIDER === 'brevo' ? makeEmailSender() : undefined;
 export { onExpenseWritten } from './aggregates';
 export { onUserWritten } from './claims';
 export { adminListUsers, adminInviteUser, adminUpdateUser, adminDeleteUser, adminUpdateSettings } from './users';

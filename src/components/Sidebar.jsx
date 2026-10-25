@@ -2,16 +2,18 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell, Users, Settings
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell, Users, Settings, ClipboardCheck
 } from 'lucide-react';
 import InstallButton from './InstallButton';
 import { useTenantSettings } from '../context/SettingsContext';
+import { useMyPendingApprovals } from '../lib/myApprovals';
 import { ROLE_LABELS, isAdminRole, isSuperadmin } from '../lib/roles';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { userRole, logout, currentUser } = useAuth();
   const location = useLocation();
-  const { modules } = useTenantSettings();
+  const { modules, approvalPolicy } = useTenantSettings();
+  const { items: myPending } = useMyPendingApprovals(approvalPolicy.mode === 'levels' ? currentUser?.uid : null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -112,6 +114,13 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <UserCircle className={`w-4 h-4 mr-3 ${isActive('/dashboard') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mi Resumen
         </Link>
+        {approvalPolicy.mode === 'levels' && myPending.length > 0 && (
+        <Link to="/dashboard/approvals" className={linkClass('/dashboard/approvals')} aria-current={ariaCurrent('/dashboard/approvals')} onClick={() => setIsOpen(false)}>
+            <ClipboardCheck className={`w-4 h-4 mr-3 ${isActive('/dashboard/approvals') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+            Mis aprobaciones
+            <span className="ml-auto rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">{myPending.length}</span>
+        </Link>
+        )}
         <Link to="/dashboard/expenses" className={linkClass('/dashboard/expenses')} aria-current={ariaCurrent('/dashboard/expenses')} onClick={() => setIsOpen(false)}>
             <Receipt className={`w-4 h-4 mr-3 ${isActive('/dashboard/expenses') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mis Rendiciones

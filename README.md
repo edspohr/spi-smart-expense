@@ -40,6 +40,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 
+### Ola 5 — Approval workflows, audit timeline, email (2026-10-25)
+
+- **Approval policy per tenant** in Ajustes: *Simple* (today's single step, SPI's default) or *Por niveles* (submitter's manager → finance), optional second finance signature above an amount, auto-approval below an amount, temporary delegation, and opt-in reminders for stale expenses.
+- **Mis aprobaciones** for managers of any role, with optional comment; admins see level badges in Aprobaciones.
+- **Audit timeline** in every expense detail: who approved/rejected/edited, comments, overrides and automatic approvals.
+- **Email** via Brevo (approved, rejected, needs approval, stale digest) through an outbox, branded per tenant; users can opt out in Mi Espacio. Activated per tenant once the Brevo key and sender exist.
+
 ### Ola 4 — Per-action PIN (2026-10-25)
 
 - **4-digit personal PIN**, verified only on the server (scrypt, lockout after 5 failures, disabled after 10, weak PINs rejected), with a versioned responsibility statement accepted at creation.

@@ -65,6 +65,15 @@ export interface SettingsPatch {
   security?: { pinEnabled?: boolean; pinApprovalThreshold?: number | null; pinActions?: Record<string, boolean> };
   modules?: Record<string, boolean>;
   ai?: { dailyLimitUser?: number; dailyLimitTenant?: number };
+  approvalPolicy?: Partial<{
+    mode: 'single' | 'levels';
+    autoApproveBelow: number | null;
+    managerApproval: boolean;
+    secondSignatureAbove: number | null;
+    allowDelegation: boolean;
+    staleReminders: boolean;
+    staleDays: number;
+  }>;
 }
 
 export function updateSettings(patch: SettingsPatch) {

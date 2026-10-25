@@ -247,6 +247,29 @@ export const adminUpdateSettings = onCall(async (req) => {
       update[`ai.${key}`] = value;
     }
   }
+  if (input.approvalPolicy !== undefined) {
+    const ap = input.approvalPolicy ?? {};
+    if (ap.mode !== undefined) {
+      if (!['single', 'levels'].includes(ap.mode)) throw new HttpsError('invalid-argument', 'Modo de aprobación no válido.');
+      update['approvalPolicy.mode'] = ap.mode;
+    }
+    for (const key of ['autoApproveBelow', 'secondSignatureAbove'] as const) {
+      if (ap[key] === undefined) continue;
+      if (ap[key] !== null && (typeof ap[key] !== 'number' || !Number.isFinite(ap[key]) || ap[key] < 0)) {
+        throw new HttpsError('invalid-argument', 'Los montos de la política deben ser positivos o vacíos.');
+      }
+      update[`approvalPolicy.${key}`] = ap[key];
+    }
+    for (const key of ['managerApproval', 'allowDelegation', 'staleReminders'] as const) {
+      if (ap[key] === undefined) continue;
+      if (typeof ap[key] !== 'boolean') throw new HttpsError('invalid-argument', `Valor no válido para ${key}.`);
+      update[`approvalPolicy.${key}`] = ap[key];
+    }
+    if (ap.staleDays !== undefined) {
+      if (!Number.isInteger(ap.staleDays) || ap.staleDays < 1 || ap.staleDays > 90) throw new HttpsError('invalid-argument', 'Los días deben estar entre 1 y 90.');
+      update['approvalPolicy.staleDays'] = ap.staleDays;
+    }
+  }
   if (Object.keys(update).length === 0) throw new HttpsError('invalid-argument', 'No hay cambios.');
   // Changing settings needs the PIN only while it is already enforced.
   await requirePinFor(req, 'settings', { policy: await loadPinPolicy() });

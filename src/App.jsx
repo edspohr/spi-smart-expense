@@ -15,6 +15,7 @@ import UserExpenses from './pages/UserExpenses';
 import ExpenseForm from './pages/ExpenseForm';
 import BulkUpload from './pages/BulkUpload';
 import MiEspacio from './pages/MiEspacio';
+import MyApprovals from './pages/MyApprovals';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/useAuth';
 import { isAdminRole } from './lib/roles';
@@ -58,6 +59,7 @@ function App() {
         <Route path="/dashboard/expenses" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><UserExpenses /></ProtectedRoute>} />
         <Route path="/dashboard/new-expense" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><ExpenseForm /></ProtectedRoute>} />
         <Route path="/dashboard/bulk-upload" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']} module="bulkUpload"><BulkUpload /></ProtectedRoute>} />
+        <Route path="/dashboard/approvals" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><MyApprovals /></ProtectedRoute>} />
         <Route path="/dashboard/mi-espacio" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><MiEspacio /></ProtectedRoute>} />
 
         <Route path="/" element={<RootRedirect />} />

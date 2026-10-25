@@ -16,7 +16,28 @@ export const PIN_ACTION_LABELS: Record<PinAction, string> = {
 
 const ALL_ACTIONS = Object.keys(PIN_ACTION_LABELS) as PinAction[];
 
+export interface ApprovalPolicy {
+  mode: 'single' | 'levels';
+  autoApproveBelow: number | null;
+  managerApproval: boolean;
+  secondSignatureAbove: number | null;
+  allowDelegation: boolean;
+  staleReminders: boolean;
+  staleDays: number;
+}
+
+export const DEFAULT_APPROVAL_POLICY: ApprovalPolicy = {
+  mode: 'single',
+  autoApproveBelow: null,
+  managerApproval: true,
+  secondSignatureAbove: null,
+  allowDelegation: true,
+  staleReminders: false,
+  staleDays: 7,
+};
+
 export interface TenantSettings {
+  approvalPolicy: ApprovalPolicy;
   security: { pinEnabled: boolean; pinApprovalThreshold: number | null; pinActions: Record<PinAction, boolean> };
   modules: TenantConfig['modules'];
   ai: { dailyLimitUser: number | null; dailyLimitTenant: number | null };
@@ -34,6 +55,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 export const DEFAULT_SETTINGS: TenantSettings = {
+  approvalPolicy: DEFAULT_APPROVAL_POLICY,
   security: {
     pinEnabled: tenant.security.pinEnabled,
     pinApprovalThreshold: null,
@@ -52,7 +74,18 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
   const ai = (doc.ai ?? {}) as Partial<TenantSettings['ai']>;
   const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
   const int = (v: unknown) => (Number.isInteger(v) ? (v as number) : null);
+  const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
+  const ap = (doc.approvalPolicy ?? {}) as Record<string, unknown>;
   return {
+    approvalPolicy: {
+      mode: ap.mode === 'levels' ? 'levels' : 'single',
+      autoApproveBelow: amount(ap.autoApproveBelow),
+      managerApproval: ap.managerApproval !== false,
+      secondSignatureAbove: amount(ap.secondSignatureAbove),
+      allowDelegation: ap.allowDelegation !== false,
+      staleReminders: ap.staleReminders === true,
+      staleDays: Number.isInteger(ap.staleDays) && (ap.staleDays as number) > 0 ? (ap.staleDays as number) : DEFAULT_APPROVAL_POLICY.staleDays,
+    },
     security: {
       pinEnabled: bool(security.pinEnabled, DEFAULT_SETTINGS.security.pinEnabled),
       pinApprovalThreshold: typeof threshold === 'number' && threshold >= 0 ? threshold : null,

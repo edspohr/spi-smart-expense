@@ -31,6 +31,14 @@ Marcar `[x]` con la fecha al cerrar.
 
 ## Más adelante (no urgente)
 
+- [ ] **Activar correos (Brevo)** cuando quieras: crear una API key en Brevo
+  (SMTP & API → API keys) y verificar un remitente (p. ej.
+  `notificaciones@spohr.cl`); luego correr
+  `firebase functions:secrets:set BREVO_API_KEY --project spi-smart-expense`
+  y avisarme el remitente para poner `EMAIL_PROVIDER=brevo` y redeployar.
+- [ ] Si SPI quiere aprobación por niveles: asignar responsables en Usuarios y
+  elegir "Por niveles" en Ajustes → Política de aprobación.
+
 - [ ] Cuando quieras mostrar el PIN a SPI (tras el deploy de Ola 4): crear
   tu PIN en Mi Espacio → Seguridad y activarlo en Ajustes; avisar a los
   admins para que creen el suyo (verán un aviso amarillo).

@@ -26,3 +26,5 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Registro abierto configurable por tenant (`auth.selfSignup`) | SPI mantiene "Regístrate aquí" (siempre como profesional). Para Elecnor/demo conviene apagarlo y entrar solo por invitación desde `/admin/users`. | Ola 7 (tenant demo) |
 | Branding editable en runtime desde `/admin/settings` | Manifest, íconos y paleta son de build (Ola 1); editarlos en caliente exige generar el manifest dinámicamente. | Cuando un cliente lo pida |
 | Invitaciones para cuentas Google sin contraseña (`claimInvite`) | Hoy la invitación crea cuenta email/contraseña; si la persona entra con Google con el mismo correo verificado, Firebase la vincula. Revisar si un tenant usa solo Google. | Ola 7 |
+| Resumen semanal por correo | La Ola 5 dejó recordatorio diario de pendientes (opt-in). El resumen semanal para quien rinde/aprueba puede salir de la misma plantilla. | Tras activar Brevo |
+| Niveles de aprobación genéricos | Hoy: responsable → finanzas con doble firma (ADR 0012). Un arreglo arbitrario de niveles por monto si un cliente lo pide. | A demanda |
