@@ -116,3 +116,14 @@ contienen secretos).
 
 - `npm run lint` ✅ · 94 tests web ✅ · 46 tests functions ✅ · 20 tests de
   reglas ✅ · `npm run build` y `npm run build:demo` ✅
+
+## Deploy
+
+- 2026-10-25: SPI (`spi-smart-expense`) — Functions (18, `southamerica-east1`),
+  reglas de Firestore y Storage, índices y hosting. Verificado: el bundle en
+  producción es el mismo del build local, con marca SPI, sin textos del demo
+  y con BanRep; `healthcheck` responde `ok`; login sin errores de consola,
+  "Regístrate aquí" visible. El claim `baseCurrency` llega a cada usuario en
+  su próxima escritura; mientras tanto las reglas asumen `COP`.
+- Demo (`expense-buddy-demo`): pendiente de que exista el proyecto Firebase
+  (ver `docs/pendientes.md`).
