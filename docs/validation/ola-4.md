@@ -93,4 +93,12 @@ errado muestra el error, el correcto completa; tarjeta de Seguridad muestra
 
 ## Estado del deploy
 
-- Pendiente.
+- 2026-10-25: 15 Functions desplegadas (nuevas: `setOwnPin`, `verifyPin`,
+  `adminResetPin`, `adminListPinLog`, `deleteExpense`), hosting + rules
+  liberados. El PIN queda apagado (`settings/tenant` aún no existe en
+  producción; defaults de `tenants/spi.json`).
+- Hallazgo en la verificación: `verifyPin` respondía `ok` sin sesión cuando
+  el PIN no era requerido (sin datos expuestos). Corregido exigiendo sesión
+  antes de evaluar la política y redeployado; ahora devuelve
+  `UNAUTHENTICATED`.
+- Pendiente: prueba con sesión real cuando se active (ver `docs/pendientes.md`).

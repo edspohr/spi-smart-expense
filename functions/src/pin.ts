@@ -125,6 +125,7 @@ export const setOwnPin = onCall(async (req) => {
 
 // Client-side confirmations (e.g. exports, which run in the browser).
 export const verifyPin = onCall(async (req) => {
+  requireAuth(req);
   const action = String(req.data?.action ?? 'verify');
   if (!(PIN_ACTIONS as readonly string[]).includes(action)) throw new HttpsError('invalid-argument', 'Acción no válida.');
   const ref = req.data?.ref != null ? String(req.data.ref).slice(0, 80) : null;

@@ -26,7 +26,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 1 | PWA instalable | Visible positivo | Deployada 2026-10-25 (`f2ff128`) |
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Deployada 2026-10-25 (`cb7e8bf`) |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Deployada 2026-10-25 (`47a5827`) |
-| 4 | PIN por acción | Transparente (apagado por defecto) | En curso |
+| 4 | PIN por acción | Transparente (apagado por defecto) | Deployada 2026-10-25 (`23bfff1`) |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Pendiente |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
 | 7 | País configurable + tenant demo | Transparente | Pendiente |
