@@ -58,9 +58,10 @@ Su escala Tailwind `brand` usa `600` para botones, así que el mapeo
 
 ## Ícono de app
 
-Monograma de la marca sobre fondo claro (blanco → teal-50 → teal-100, línea
-`ink-200`): letras en tinta `ink-950` y la inicial de "Buddy" en turquesa
-`teal-600`. Expense Buddy: **ExB** ("Ex" en tinta, "B" en turquesa)
-(`scripts/brand/expense-buddy-icon.py` genera SVG y todos los íconos PWA
-desde una sola geometría). El degradado de marca queda para superficies
-hero, no para el ícono. Decisión: `docs/adr/0013-paleta-growth-buddies-light.md`.
+Monograma tipográfico sobre tile sólido **tinta** `ink-950`, en Instrument
+Serif: las letras en `ink-50` y la inicial de "buddy" en itálica `teal-400`
+`#00B5D6` (sobre oscuro el turquesa claro tiene más fuerza que `teal-600`).
+Monograma al ~54 % del ancho, espaciado ajustado a mano, sin degradados ni
+bordes. Expense Buddy: **ExB** (`scripts/brand/expense-buddy-icon.py`, lee
+los contornos de `scripts/brand/fonts`). Decisión:
+`docs/adr/0013-paleta-growth-buddies-light.md`.

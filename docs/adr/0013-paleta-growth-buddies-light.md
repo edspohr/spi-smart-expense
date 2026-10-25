@@ -24,9 +24,18 @@ genérico y un logo provisorio.
 - Los tenants de Expense Buddy la consumen por config: `branding.palette`
   (mapeo `tenantPalette`), `branding.ctaPalette` para el botón principal y
   `branding.designSystem: "growth-buddies-light"`.
-- Ícono de app: monograma de la marca (Expense Buddy: **ExB**, "Ex" en
-  tinta y la B de "Buddy" en turquesa) sobre fondo claro, generado por script desde una sola
-  geometría (`scripts/brand/expense-buddy-icon.py`).
+- Ícono de app: monograma tipográfico de la marca sobre un tile **tinta**
+  `#0B0B0F` (el fondo de la web de Growth Buddies): Expense Buddy = **ExB**
+  en Instrument Serif (la serif de la marca), "Ex" en blanco y la *B* de
+  "Buddy" en itálica turquesa `#00B5D6` (teal-400, el acento sobre oscuro).
+  El script toma los contornos reales de la fuente
+  (`scripts/brand/fonts`, OFL) y genera SVG en paths y PNG idénticos
+  (`scripts/brand/expense-buddy-icon.py`). La app sigue en tema claro; el
+  ícono oscuro destaca en cualquier fondo de pantalla.
+- Se descartaron, tras revisarlos con el responsable, un monograma
+  geométrico sobre degradado y varias versiones claras: se veían
+  "baratas". Lo que da calidad es la composición sobria: fondo sólido,
+  tipografía de autor, aire alrededor y espaciado ajustado a mano.
 
 ## Alternativas consideradas
 

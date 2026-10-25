@@ -144,7 +144,7 @@ contienen secretos).
 (ADR 0013) aplicada al demo: `brand` turquesa (`600 = #007C93` para botones
 AA, `500 = #0097B2` identidad), `themeColor #0097B2`, CTA "Rendir un Gasto"
 vía `branding.ctaPalette` (escala `cta` nueva; SPI conserva el verde por
-defecto). Logo/ícono **ExB** ("Ex" en tinta, B en turquesa) generado por `scripts/brand/expense-buddy-icon.py`
+defecto). Logo/ícono **ExB** (Instrument Serif sobre tile tinta: "Ex" blanco, *B* itálica turquesa `#00B5D6`) generado por `scripts/brand/expense-buddy-icon.py` desde los contornos reales de la fuente
 (SVG para login y sidebar, PNG para PWA; maskable y apple-touch a sangre).
 
 **Estado (verificado):** valores computados en el navegador
