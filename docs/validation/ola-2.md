@@ -191,4 +191,9 @@ por los triggers. ☐
   `roles/aiplatform.user` otorgado a la service account por defecto de
   Compute). `npm run vertex:check` responde `ok` para ambos modelos en
   `global`.
-- Pasos 2-7 pendientes. Seguir `docs/runbooks/deploy-ola-2.md`.
+- 2026-10-25: App Check registrado en Firebase console con reCAPTCHA
+  Enterprise (clave `6Lemyf4tAAAAAEVgv-cx5o_Z2oup58-nDTETSVYC`, dominios
+  `spi-smart-expense.web.app`, `spi-smart-expense.firebaseapp.com`,
+  `localhost`), en modo monitor; `VITE_RECAPTCHA_SITE_KEY` ya está en el
+  `.env` de build. Enforce queda para una semana después del deploy.
+- Pasos 2-5 y 7 pendientes. Seguir `docs/runbooks/deploy-ola-2.md`.
