@@ -28,7 +28,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Deployada 2026-10-25 (`47a5827`) |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Deployada 2026-10-25 (`23bfff1`) |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
-| 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
+| 6 | Offline, push y share target | Visible positivo (opt-in) | En curso |
 | 7 | País configurable + tenant demo | Transparente | Pendiente |
 | 8 | Observabilidad y operación | Transparente | Pendiente |
 | 9 | Calidad (refactor monolitos, e2e) | Transparente | Pendiente |
@@ -609,6 +609,17 @@ fotos directo al formulario.
   precargado.
 
 **Dependencies:** Ola 1 (service worker), Ola 2 (Functions para FCM).
+
+**Desviaciones implementadas (2026-10-25):**
+- Sin Background Sync del service worker: la cola se envía desde la página
+  (al abrir, al volver la red y cada minuto), porque la sesión y el SDK de
+  Firebase viven ahí. El envío diferido escribe los documentos directo (con
+  IDs fijos), no por callable.
+- Push: tokens en `users/{uid}.fcmTokens` (array) y mensajes de datos
+  renderizados por `public/sw-extras.js`, sin el SDK de Firebase en el
+  worker. Cada notificación in-app también genera push.
+- El share target usa `workbox.importScripts` en vez de cambiar a la
+  estrategia `injectManifest`.
 **Impacto en SPI:** Visible positivo y opt-in.
 
 ### Prompt 6 (paste into Claude Code)

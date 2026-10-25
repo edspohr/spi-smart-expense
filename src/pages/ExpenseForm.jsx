@@ -3,8 +3,8 @@ import Layout from '../components/Layout';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/useAuth';
 import { parseExpenseDocuments, checkGeminiHealth } from '../lib/gemini';
-import { db, uploadReceiptImage } from '../lib/firebase';
-import { collection, getDocs, query, where, doc, writeBatch } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { collection, getDocs, query, where, doc } from 'firebase/firestore';
 import { Upload, Loader2, Camera, X, FileText, Plus, CheckCircle, CreditCard, Calendar, MousePointer2 } from 'lucide-react';
 import { formatCurrency } from '../utils/format'; 
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,8 @@ import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURREN
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { isAdminRole } from '../lib/roles';
+import { enqueueSubmission, isNetworkError } from '../lib/offlineQueue';
+import { flushNewSubmission } from '../lib/offlineSync';
 
 /**
  * Checks a set of existing expenses for a potential duplicate of the given formData.
@@ -272,7 +274,32 @@ export default function ExpenseForm() {
     // Clearing value lets the same file be picked again later if needed.
     e.target.value = '';
     if (!file) return;
+    await processFile(type, file);
+  };
 
+  // A photo shared from the gallery (Web Share Target) arrives via the
+  // service worker in Cache Storage; load it as the receipt.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('shared') || typeof caches === 'undefined') return;
+    (async () => {
+      try {
+        const cache = await caches.open('shared-files');
+        const res = await cache.match('/shared/receipt');
+        if (!res) return;
+        const blob = await res.blob();
+        const name = decodeURIComponent(res.headers.get('x-filename') || 'compartido.jpg');
+        await cache.delete('/shared/receipt');
+        await processFile('receipt', new File([blob], name, { type: blob.type }));
+        toast.success('Foto recibida. Revisa y envía la rendición.', { id: 'shared-photo' });
+      } catch (err) {
+        console.error('Error loading shared file:', err);
+      } finally {
+        window.history.replaceState(null, '', '/dashboard/new-expense');
+      }
+    })();
+  }, []);
+
+  const processFile = async (type, file) => {
     setCompressing(prev => ({ ...prev, [type]: true }));
     try {
         let processedFile = file;
@@ -401,7 +428,7 @@ export default function ExpenseForm() {
     }
 
     // Soft stop: check for duplicate invoices (skipped when user explicitly acknowledged)
-    if (!duplicateAcknowledged.current) {
+    if (!duplicateAcknowledged.current && navigator.onLine) {
       try {
         const expSnap = await getDocs(
           query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
@@ -416,59 +443,38 @@ export default function ExpenseForm() {
     }
     duplicateAcknowledged.current = false;
 
-    try {
-        setLoading(true);
+    setLoading(true);
 
-        let receiptUrl = null;
-        let voucherUrl = null;
+    let targetUid = currentUser.uid;
+    let targetName = currentUser.displayName;
+    let isProjectExpense = false;
 
-        if (files.receipt) {
-             receiptUrl = await uploadReceiptImage(files.receipt, currentUser.uid);
+    if (isAdminRole(userRole) || userRole === 'assistant') {
+        if (expenseMode === 'project' && isAdminRole(userRole)) {
+            targetUid = 'company_expense';
+            targetName = 'Gasto Empresa';
+            isProjectExpense = true;
+        } else if (expenseMode === 'other') {
+            if (!selectedUserId) { toast.error("Seleccione un usuario."); setLoading(false); return; }
+            const selUser = users.find(u => u.id === selectedUserId);
+            targetUid = selUser.id;
+            targetName = selUser.displayName;
         }
-        if (files.voucher) {
-             voucherUrl = await uploadReceiptImage(files.voucher, currentUser.uid);
-        }
+    }
 
-        let targetUid = currentUser.uid;
-        let targetName = currentUser.displayName;
-        let isProjectExpense = false;
+    const splitGroupId = isSplitMode ? crypto.randomUUID() : null;
+    const itemsToSave = isSplitMode
+        ? splitRows.map(row => ({ projectId: row.projectId, amount: Number(row.amount) }))
+        : [{ projectId: formData.projectId || null, amount: totalAmount }];
 
-        if (isAdminRole(userRole) || userRole === 'assistant') {
-            if (expenseMode === 'project' && isAdminRole(userRole)) {
-                targetUid = 'company_expense';
-                targetName = 'Gasto Empresa';
-                isProjectExpense = true;
-            } else if (expenseMode === 'other') {
-                if (!selectedUserId) { toast.error("Seleccione un usuario."); setLoading(false); return; }
-                const selUser = users.find(u => u.id === selectedUserId);
-                targetUid = selUser.id;
-                targetName = selUser.displayName;
-            }
-        }
-
-        const initialStatus = 'pending';
-        const splitGroupId = isSplitMode ? crypto.randomUUID() : null;
-
-        let itemsToSave = [];
-        if (isSplitMode) {
-            itemsToSave = splitRows.map(row => ({
-                projectId: row.projectId,
-                amount: Number(row.amount)
-            }));
-        } else {
-             itemsToSave = [{
-                 projectId: formData.projectId || null,
-                 amount: totalAmount
-             }];
-        }
-
-        const batch = writeBatch(db);
-
-        for (const item of itemsToSave) {
-            const projectObj = projects.find(p => p.id === item.projectId);
-            const expenseRef = doc(collection(db, "expenses"));
-
-            batch.set(expenseRef, {
+    // Final documents with pre-generated ids: the same payload is written now
+    // or later from the offline queue, so a retry never duplicates anything.
+    const createdAt = new Date().toISOString();
+    const docs = itemsToSave.map(item => {
+        const projectObj = projects.find(p => p.id === item.projectId);
+        return {
+            id: doc(collection(db, "expenses")).id,
+            data: {
                 userId: targetUid,
                 userName: targetName,
                 projectId: item.projectId,
@@ -490,26 +496,51 @@ export default function ExpenseForm() {
                 amount: item.amount,
                 currency: formData.currency || 'COP',
                 cardLast4: formData.cardLast4 || null,
-                
-                receiptUrl: receiptUrl,
-                voucherUrl: voucherUrl,
-                
-                status: initialStatus,
-                createdAt: new Date().toISOString(),
+                receiptUrl: null,
+                voucherUrl: null,
+                status: 'pending',
+                createdAt,
                 isCompanyExpense: isProjectExpense,
-                splitGroupId: splitGroupId,
+                splitGroupId,
                 trm: NEEDS_RATE(formData.currency) ? (trmState.trm || null) : null,
                 amountCOP: NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
-            });
+            },
+        };
+    });
+
+    const saveOffline = async () => {
+        const asQueued = (file) => file ? { name: file.name || 'comprobante.jpg', type: file.type || 'image/jpeg', blob: file, url: null } : undefined;
+        await enqueueSubmission({
+            id: crypto.randomUUID(),
+            uid: currentUser.uid,
+            label: `${formData.merchant || 'Sin comercio'} · ${formatCurrency(totalAmount, formData.currency || 'COP')}`,
+            createdAt,
+            files: { receipt: asQueued(files.receipt), voucher: asQueued(files.voucher) },
+            docs,
+        });
+        toast.success("Sin conexión: la rendición quedó guardada y se enviará sola al recuperar señal.");
+        navigate('/dashboard');
+    };
+
+    try {
+        if (!navigator.onLine) {
+            await saveOffline();
+            return;
         }
-
-        await batch.commit();
-
+        await flushNewSubmission(docs, files, currentUser.uid);
         toast.success("Rendición enviada exitosamente.");
         navigate('/dashboard');
-
     } catch (e) {
+        if (isNetworkError(e)) {
+            try {
+                await saveOffline();
+            } catch (queueErr) {
+                console.error("Error queueing expense offline:", queueErr);
+                toast.error("No se pudo guardar sin conexión: " + queueErr.message);
+            }
+            return;
+        }
         console.error("Error submitting expense:", e);
         toast.error("Error al enviar la rendición: " + e.message);
     } finally {

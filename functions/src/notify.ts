@@ -5,6 +5,7 @@ import { logger } from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
 import { nowIso } from './common';
 import { renderTemplate, type Branding, type TemplateId, type TemplateVars } from './mail.templates';
+import { linkForType, sendPush } from './push';
 
 // In-app notifications plus optional email through an outbox (mailQueue).
 // Email is enabled per tenant with EMAIL_PROVIDER=brevo in
@@ -39,6 +40,7 @@ export async function notifyUser(input: NotifyInput): Promise<void> {
     read: false,
     createdAt: nowIso(),
   });
+  await sendPush(input.toUid, { title: input.title, body: input.body, link: linkForType(input.type), tag: input.expenseId ?? undefined });
   if (!input.email || !emailEnabled()) return;
 
   const user = (await db.doc(`users/${input.toUid}`).get()).data();

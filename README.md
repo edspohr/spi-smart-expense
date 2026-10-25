@@ -40,6 +40,12 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 
+### Ola 6 — Offline, push and share (2026-10-25)
+
+- **Submit without signal**: expenses (with photos) are kept on the device and sent automatically when the connection returns or the app opens; header pill "Sin conexión / N sin enviar", and a retry/discard list in Mi Espacio. Fixed document ids make retries duplicate-free.
+- **Share a photo to the app** (Android, installed PWA): the OS share sheet opens Nueva Rendición with the image loaded.
+- **Push notifications** on opt-in per device (Mi Espacio): every in-app notification also arrives as a system notification; tapping it opens the right screen. Needs the project's Web Push key (`VITE_FCM_VAPID_KEY`).
+
 ### Ola 5 — Approval workflows, audit timeline, email (2026-10-25)
 
 - **Approval policy per tenant** in Ajustes: *Simple* (today's single step, SPI's default) or *Por niveles* (submitter's manager → finance), optional second finance signature above an amount, auto-approval below an amount, temporary delegation, and opt-in reminders for stale expenses.

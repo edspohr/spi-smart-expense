@@ -68,6 +68,10 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 
 Server: `functions/src/pin.ts` (`requirePinFor(req, action, { amount })` at the top of sensitive callables; `userPins`/`pinLog` are server-only). Client: wrap any sensitive callable with `withPin(reason, (pin) => callFunction(name, { ...data, pin }))` from `src/lib/pin.ts`; browser-side actions (exports) call `ensureExportAllowed(settings.security)`. Never delete another user's expense with `deleteDoc` — use `deleteExpense` (rules forbid it). `PinCancelled` means the user dismissed the prompt: don't toast it as an error.
 
+### Offline, push, share (Ola 6)
+
+`ExpenseForm` builds the final expense docs with pre-generated ids, then either sends them (`flushNewSubmission`) or queues them (`enqueueSubmission`, IndexedDB) when offline or on a network error; `startOfflineSync()` (main.jsx) flushes the queue. Keep both paths writing identical payloads. `public/sw-extras.js` (imported by Workbox) handles the share target POST and push display; `functions/src/push.ts` sends push from `notifyUser()`.
+
 ### Approval workflow (Ola 5)
 
 `settings/tenant.approvalPolicy` (ADR 0012). `onExpenseCreated` applies it (no-op in `single` mode); expenses under `levels` carry `approvalFlow` and `pendingApproverUids` (server-only fields — rules reject client writes). `reviewExpense` returns `partial: true` while more signatures are needed; UIs must keep the expense pending. Managers use `/dashboard/approvals` (`useMyPendingApprovals`). Notifications go through `notifyUser()` in `functions/src/notify.ts`, which also queues email when `EMAIL_PROVIDER=brevo`.

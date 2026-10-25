@@ -1,6 +1,7 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { nowIso, requireAuth } from './common';
+import { notifyUser } from './notify';
 import {
   PIN_ACTIONS,
   PinFormatError,
@@ -120,6 +121,7 @@ export const setOwnPin = onCall(async (req) => {
     acceptVersion: RESPONSIBILITY_VERSION,
     userAgent: String(req.rawRequest?.headers['user-agent'] ?? '').slice(0, 200),
   });
+  await notifyUser({ toUid: uid, type: 'security', title: 'PIN actualizado', body: 'Se creó o cambió tu PIN de seguridad. Si no fuiste tú, avisa a la administración.' });
   return { ok: true };
 });
 
@@ -143,6 +145,7 @@ export const adminResetPin = onCall(async (req) => {
   await db.doc(`userPins/${uid}`).delete();
   await db.doc(`users/${uid}`).set({ hasPin: false, pinDisabled: false }, { merge: true });
   await log(uid, actor.name, 'pin_restablecido', true, { ref: uid, byUid: actor.uid });
+  await notifyUser({ toUid: uid, type: 'security', title: 'PIN restablecido', body: `${actor.name} restableció tu PIN. Crea uno nuevo en Mi Espacio → Seguridad.` });
   return { ok: true };
 });
 

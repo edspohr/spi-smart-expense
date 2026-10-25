@@ -14,10 +14,12 @@ import PinPrompt from './components/PinPrompt'
 import { Toaster } from 'sonner'
 import { validateEnv } from './lib/env'
 import { applyTenantTheme } from './lib/tenant'
+import { startOfflineSync } from './lib/offlineSync'
 
 applyTenantTheme();
 
 const env = validateEnv();
+if (env.ok) startOfflineSync();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -31,6 +31,13 @@ Marcar `[x]` con la fecha al cerrar.
 
 ## Más adelante (no urgente)
 
+- [ ] **Activar notificaciones push**: Firebase console → Configuración del
+  proyecto → Cloud Messaging → Certificados push web → "Generar par de
+  claves"; pásame la clave pública y la pongo en `VITE_FCM_VAPID_KEY` y
+  redeployo. Luego probar en tu teléfono (Mi Espacio → Notificaciones).
+- [ ] **Probar rendir sin señal** en terreno (modo avión) y **compartir una
+  foto** desde la galería a la app instalada en Android.
+
 - [ ] **Activar correos (Brevo)** cuando quieras: crear una API key en Brevo
   (SMTP & API → API keys) y verificar un remitente (p. ej.
   `notificaciones@spohr.cl`); luego correr

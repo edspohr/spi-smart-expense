@@ -44,6 +44,8 @@ function pwaPlugin(tenant) {
       globPatterns: ['**/*.{js,css,html,ico,svg,webmanifest}'],
       navigateFallback: '/index.html',
       cleanupOutdatedCaches: true,
+      // Share target + push handlers (public/sw-extras.js).
+      importScripts: ['sw-extras.js'],
     },
     manifest: {
       id: '/',
@@ -63,6 +65,13 @@ function pwaPlugin(tenant) {
         { src: `/${icons}/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
         { src: `/${icons}/icon-512-maskable.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
+      // Installed app appears in the OS share sheet for photos and PDFs.
+      share_target: {
+        action: '/share-target',
+        method: 'POST',
+        enctype: 'multipart/form-data',
+        params: { files: [{ name: 'receipt', accept: ['image/*', 'application/pdf'] }] },
+      },
     },
   })
 }
@@ -81,7 +90,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/app-check'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/app-check', 'firebase/messaging'],
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
             'vendor-motion': ['framer-motion'],
             'vendor-ui': ['lucide-react', 'sonner'],
