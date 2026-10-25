@@ -83,4 +83,7 @@ no probado (requiere la clave VAPID y un dispositivo real).
 
 ## Estado del deploy
 
-- Pendiente.
+- 2026-10-25: Functions (push en `notifyUser`, avisos de PIN) y hosting
+  desplegados. Verificado por HTTP: `sw-extras.js` servido e importado por
+  `sw.js`; el manifest publica `share_target`. Push oculto hasta configurar
+  `VITE_FCM_VAPID_KEY` (ver `docs/pendientes.md`).
