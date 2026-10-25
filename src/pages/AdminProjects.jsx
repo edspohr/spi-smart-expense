@@ -9,6 +9,7 @@ import { Plus, DollarSign, Trash2 } from 'lucide-react';
 import { sortProjects } from '../utils/sort';
 import { toast } from 'sonner';
 import TableSkeleton from '../components/TableSkeleton';
+import { tenant } from '../lib/tenant';
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
@@ -150,22 +151,15 @@ export default function AdminProjects() {
       }
   };
 
-  const SPI_CENTERS = [
-    { code: '51', name: 'Administración', client: 'SPI Americas' },
-    { code: '52', name: 'Ventas', client: 'SPI Americas' },
-    { code: '51/52', name: 'Mix (54% Ventas / 46% Admin)', client: 'SPI Americas' },
-    { code: 'PI', name: 'PI - Ventas', client: 'SPI Americas' },
-    { code: 'AR', name: 'AR - Ventas', client: 'SPI Americas' },
-    { code: '6', name: 'Costo', client: 'SPI Americas' },
-    { code: 'SOCIOS', name: 'Socios - Cuenta Exclusiva', client: 'SPI Americas' }
-  ];
+  // Tenant-provided starter cost centres (tenants/<id>.json defaultProjects).
+  const DEFAULT_CENTERS = tenant.defaultProjects ?? [];
 
   const handleSeedSPI = async () => {
-      if (!confirm("Esto cargará los Centros de Costo por defecto de SPI. ¿Continuar?")) return;
+      if (!confirm(`Esto cargará los centros de costo por defecto de ${tenant.branding.legalName}. ¿Continuar?`)) return;
       setLoading(true);
       try {
           let createdCount = 0;
-          for (const center of SPI_CENTERS) {
+          for (const center of DEFAULT_CENTERS) {
               // Check if exists
               const q = query(collection(db, "projects"), where("code", "==", center.code));
               const snap = await getDocs(q);
@@ -211,17 +205,18 @@ export default function AdminProjects() {
                     <div className="flex gap-2">
                         <button 
                             onClick={handleSeedSPI}
+                            hidden={DEFAULT_CENTERS.length === 0}
                             className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1 rounded border border-gray-300"
-                            title="Cargar Centros SPI por defecto"
+                            title="Cargar centros de costo por defecto"
                         >
-                            Cargar Defaults SPI
+                            Cargar centros por defecto
                         </button>
                         <button
                             type="button"
                             onClick={() => setShowProjectForm(!showProjectForm)}
                             aria-label={showProjectForm ? 'Cancelar creación' : 'Crear nuevo centro de costo'}
                             aria-expanded={showProjectForm}
-                            className="text-blue-600 hover:text-blue-800 focus-ring rounded p-1"
+                            className="text-brand-600 hover:text-brand-800 focus-ring rounded p-1"
                         >
                             {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5" aria-hidden="true" />}
                         </button>
@@ -235,7 +230,7 @@ export default function AdminProjects() {
                                 <label className="block text-sm font-medium text-gray-700">Nombre del Centro de Costo</label>
                                 <input 
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-2 border"
                                     value={newProject.name}
                                     onChange={e => setNewProject({...newProject, name: e.target.value})}
                                     placeholder="Ej: Operaciones"
@@ -246,7 +241,7 @@ export default function AdminProjects() {
                                 <label className="block text-sm font-medium text-gray-700">Código</label>
                                 <input 
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-2 border"
                                     value={newProject.code}
                                     onChange={e => setNewProject({...newProject, code: e.target.value})}
                                     placeholder="Ej: CC-001"
@@ -257,10 +252,10 @@ export default function AdminProjects() {
                                 <input 
                                     type="text" 
                                     list="client-suggestions" // [NEW] Link to datalist
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-2 border"
                                     value={newProject.client}
                                     onChange={e => setNewProject({...newProject, client: e.target.value})}
-                                    placeholder="Ej: SPI Americas"
+                                    placeholder={`Ej: ${tenant.branding.legalName}`}
                                 />
                             </div>
                         </div>
@@ -270,7 +265,7 @@ export default function AdminProjects() {
                                 <option key={i} value={c} />
                             ))}
                         </datalist>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                        <button type="submit" className="w-full bg-brand-600 text-white py-2 rounded hover:bg-brand-700">
                             Guardar Proyecto
                         </button>
                     </form>
@@ -290,7 +285,7 @@ export default function AdminProjects() {
                         <input 
                             type="text"
                             placeholder="Buscar centro de costo..."
-                            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64 mb-2"
+                            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 outline-none w-full md:w-64 mb-2"
                             value={allocationSearch}
                             onChange={e => setAllocationSearch(e.target.value)}
                         />
@@ -358,7 +353,7 @@ export default function AdminProjects() {
                 <input 
                     type="text"
                     placeholder="Buscar por nombre, código o cliente..."
-                    className="px-4 py-2 border rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="px-4 py-2 border rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-brand-500 outline-none"
                     value={projectSearch}
                     onChange={e => setProjectSearch(e.target.value)}
                 />
@@ -392,7 +387,7 @@ export default function AdminProjects() {
                                     {filtered.map(p => (
                                         <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
                                             <td className="px-6 py-4 font-medium">
-                                                <Link to={`/admin/projects/${p.id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                                                <Link to={`/admin/projects/${p.id}`} className="text-brand-600 hover:text-brand-800 hover:underline">
                                                    <div className="font-medium text-gray-900">
                                                 {p.code ? `[${p.code}] ` : ''}{p.name}
                                             </div>

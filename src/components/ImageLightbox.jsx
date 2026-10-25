@@ -20,7 +20,7 @@ function MediaViewer({ url, label }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium focus-ring transition"
+          className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2 rounded-lg text-sm font-medium focus-ring transition"
         >
           Abrir PDF
         </a>
@@ -36,7 +36,7 @@ function MediaViewer({ url, label }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-blue-500 hover:underline focus-ring rounded"
+          className="text-xs text-brand-500 hover:underline focus-ring rounded"
         >
           Intentar abrir directamente
         </a>
@@ -100,7 +100,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
                 onClick={() => setActiveTab('recibo')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium focus-ring transition ${
                   effectiveTab === 'recibo'
-                    ? 'bg-white text-blue-700 shadow-sm'
+                    ? 'bg-white text-brand-700 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -125,7 +125,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
           ) : (
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
               {hasReceipt ? (
-                <><FileText className="w-4 h-4 text-blue-500" aria-hidden="true" /> Recibo</>
+                <><FileText className="w-4 h-4 text-brand-500" aria-hidden="true" /> Recibo</>
               ) : hasVoucher ? (
                 <><CreditCard className="w-4 h-4 text-purple-500" aria-hidden="true" /> Voucher</>
               ) : null}
@@ -163,7 +163,7 @@ export default function ImageLightbox({ isOpen, onClose, receiptUrl, voucherUrl 
               href={currentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline focus-ring rounded"
+              className="text-sm text-brand-600 hover:underline focus-ring rounded"
             >
               Abrir en nueva pestaña
             </a>

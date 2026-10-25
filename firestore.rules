@@ -40,11 +40,14 @@ service cloud.firestore {
         && d.createdAt is string
         && nullableString(d, 'projectId')
         && nullableNumber(d, 'amountCOP')
+        && nullableNumber(d, 'amountBase')
         && nullableNumber(d, 'trm')
         && (!('isCompanyExpense' in d) || d.isCompanyExpense is bool);
     }
 
-    function isColombiaExpense() { return resource.data.get('currency', 'COP') == 'COP'; }
+    // Base currency of the tenant comes from the claims (COP for SPI).
+    function baseCurrency() { return claims().get('baseCurrency', 'COP'); }
+    function isColombiaExpense() { return resource.data.get('currency', baseCurrency()) == baseCurrency(); }
     function canReviewCurrent() {
       return isAdmin()
         || (hasFlag('canApprove') && !isColombiaExpense())

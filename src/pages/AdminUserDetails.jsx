@@ -18,6 +18,7 @@ import { reviewExpense, deleteExpense } from "../lib/expenseActions";
 import { PinCancelled } from "../lib/pin";
 import { useAuth } from "../context/useAuth";
 import { isSuperadmin } from "../lib/roles";
+import { BASE_CURRENCY, country } from "../lib/country";
 import {
   ArrowLeft,
   CheckCircle,
@@ -313,7 +314,7 @@ export default function AdminUserDetails() {
       <div className="mb-6">
         <Link
           to="/admin/balances"
-          className="text-blue-600 hover:text-blue-800 flex items-center"
+          className="text-brand-600 hover:text-brand-800 flex items-center"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Balances
         </Link>
@@ -336,12 +337,12 @@ export default function AdminUserDetails() {
             <p className="text-sm text-gray-500 capitalize">{user.role}</p>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-lg shadow-sm border border-blue-500 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-br from-brand-600 to-brand-800 p-6 rounded-lg shadow-sm border border-brand-500 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Wallet className="w-16 h-16" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-blue-100 text-sm font-medium mb-1">
+            <h3 className="text-brand-100 text-sm font-medium mb-1">
               Saldo Actual (Presupuesto)
             </h3>
             <p className="text-3xl font-bold">
@@ -360,7 +361,7 @@ export default function AdminUserDetails() {
         const PERM_ROWS = [
           { key: 'canApprove',         label: 'Puede aprobar rendiciones',         defaultVal: effectivePerms.canApprove },
           { key: 'canDelete',           label: 'Puede eliminar rendiciones',         defaultVal: effectivePerms.canDelete },
-          { key: 'isColombiaApprover',  label: 'Aprobador Colombia (COP)',           defaultVal: effectivePerms.isColombiaApprover },
+          { key: 'isColombiaApprover',  label: `Aprobador ${country.name} (${BASE_CURRENCY})`,           defaultVal: effectivePerms.isColombiaApprover },
           { key: 'canExport',           label: 'Puede exportar CSV',                 defaultVal: effectivePerms.canExport },
           { key: 'requiresApproval',    label: 'Sus rendiciones requieren aprobación', defaultVal: user.requiresApproval !== false },
         ];
@@ -432,7 +433,7 @@ export default function AdminUserDetails() {
                </h3>
                <button 
                   onClick={() => setTransferModalOpen(true)}
-                  className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 flex items-center font-medium transition"
+                  className="text-sm bg-brand-50 text-brand-600 px-3 py-1 rounded-full hover:bg-brand-100 flex items-center font-medium transition"
                >
                  <ArrowRightLeft className="w-4 h-4 mr-1" /> Reasignar Recursos
                </button>
@@ -461,7 +462,7 @@ export default function AdminUserDetails() {
                                if (e.status === 'rejected') return; // Exclude rejected
                                const pid = e.projectId || 'unknown';
                                if (!projectStats[pid]) projectStats[pid] = { expByCurrency: {}, totalAlloc: 0, name: e.projectName || 'Sin Proyecto' };
-                               const currency = e.currency || 'COP';
+                               const currency = e.currency || BASE_CURRENCY;
                                projectStats[pid].expByCurrency[currency] = (projectStats[pid].expByCurrency[currency] || 0) + (Number(e.amount) || 0);
                                if (e.projectName) projectStats[pid].name = e.projectName;
                            });
@@ -485,7 +486,7 @@ export default function AdminUserDetails() {
                                };
                            });
 
-                           const currencyOrder = ['COP', 'USD', 'EUR', 'CLP'];
+                           const currencyOrder = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
 
                            if (rows.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-gray-400">No hay actividad registrada.</td></tr>;
 
@@ -495,7 +496,7 @@ export default function AdminUserDetails() {
                                const projectAllocations = allocations.filter(a => a.projectId === row.id || (!a.projectId && row.id === 'unknown'));
                                const byCurrency = row.expByCurrency || {};
                                const activeCurrencies = currencyOrder.filter(c => byCurrency[c]);
-                               const copTotal = byCurrency['COP'] || 0;
+                               const copTotal = byCurrency[BASE_CURRENCY] || 0;
                                const copSaldo = copTotal - row.totalAlloc;
                                const totalExpAll = Object.values(byCurrency).reduce((s, v) => s + v, 0);
                                const hasUsd = byCurrency['USD'] > 0;
@@ -516,18 +517,18 @@ export default function AdminUserDetails() {
                                        </td>
                                        <td className="px-6 py-4 text-right">
                                            {activeCurrencies.length === 0 ? (
-                                               <span className="font-medium text-blue-600">{formatCurrency(0)}</span>
+                                               <span className="font-medium text-brand-600">{formatCurrency(0)}</span>
                                            ) : activeCurrencies.map((c, i) => (
-                                               <div key={c} className={i === 0 ? 'font-bold text-blue-600' : 'text-sm text-gray-400'}>
+                                               <div key={c} className={i === 0 ? 'font-bold text-brand-600' : 'text-sm text-gray-400'}>
                                                    {formatCurrency(byCurrency[c], c)}
                                                    <span className="text-xs font-normal ml-1">{c}</span>
                                                </div>
                                            ))}
                                        </td>
                                        <td className="px-6 py-4 text-right">
-                                           <div className={`font-bold ${copSaldo >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                                           <div className={`font-bold ${copSaldo >= 0 ? 'text-brand-600' : 'text-red-500'}`}>
                                                {formatCurrency(copSaldo)}
-                                               <span className="text-xs font-normal ml-1">COP</span>
+                                               <span className="text-xs font-normal ml-1">{BASE_CURRENCY}</span>
                                            </div>
                                            {hasUsd && (
                                                <div className="text-sm text-gray-400 mt-0.5">
@@ -608,7 +609,7 @@ export default function AdminUserDetails() {
                                                                                 <td className="px-3 py-2">
                                                                                     <p className="font-medium text-gray-700">{e.category}</p>
                                                                                     <p className="text-gray-400 truncate max-w-[150px]">{e.description}</p>
-                                                                                    {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-blue-500 hover:underline">Ver Recibo</a>}
+                                                                                    {e.imageUrl && <a href={e.imageUrl} target="_blank" className="text-brand-500 hover:underline">Ver Recibo</a>}
                                                                                 </td>
                                                                                 <td className="px-3 py-2 font-bold text-gray-700 text-right">{formatCurrency(e.amount, e.currency)}</td>
                                                                                 <td className="px-3 py-2 text-center text-[10px] text-gray-500">
@@ -624,14 +625,14 @@ export default function AdminUserDetails() {
                                                                                 <td className="px-3 py-2 text-center">
                                                                                     {(!e.status || ['pending', 'Pending', 'PENDING'].includes(e.status)) ? (
                                                                                         <div className="flex justify-center gap-1">
-                                                                                            <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-blue-600 hover:bg-blue-50 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
+                                                                                            <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-brand-600 hover:bg-brand-50 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Aprobar rendición" title="Aprobar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'approved', e.amount); }} className="p-1 text-green-600 hover:bg-green-100 rounded focus-ring"><CheckCircle className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Rechazar rendición" title="Rechazar" onClick={(ev) => { ev.stopPropagation(); handleUpdateStatus(e.id, 'rejected', e.amount); }} className="p-1 text-red-600 hover:bg-red-100 rounded focus-ring"><XCircle className="w-4 h-4" aria-hidden="true" /></button>
                                                                                             <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
                                                                                         </div>
                                                                                     ) : (
                                                                                       <div className="flex justify-center gap-1">
-                                                                                        <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-blue-600 hover:bg-blue-50 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
+                                                                                        <button type="button" aria-label="Ver detalles" title="Ver detalles" onClick={(ev) => { ev.stopPropagation(); setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }} className="p-1 text-brand-600 hover:bg-brand-50 rounded focus-ring"><Eye className="w-4 h-4" aria-hidden="true" /></button>
                                                                                         <button type="button" aria-label="Eliminar rendición" title="Eliminar" onClick={(ev) => { ev.stopPropagation(); handleDeleteExpense(e); }} className="p-1 text-gray-400 hover:text-red-500 rounded focus-ring"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
                                                                                       </div>
                                                                                     )}
@@ -661,7 +662,7 @@ export default function AdminUserDetails() {
       {transferModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                  <h3 className="text-lg font-bold mb-4 flex items-center text-blue-800">
+                  <h3 className="text-lg font-bold mb-4 flex items-center text-brand-800">
                       <ArrowRightLeft className="w-5 h-5 mr-2" /> Reasignar Recursos entre Proyectos
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
@@ -721,7 +722,7 @@ export default function AdminUserDetails() {
                           </button>
                           <button 
                               type="submit"
-                              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                              className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700"
                           >
                               Reasignar
                           </button>

@@ -4,7 +4,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
-import { BASE_CURRENCY, nowIso, requireAuth } from './common';
+import { BASE_CURRENCY, COUNTRY, nowIso, requireAuth } from './common';
 import { activeDelegate, approvalPolicyFrom, pendingApproverUids, planOnCreate, type ApprovalFlow, type Delegation } from './approval.logic';
 import { notifyUser } from './notify';
 
@@ -13,14 +13,15 @@ export const TIMEZONE = defineString('TIMEZONE', { default: 'America/Bogota' });
 export function baseAmount(expense: FirebaseFirestore.DocumentData): number | null {
   const currency = expense.currency ?? BASE_CURRENCY.value();
   if (currency === BASE_CURRENCY.value()) return Number(expense.amount) || 0;
-  return typeof expense.amountCOP === 'number' ? expense.amountCOP : null;
+  if (typeof expense.amountBase === 'number') return expense.amountBase;
+  return BASE_CURRENCY.value() === 'COP' && typeof expense.amountCOP === 'number' ? expense.amountCOP : null;
 }
 
 export function formatAmount(expense: FirebaseFirestore.DocumentData): string {
   const currency = expense.currency ?? BASE_CURRENCY.value();
   const value = Number(expense.amount) || 0;
   try {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency, maximumFractionDigits: currency === 'USD' || currency === 'EUR' ? 2 : 0 }).format(value);
+    return new Intl.NumberFormat(COUNTRY.value() === 'CL' ? 'es-CL' : 'es-CO', { style: 'currency', currency, maximumFractionDigits: currency === 'USD' || currency === 'EUR' ? 2 : 0 }).format(value);
   } catch {
     return `${value} ${currency}`;
   }

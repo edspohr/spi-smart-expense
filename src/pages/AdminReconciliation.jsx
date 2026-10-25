@@ -213,7 +213,7 @@ export default function AdminReconciliation() {
       ];
     });
     const ws = XLSX.utils.aoa_to_sheet([
-      ['Fecha Extracto', 'Monto Extracto', 'Comercio Extracto', 'Referencia', 'Estado', 'Usuario SPI', 'Proyecto SPI', 'No. Factura'],
+      ['Fecha Extracto', 'Monto Extracto', 'Comercio Extracto', 'Referencia', 'Estado', 'Usuario', 'Proyecto', 'No. Factura'],
       ...rows,
     ]);
     const wb = XLSX.utils.book_new();
@@ -326,7 +326,7 @@ export default function AdminReconciliation() {
                     <th className="px-4 py-3 font-semibold text-gray-500">Fecha Extracto</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Monto Extracto</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Comercio Extracto</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500">Coincidencia SPI</th>
+                    <th className="px-4 py-3 font-semibold text-gray-500">Coincidencia en la app</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Usuario</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Proyecto</th>
                   </tr>

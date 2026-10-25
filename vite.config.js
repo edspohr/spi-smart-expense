@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
@@ -78,7 +78,10 @@ function pwaPlugin(tenant) {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const tenantId = process.env.VITE_TENANT || 'spi'
+  // `vite --mode demo` loads .env.demo (that tenant's Firebase project) and
+  // VITE_TENANT from it; an explicit VITE_TENANT in the shell still wins.
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const tenantId = process.env.VITE_TENANT || env.VITE_TENANT || 'spi'
   const tenant = loadTenant(tenantId)
 
   return {

@@ -1,8 +1,11 @@
+import { tenant } from './tenant';
+import { country } from './country';
+
 // Shared constants for expense capture, edit, display, and reporting flows.
 // Values are stored as-is in Firestore; labels are Spanish UI strings.
 
 // Extension point — add new categories here; they propagate to all forms, filters and exports.
-export const CATEGORIES_COMMON = [
+const DEFAULT_CATEGORIES = [
   "RESTAURANTE - ALIMENTACION",
   "HOTEL",
   "ROOMING",
@@ -19,6 +22,8 @@ export const CATEGORIES_COMMON = [
   "VARIOS",
 ];
 
+export const CATEGORIES_COMMON = tenant.categories?.length ? tenant.categories : DEFAULT_CATEGORIES;
+
 // Amex and Citi removed from PAYMENT_METHODS — they are now captured under CARD_BRANDS (Marca de tarjeta).
 // Legacy expenses that still hold "Amex" or "Citi" are resolved via PAYMENT_METHOD_LABELS below.
 export const PAYMENT_METHODS = [
@@ -26,7 +31,7 @@ export const PAYMENT_METHODS = [
   { value: "Debit Card", label: "Tarjeta Débito" },
   { value: "Cash", label: "Efectivo" },
   { value: "Transfer", label: "Transferencia" },
-  { value: "Wallet", label: "Billetera Digital (Nequi/Daviplata)" },
+  { value: "Wallet", label: country.walletLabel },
   { value: "Other", label: "Otro" },
 ];
 
@@ -47,17 +52,13 @@ export const CARD_BRANDS = [
   { value: "other", label: "Otra" },
 ];
 
-export const CARD_COMPANIES = [
-  { value: "SPI Americas", label: "SPI Americas" },
-  { value: "SPI Advisors", label: "SPI Advisors" },
-];
+// Paying entities of the tenant (e.g. SPI Americas / SPI Advisors).
+export const CARD_COMPANIES = (tenant.cardCompanies ?? []).map((name) => ({ value: name, label: name }));
 
-export const CURRENCIES = [
-  { value: "COP", label: "COP ($)" },
-  { value: "USD", label: "USD (u$s)" },
-  { value: "EUR", label: "EUR (€)" },
-  { value: "CLP", label: "CLP ($)" },
-];
+const CURRENCY_LABELS = { COP: "COP ($)", USD: "USD (u$s)", EUR: "EUR (€)", CLP: "CLP ($)" };
+
+// Currencies the tenant accepts; the base currency comes first.
+export const CURRENCIES = tenant.locale.currencies.map((value) => ({ value, label: CURRENCY_LABELS[value] ?? value }));
 
 export const CARD_BRAND_LABELS = Object.fromEntries(
   CARD_BRANDS.map(b => [b.value, b.label])

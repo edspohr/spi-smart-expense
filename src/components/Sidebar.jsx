@@ -8,6 +8,7 @@ import InstallButton from './InstallButton';
 import { useTenantSettings } from '../context/SettingsContext';
 import { useMyPendingApprovals } from '../lib/myApprovals';
 import { ROLE_LABELS, isAdminRole, isSuperadmin } from '../lib/roles';
+import { tenant } from '../lib/tenant';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { userRole, logout, currentUser } = useAuth();
@@ -36,10 +37,15 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     `}>
       <div className="flex items-center justify-center px-2 mb-8 mt-2">
         <div className="flex items-center space-x-3">
-             <div className="bg-brand-600 p-2 rounded-xl shadow-lg shadow-brand-500/30">
-                <img src="/logo.png" alt="Logo" className="h-6 w-auto invert brightness-0" />
-            </div>
-            <span className="font-bold text-lg text-zinc-800 tracking-tight">Smart Expense</span>
+            {tenant.branding.icon ? (
+              // A full-colour square icon is shown as is.
+              <img src={tenant.branding.icon} alt="" className="h-10 w-10 rounded-xl shadow-lg shadow-brand-500/30" />
+            ) : (
+              <div className="bg-brand-600 p-2 rounded-xl shadow-lg shadow-brand-500/30">
+                <img src={tenant.branding.logo} alt="" className="h-6 w-auto invert brightness-0" />
+              </div>
+            )}
+            <span className="font-bold text-lg text-zinc-800 tracking-tight">{tenant.branding.productName}</span>
         </div>
       </div>
 

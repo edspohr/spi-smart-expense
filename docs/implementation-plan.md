@@ -29,7 +29,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 4 | PIN por acción | Transparente (apagado por defecto) | Deployada 2026-10-25 (`23bfff1`) |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Deployada 2026-10-25 (`1f5d0af`) |
-| 7 | País configurable + tenant demo | Transparente | Pendiente |
+| 7 | País configurable + tenant demo | Transparente | Implementada 2026-10-25 (deploy SPI pendiente; demo espera su proyecto Firebase) |
 | 8 | Observabilidad y operación | Transparente | Pendiente |
 | 9 | Calidad (refactor monolitos, e2e) | Transparente | Pendiente |
 
@@ -679,6 +679,26 @@ tenant demo Expense Buddy exista con datos realistas para Elecnor.
   ETFA).
 
 **Dependencies:** Ola 3 (settings), Ola 5 (política por tenant).
+
+**Desviaciones implementadas (2026-10-25):**
+- El permiso conserva el nombre `isColombiaApprover` (ahora significa
+  "aprobador en moneda base" y se rotula con el país); renombrarlo exigía
+  migrar documentos y claims sin beneficio para el usuario. El claim lleva
+  `baseCurrency` y las reglas comparan contra él.
+- Gastos nuevos guardan `baseCurrency` + `amountBase`; `amountCOP` sigue
+  escribiéndose cuando la base es COP. TD-026 (agregados con monedas
+  mezcladas) queda igual: ahora el dato para corregirlo existe.
+- Sin usuarios `@system.local` ni `isSystemUser()`: los usuarios demo son
+  personas ficticias reales (`@andesenergia.demo`) que la demo necesita
+  mostrar. Scripts en `.mjs` (como los demás), no `.ts`.
+- `bootstrap-tenant` genera archivos e imprime los pasos de consola; no
+  ejecuta deploys ni crea proyectos (requieren al responsable).
+- `useSpeechToText` no se portó: pasa a backlog.
+- Además: `auth.selfSignup` por tenant (registro abierto solo en SPI),
+  branding de login/sidebar desde el tenant, clases `blue-*` → `brand-*`,
+  centros de costo por defecto en `tenants/spi.json` y
+  `functions/.env.<proyecto>` versionados.
+
 **Impacto en SPI:** Transparente. SPI sigue COP / BanRep / NIT.
 
 ### Prompt 7 (paste into Claude Code)

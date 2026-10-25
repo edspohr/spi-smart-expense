@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "spi": "spi-smart-expense",
+    "demo": "expense-buddy-demo"
+  }
+}

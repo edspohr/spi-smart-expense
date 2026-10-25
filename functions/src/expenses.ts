@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { isAdminRole, nowIso, requireAuth, requireString, type AppClaims } from './common';
+import { BASE_CURRENCY, isAdminRole, nowIso, requireAuth, requireString, type AppClaims } from './common';
 import { requirePinFor } from './pin';
 import { ApprovalError, applyApproval, eligibility, pendingApproverUids, type Actor, type ApprovalFlow } from './approval.logic';
 import { baseAmount, delegateOf, formatAmount } from './approval';
@@ -11,12 +11,13 @@ type Status = 'pending' | 'approved' | 'rejected';
 
 const TARGET: Record<Action, Status> = { approve: 'approved', reject: 'rejected', reopen: 'pending' };
 
-// Mirrors src/lib/permissions.js canUserApprove(): COP needs the Colombia
-// approver flag, any other currency needs canApprove.
+// Mirrors src/lib/permissions.js canUserApprove(): base-currency expenses need
+// the base-currency approver flag, any other currency needs canApprove.
 function canFinance(claims: AppClaims, expense: FirebaseFirestore.DocumentData): boolean {
   if (isAdminRole(claims.role)) return true;
-  const isColombia = (expense.currency ?? 'COP') === 'COP';
-  return isColombia ? claims.isColombiaApprover === true : claims.canApprove === true;
+  // `isColombiaApprover` is the historical name of the base-currency approver flag.
+  const isBase = (expense.currency ?? BASE_CURRENCY.value()) === BASE_CURRENCY.value();
+  return isBase ? claims.isColombiaApprover === true : claims.canApprove === true;
 }
 
 async function buildActor(uid: string, name: string, claims: AppClaims, expense: FirebaseFirestore.DocumentData): Promise<Actor> {

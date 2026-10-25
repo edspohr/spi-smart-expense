@@ -17,6 +17,7 @@ const args = new Set(process.argv.slice(2));
 const apply = args.has('--apply');
 const prod = args.has('--prod');
 const tenantId = process.env.TENANT_ID || 'spi';
+const baseCurrency = process.env.BASE_CURRENCY || 'COP';
 if (!apply && !args.has('--dry-run')) {
   console.error('Pass --dry-run or --apply');
   process.exit(1);
@@ -57,7 +58,7 @@ let missing = 0;
 
 for (const docSnap of snap.docs) {
   const uid = docSnap.id;
-  const desired = claimsFromUserDoc(docSnap.data(), tenantId);
+  const desired = claimsFromUserDoc(docSnap.data(), tenantId, baseCurrency);
   let current;
   try {
     current = (await auth.getUser(uid)).customClaims;

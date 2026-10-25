@@ -7,7 +7,7 @@ import { subscribeNotifications, markRead } from '../lib/notifications';
 const TYPE_COLORS = {
   rejection:    'bg-red-50 border-red-100',
   status_change: 'bg-green-50 border-green-100',
-  assignment:   'bg-blue-50 border-blue-100',
+  assignment:   'bg-brand-50 border-brand-100',
 };
 
 const PREVIEW_LIMIT = 8;

@@ -41,7 +41,7 @@ export default function ProtectedRoute({ children, requiredRole, module }) {
                   </p>
                   <button
                       onClick={() => signOut(auth)}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                      className="w-full bg-brand-600 text-white py-2 px-4 rounded hover:bg-brand-700 transition"
                   >
                       Cerrar Sesión e Intentar de Nuevo
                   </button>

@@ -15,18 +15,27 @@
       "700": "#1d4ed8",
       "800": "#1e40af",
       "900": "#1e3a8a"
-    }
+    },
+    "productName": "Smart Expense",
+    "legalName": "SPI Americas",
+    "emailPlaceholder": "ejemplo@spiamericas.com"
   },
   "locale": {
     "country": "CO",
     "language": "es-CO",
     "baseCurrency": "COP",
-    "currencies": ["COP", "USD", "EUR", "CLP"],
+    "currencies": [
+      "COP",
+      "USD",
+      "EUR",
+      "CLP"
+    ],
     "taxIdLabel": "NIT",
     "fxProvider": "banrep"
   },
   "auth": {
-    "googleLogin": true
+    "googleLogin": true,
+    "selfSignup": true
   },
   "modules": {
     "bulkUpload": true,
@@ -36,5 +45,46 @@
   },
   "security": {
     "pinEnabled": false
-  }
+  },
+  "cardCompanies": [
+    "SPI Americas",
+    "SPI Advisors"
+  ],
+  "defaultProjects": [
+    {
+      "code": "51",
+      "name": "Administración",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "52",
+      "name": "Ventas",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "51/52",
+      "name": "Mix (54% Ventas / 46% Admin)",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "PI",
+      "name": "PI - Ventas",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "AR",
+      "name": "AR - Ventas",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "6",
+      "name": "Costo",
+      "client": "SPI Americas"
+    },
+    {
+      "code": "SOCIOS",
+      "name": "Socios - Cuenta Exclusiva",
+      "client": "SPI Americas"
+    }
+  ]
 }

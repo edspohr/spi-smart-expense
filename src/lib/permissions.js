@@ -1,3 +1,5 @@
+import { tenant } from './tenant';
+
 /**
  * Granular RBAC helpers.
  * Permission flags are stored on the user Firestore doc under `permissions`.
@@ -24,11 +26,11 @@ export function resolvePermissions(userData) {
 }
 
 /**
- * An expense is considered a "Colombia expense" when its currency is COP
- * (the documented assumption; can be refined to a country field later).
+ * Expenses in the tenant's base currency (COP for SPI, CLP for Chile) need
+ * the dedicated base-currency approver flag (historically "isColombiaApprover").
  */
 export function isColombiaExpense(expense) {
-  return (expense?.currency || 'COP') === 'COP';
+  return (expense?.currency || tenant.locale.baseCurrency) === tenant.locale.baseCurrency;
 }
 
 /**

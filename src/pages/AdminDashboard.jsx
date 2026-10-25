@@ -1,3 +1,4 @@
+import { BASE_CURRENCY, baseAmountOf } from '../lib/country';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -40,11 +41,9 @@ function parseDate(s) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Base-currency value (tenant base); null for foreign expenses without a rate.
 function copEquivalent(exp) {
-  const c = exp.currency || 'COP';
-  if (c === 'USD' || c === 'EUR') return Number(exp.amountCOP) || null;
-  if (c === 'CLP') return null;
-  return Number(exp.amount) || 0;
+  return baseAmountOf(exp);
 }
 
 function median(values) {
@@ -81,7 +80,7 @@ function applyFilters(expenses, filters, projectsMap) {
 function sumByCurrency(list) {
   const totals = {};
   list.forEach(e => {
-    const c = e.currency || 'COP';
+    const c = e.currency || BASE_CURRENCY;
     totals[c] = (totals[c] || 0) + (Number(e.amount) || 0);
   });
   return totals;
@@ -97,7 +96,7 @@ function sumCopEquivalent(list) {
 }
 
 function renderStack(byCurrency) {
-  const order = ['COP', 'USD', 'EUR', 'CLP'];
+  const order = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),
@@ -203,7 +202,7 @@ function buildRankedGroups(filteredExpenses) {
       });
     }
     const g = groups.get(key);
-    const c = e.currency || 'COP';
+    const c = e.currency || BASE_CURRENCY;
     const amt = Number(e.amount) || 0;
     g.totalByCurrency[c] = (g.totalByCurrency[c] || 0) + amt;
     const cop = copEquivalent(e);
@@ -266,7 +265,7 @@ function buildTeamRows(clientProjectFilteredExpenses, users) {
     row.count += 1;
     const d = parseDate(e.date);
     if (d && d >= thirtyDaysAgo && d <= now) {
-      const c = e.currency || 'COP';
+      const c = e.currency || BASE_CURRENCY;
       row.last30ByCurrency[c] = (row.last30ByCurrency[c] || 0) + (Number(e.amount) || 0);
     }
     if (e.date && (!row.lastActivityDate || e.date > row.lastActivityDate)) {
@@ -296,7 +295,7 @@ function buildAnomalies(expenses) {
         type: 'missing-receipt',
         priority: 1,
         date: e.date,
-        description: `${e.userName || 'Usuario'} — ${formatCurrency(Number(e.amount) || 0, e.currency || 'COP')} ${e.currency || 'COP'} — ${e.date || 'sin fecha'}`,
+        description: `${e.userName || 'Usuario'} — ${formatCurrency(Number(e.amount) || 0, e.currency || BASE_CURRENCY)} ${e.currency || BASE_CURRENCY} — ${e.date || 'sin fecha'}`,
         expense: e,
       });
     }
@@ -334,7 +333,7 @@ function buildAnomalies(expenses) {
       type: 'duplicate',
       priority: 3,
       date: head.date,
-      description: `${countPrefix}${head.userName || 'Usuario'} — ${formatCurrency(Number(head.amount) || 0, head.currency || 'COP')} ${head.currency || 'COP'} — ${head.date}`,
+      description: `${countPrefix}${head.userName || 'Usuario'} — ${formatCurrency(Number(head.amount) || 0, head.currency || BASE_CURRENCY)} ${head.currency || BASE_CURRENCY} — ${head.date}`,
       expense: head,
     });
   });
@@ -344,8 +343,7 @@ function buildAnomalies(expenses) {
   nonRejected.forEach(e => {
     const d = parseDate(e.date);
     if (!d || d < activityCutoff || d > now) return;
-    const cur = e.currency || 'COP';
-    if (cur === 'CLP') return;
+    const cur = e.currency || BASE_CURRENCY;
     const cat = e.category || 'Otros (sin categoría)';
     const key = `${cat}|${cur}`;
     if (!catCurrencyBuckets.has(key)) catCurrencyBuckets.set(key, { cat, cur, list: [] });
@@ -576,8 +574,8 @@ export default function AdminDashboard() {
         <StatCardLarge
           label="Total rendido"
           icon={TrendingUp}
-          iconBgClass="bg-blue-50"
-          iconColorClass="text-blue-600"
+          iconBgClass="bg-brand-50"
+          iconColorClass="text-brand-600"
           value={rendidoValue}
           subtitle={stats.approvedPctLabel}
         />

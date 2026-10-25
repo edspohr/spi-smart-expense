@@ -8,6 +8,7 @@ import { auth, db } from "../lib/firebase";
 import { toast } from 'sonner';
 import InstallButton from '../components/InstallButton';
 import { consumeAuthNotice } from '../context/authNotice';
+import { tenant } from '../lib/tenant';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
@@ -114,10 +115,10 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <div className="flex justify-center mb-6">
-            <img src="/logo.png" alt="SPI Smart Expense" className="h-24 w-auto" />
+            <img src={tenant.branding.logo} alt={tenant.name} className="h-24 w-auto" />
         </div>
         <h2 className="text-2xl font-bold mb-2 text-gray-800">
-            {isRegistering ? 'Crear Cuenta' : 'Smart Expense'}
+            {isRegistering ? 'Crear Cuenta' : tenant.branding.productName}
         </h2>
         <p className="text-sm text-gray-500 mb-6">
             {isRegistering ? 'Regístrate para gestionar tus rendiciones' : 'Inicia sesión para continuar'}
@@ -148,7 +149,7 @@ export default function Login() {
                     className="w-full border border-gray-300 rounded p-2"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="ejemplo@spiamericas.com"
+                    placeholder={tenant.branding.emailPlaceholder}
                 />
             </div>
             
@@ -180,7 +181,7 @@ export default function Login() {
 
             {!isRegistering && (
                 <div className="text-right">
-                    <button type="button" onClick={handleResetPassword} className="text-sm text-blue-600 hover:underline">
+                    <button type="button" onClick={handleResetPassword} className="text-sm text-brand-600 hover:underline">
                         ¿Olvidaste tu contraseña?
                     </button>
                 </div>
@@ -188,7 +189,7 @@ export default function Login() {
             
             <button
                 type="submit"
-                className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition duration-200 flex items-center justify-center"
+                className="w-full bg-brand-600 text-white font-bold py-2 px-4 rounded hover:bg-brand-700 transition duration-200 flex items-center justify-center"
             >
                 {isRegistering ? (
                     <><UserPlus className="w-4 h-4 mr-2" /> Registrarse</>
@@ -198,23 +199,25 @@ export default function Login() {
             </button>
         </form>
 
+        {tenant.auth.selfSignup && (
         <div className="mt-6 border-t pt-4">
             <p className="text-sm text-gray-600 mb-2">
                 {isRegistering ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
             </p>
             <button 
                 onClick={toggleMode}
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-brand-600 font-semibold hover:underline"
             >
                 {isRegistering ? 'Inicia Sesión aquí' : 'Regístrate aquí'}
             </button>
         </div>
+        )}
         
         <div className="mt-6 flex justify-center">
             <InstallButton variant="pill" />
         </div>
 
-        <p className="mt-6 text-xs text-gray-400">© 2026 SPI Americas. Todos los derechos reservados.</p>
+        <p className="mt-6 text-xs text-gray-400">© {new Date().getFullYear()} {tenant.branding.legalName}. Todos los derechos reservados.</p>
       </div>
     </div>
   );

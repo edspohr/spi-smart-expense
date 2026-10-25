@@ -4,7 +4,7 @@ import { logger } from 'firebase-functions/v2';
 import { getApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI, type Part } from '@google/genai';
-import { GEMINI_DAILY_LIMIT_TENANT, GEMINI_DAILY_LIMIT_USER, TENANT_ID, nowIso, requireAuth } from './common';
+import { COUNTRY, GEMINI_DAILY_LIMIT_TENANT, GEMINI_DAILY_LIMIT_USER, TENANT_ID, nowIso, requireAuth } from './common';
 import { buildReceiptPrompt, isTransientGeminiError, postProcessExtraction } from './gemini.logic';
 
 // Gemini is called through Vertex AI: the Functions service account
@@ -130,7 +130,7 @@ export const extractReceipt = onCall({ memory: '512MiB', timeoutSeconds: 120 }, 
   await consumeQuota(uid);
 
   const parts: Part[] = [
-    { text: buildReceiptPrompt(categories) },
+    { text: buildReceiptPrompt(categories, COUNTRY.value() === 'CL' ? 'CL' : 'CO') },
     ...images.map((img) => ({ inlineData: { data: img.data, mimeType: img.mimeType } })),
   ];
 

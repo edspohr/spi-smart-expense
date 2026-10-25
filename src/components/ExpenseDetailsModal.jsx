@@ -6,6 +6,7 @@ import FocusableModal from './FocusableModal';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import AuditTimeline from './AuditTimeline';
+import { BASE_CURRENCY, baseAmountOf, country } from '../lib/country';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
   const [movements, setMovements] = useState([]);
@@ -31,7 +32,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
           <h3 id="expense-details-title" className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" aria-hidden="true" />
+            <FileText className="w-5 h-5 text-brand-600" aria-hidden="true" />
             Detalle del Gasto
           </h3>
           <button
@@ -79,7 +80,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                       </div>
                   </div>
                   <div>
-                      <label className="text-xs text-gray-500 block mb-1">NIT / ID Fiscal</label>
+                      <label className="text-xs text-gray-500 block mb-1">{country.taxIdLabel} / ID Fiscal</label>
                       <div className="flex items-center gap-2 text-gray-700">
                           <Hash className="w-4 h-4 text-gray-400" />
                           {expense.taxId || 'N/A'}
@@ -117,7 +118,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                     <div>
                         <label className="text-xs text-gray-500 block mb-1">Evento</label>
-                        <span className="font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded text-sm">
+                        <span className="font-medium text-brand-700 bg-brand-50 px-2 py-1 rounded text-sm">
                             {expense.eventName || 'N/A'}
                         </span>
                     </div>
@@ -180,17 +181,17 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
 
            {/* Conversion rate info (USD and EUR expenses) */}
            {(expense.currency === 'USD' || expense.currency === 'EUR') && expense.trm && (
-             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-               <h4 className="text-xs font-bold text-blue-800 uppercase mb-2">Conversión {expense.currency} → COP</h4>
+             <div className="bg-brand-50 p-4 rounded-xl border border-brand-100">
+               <h4 className="text-xs font-bold text-brand-800 uppercase mb-2">Conversión {expense.currency} → COP</h4>
                <div className="grid grid-cols-2 gap-2 text-sm">
                  <div>
-                   <label className="text-xs text-blue-600 block mb-0.5">Tasa aplicada</label>
-                   <span className="font-mono font-medium text-blue-800">{formatCurrency(expense.trm, 'COP')} COP/{expense.currency}</span>
+                   <label className="text-xs text-brand-600 block mb-0.5">Tasa aplicada</label>
+                   <span className="font-mono font-medium text-brand-800">{formatCurrency(expense.trm, BASE_CURRENCY)} {BASE_CURRENCY}/{expense.currency}</span>
                  </div>
-                 {expense.amountCOP && (
+                 {baseAmountOf(expense) !== null && (
                    <div>
-                     <label className="text-xs text-blue-600 block mb-0.5">Equivalente COP</label>
-                     <span className="font-mono font-bold text-blue-900">{formatCurrency(expense.amountCOP)}</span>
+                     <label className="text-xs text-brand-600 block mb-0.5">Equivalente {BASE_CURRENCY}</label>
+                     <span className="font-mono font-bold text-brand-900">{formatCurrency(baseAmountOf(expense), BASE_CURRENCY)}</span>
                    </div>
                  )}
                </div>
@@ -209,7 +210,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
            {/* Files Links */}
            <div className="flex gap-4 pt-2">
                {expense.receiptUrl && (
-                   <a href={expense.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 rounded-lg text-center text-sm font-medium transition flex items-center justify-center gap-2">
+                   <a href={expense.receiptUrl} target="_blank" rel="noopener noreferrer" className="flex-1 bg-brand-50 hover:bg-brand-100 text-brand-700 py-2 rounded-lg text-center text-sm font-medium transition flex items-center justify-center gap-2">
                        <FileText className="w-4 h-4" /> Recibo
                    </a>
                )}

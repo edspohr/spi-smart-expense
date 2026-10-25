@@ -1,4 +1,5 @@
 import { formatCurrency } from './format';
+import { BASE_CURRENCY } from '../lib/country';
 
 /**
  * Groups an array of expense objects by currency, summing amounts.
@@ -10,7 +11,7 @@ export function groupByCurrency(expenses) {
   const groups = {};
   (expenses || []).forEach(exp => {
     if (exp.status === 'rejected') return;
-    const currency = exp.currency || 'COP';
+    const currency = exp.currency || BASE_CURRENCY;
     if (!groups[currency]) groups[currency] = { total: 0, count: 0 };
     groups[currency].total += Number(exp.amount) || 0;
     groups[currency].count += 1;
@@ -25,7 +26,7 @@ export function groupByCurrency(expenses) {
  * @returns {string[]}
  */
 export function formatMultiCurrencyTotal(currencyGroups) {
-  const order = ['COP', 'USD', 'EUR', 'CLP'];
+  const order = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
   const currencies = [
     ...order.filter(c => currencyGroups[c]),
     ...Object.keys(currencyGroups).filter(c => !order.includes(c))

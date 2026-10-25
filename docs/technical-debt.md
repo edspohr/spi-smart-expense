@@ -455,6 +455,11 @@ dry-run para corregir los acumulados históricos.
 (`functions/src/aggregates.logic.ts`, ADR 0010), así que el fix es un cambio
 en esa función pura más la migración de recálculo.
 
+**Update 2026-10-25 (Ola 7):** los gastos nuevos guardan `amountBase` en la
+moneda base del tenant (CLP en el demo), así que el fix ya tiene su dato:
+sumar `amountBase ?? amountCOP ?? (currency === base ? amount : rechazar)`.
+En el demo, aprobar el gasto en USD sembrado reproduce el problema.
+
 ---
 
 # Items registered in Ola 2 (2026-10-25)
@@ -489,3 +494,17 @@ start puede ser mayor.
 
 **Recommended fix:** Suscribir el saldo con `onSnapshot` en `UserDashboard`
 (y en `AdminUserDetails`), lo que además encaja con el modo offline de Ola 6.
+
+---
+
+## TD-029 — Rutas desconocidas muestran una página en blanco
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low  
+**Files:** `src/App.jsx`
+
+**Problem:** No hay ruta comodín: `/dashboard/new` (o un enlace viejo)
+deja la pantalla en blanco sin mensaje. Detectado al probar el demo.
+
+**Recommended fix:** `<Route path="*" element={<Navigate to="/" replace />} />`
+o una página 404 simple con enlace al inicio.

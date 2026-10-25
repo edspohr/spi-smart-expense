@@ -2,7 +2,7 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { logger } from 'firebase-functions/v2';
 import { claimsEqual, claimsFromUserDoc } from './claims.logic';
-import { TENANT_ID } from './common';
+import { BASE_CURRENCY, TENANT_ID } from './common';
 
 // Mirrors users/{uid}.role / permissions / active into custom claims so
 // firestore.rules and storage.rules can authorise without a get() per read.
@@ -21,7 +21,7 @@ export const onUserWritten = onDocumentWritten('users/{uid}', async (event) => {
     return;
   }
 
-  const desired = claimsFromUserDoc(after.data(), TENANT_ID.value());
+  const desired = claimsFromUserDoc(after.data(), TENANT_ID.value(), BASE_CURRENCY.value());
   let current: Record<string, unknown> | undefined;
   try {
     current = (await auth.getUser(uid)).customClaims;

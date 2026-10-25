@@ -37,3 +37,19 @@ describe('buildReceiptPrompt', () => {
     expect(buildReceiptPrompt(['HOTEL', 'VARIOS'])).toContain('HOTEL, VARIOS');
   });
 });
+
+describe('country prompts', () => {
+  it('keeps Colombian rules by default and switches to RUT/boleta/CLP for Chile', () => {
+    expect(buildReceiptPrompt([])).toContain('NIT');
+    const cl = buildReceiptPrompt(['COMBUSTIBLE', 'VARIOS'], 'CL');
+    expect(cl).toContain('RUT');
+    expect(cl).toContain('Boleta');
+    expect(cl).toContain("'CLP', 'USD', or 'EUR'");
+    expect(cl).toContain("'COMBUSTIBLE'");
+  });
+
+  it('maps Chilean fuel merchants to COMBUSTIBLE', () => {
+    const out = postProcessExtraction('{"merchant":"Copec Ruta 5","category":"VARIOS"}', ['COMBUSTIBLE', 'VARIOS']);
+    expect(out.category).toBe('COMBUSTIBLE');
+  });
+});

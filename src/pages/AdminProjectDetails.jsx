@@ -10,6 +10,7 @@ import RejectionModal from '../components/RejectionModal';
 import { toast } from 'sonner';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
+import { BASE_CURRENCY } from '../lib/country';
 
 export default function AdminProjectDetails() {
   const { id } = useParams();
@@ -289,7 +290,7 @@ export default function AdminProjectDetails() {
   return (
     <Layout title={`Acciones: ${project.code ? `[${project.code}] ` : ''}${project.name}`}>
         <div className="mb-6">
-            <Link to="/admin/projects" className="text-blue-600 hover:text-blue-800 flex items-center">
+            <Link to="/admin/projects" className="text-brand-600 hover:text-brand-800 flex items-center">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Centros de Costo
             </Link>
         </div>
@@ -303,7 +304,7 @@ export default function AdminProjectDetails() {
              const activeExpenses = expenses.filter(e => e.status !== 'rejected');
              const renderedByCurrency = groupByCurrency(activeExpenses.filter(e => !e.isCompanyExpense));
              const totalByCurrency = groupByCurrency(activeExpenses);
-             const currencies = ['COP', 'USD', 'EUR', 'CLP'];
+             const currencies = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
 
              return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -316,12 +317,12 @@ export default function AdminProjectDetails() {
                         <h3 className="text-sm font-bold text-gray-500 mb-1 uppercase tracking-wide">Gasto Rendido</h3>
                         <div className="flex flex-col mt-1">
                             {currencies.filter(c => renderedByCurrency[c]).map((c, i) => (
-                                <span key={c} className={i === 0 ? 'text-2xl font-bold text-blue-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}>
+                                <span key={c} className={i === 0 ? 'text-2xl font-bold text-brand-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}>
                                     {formatCurrency(renderedByCurrency[c].total, c)}
                                     <span className="text-xs font-normal ml-1">{c}</span>
                                 </span>
                             ))}
-                            {Object.keys(renderedByCurrency).length === 0 && <span className="text-2xl font-bold text-blue-600">{formatCurrency(0)}</span>}
+                            {Object.keys(renderedByCurrency).length === 0 && <span className="text-2xl font-bold text-brand-600">{formatCurrency(0)}</span>}
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Justificado por usuarios</p>
                     </div>
@@ -371,13 +372,13 @@ export default function AdminProjectDetails() {
                                     <td className="px-4 py-3 text-gray-600">{e.date}</td>
                                     <td className="px-4 py-3 text-gray-800 font-medium">
                                         {e.userName}
-                                        {e.isCompanyExpense && <span className="block text-xs text-blue-500">Empresa</span>}
+                                        {e.isCompanyExpense && <span className="block text-xs text-brand-500">Empresa</span>}
                                     </td>
                                     <td className="px-4 py-3 text-gray-600">
                                         <p className="font-medium">{e.category}</p>
                                         <p className="text-xs truncate max-w-[150px]">{e.description}</p>
                                         {e.imageUrl && (
-                                            <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs block mt-1">Ver Recibo</a>
+                                            <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline text-xs block mt-1">Ver Recibo</a>
                                         )}
                                         {e.rejectionReason && e.status === 'rejected' && (
                                             <p className="text-xs text-red-500 mt-1 italic">"{e.rejectionReason}"</p>
@@ -471,7 +472,7 @@ export default function AdminProjectDetails() {
                                             type="button"
                                             aria-label="Editar asignación"
                                             onClick={() => openEditAllocation(a)}
-                                            className="text-gray-400 hover:text-blue-500 focus-ring rounded p-1"
+                                            className="text-gray-400 hover:text-brand-500 focus-ring rounded p-1"
                                             title="Editar Asignación"
                                         >
                                             <Pencil className="w-5 h-5" aria-hidden="true" />
@@ -564,7 +565,7 @@ export default function AdminProjectDetails() {
                             </button>
                             <button 
                                 type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                className="px-4 py-2 bg-brand-600 text-white rounded hover:bg-brand-700"
                             >
                                 Guardar Cambios
                             </button>

@@ -8,6 +8,7 @@ export const ROLES: readonly Role[] = ['superadmin', 'admin', 'assistant', 'prof
 export interface UserClaims {
   role: Role;
   tenantId: string;
+  baseCurrency: string;
   active: boolean;
   canApprove: boolean;
   canDelete: boolean;
@@ -15,7 +16,7 @@ export interface UserClaims {
   isColombiaApprover: boolean;
 }
 
-export function claimsFromUserDoc(data: Record<string, unknown> | undefined, tenantId: string): UserClaims {
+export function claimsFromUserDoc(data: Record<string, unknown> | undefined, tenantId: string, baseCurrency = 'COP'): UserClaims {
   const role = ROLES.includes(data?.role as Role) ? (data?.role as Role) : 'professional';
   const isAdmin = role === 'admin' || role === 'superadmin';
   const perms = (data?.permissions ?? {}) as Record<string, unknown>;
@@ -23,6 +24,7 @@ export function claimsFromUserDoc(data: Record<string, unknown> | undefined, ten
   return {
     role,
     tenantId,
+    baseCurrency,
     active: data?.active !== false,
     canApprove: flag('canApprove', isAdmin),
     canDelete: flag('canDelete', isAdmin),

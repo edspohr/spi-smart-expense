@@ -10,6 +10,7 @@ import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
+import { BASE_CURRENCY } from '../lib/country';
 
 export default function UserExpenses() {
   const { currentUser } = useAuth();
@@ -104,7 +105,7 @@ export default function UserExpenses() {
                         <td className="px-6 py-4 text-gray-500 text-sm">{e.cardCompany || '-'}</td>
                         <td className="px-6 py-4 font-medium">
                             {formatCurrency(e.amount, e.currency)}
-                            {e.currency && e.currency !== 'COP' && (
+                            {e.currency && e.currency !== BASE_CURRENCY && (
                                 <span className="text-xs text-gray-400 ml-1">{e.currency}</span>
                             )}
                         </td>
@@ -128,7 +129,7 @@ export default function UserExpenses() {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedExpense(e)}
-                                    className="p-2 text-gray-400 hover:text-blue-600 transition rounded-full hover:bg-blue-50 focus-ring"
+                                    className="p-2 text-gray-400 hover:text-brand-600 transition rounded-full hover:bg-brand-50 focus-ring"
                                     title="Ver detalles"
                                     aria-label="Ver detalles"
                                 >

@@ -11,8 +11,9 @@ import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
 import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { BASE_CURRENCY, baseEquivalentFields, country, needsRate } from '../lib/country';
 
-const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
+const NEEDS_RATE = needsRate;
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -209,7 +210,7 @@ export default function ExpenseForm() {
     description: '',
     category: '',
     amount: '',
-    currency: 'COP',
+    currency: BASE_CURRENCY,
     paymentMethod: '',
     cardLast4: '',
     cardCompany: '',
@@ -373,7 +374,7 @@ export default function ExpenseForm() {
       setFiles({ receipt: null, voucher: null });
       setPreviews({ receipt: null, voucher: null });
       setFormData({
-        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: 'COP', paymentMethod: '', cardLast4: '', cardCompany: '', cardBrand: ''
+        projectId: '', eventName: '', date: '', time: '', merchant: '', taxId: '', invoiceNumber: '', city: '', address: '', phone: '', description: '', category: '', amount: '', currency: BASE_CURRENCY, paymentMethod: '', cardLast4: '', cardCompany: '', cardBrand: ''
       });
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
@@ -494,7 +495,7 @@ export default function ExpenseForm() {
                 cardCompany: formData.cardCompany || null,
                 description: formData.description + (isSplitMode ? ' [Distribución]' : ''),
                 amount: item.amount,
-                currency: formData.currency || 'COP',
+                currency: formData.currency || BASE_CURRENCY,
                 cardLast4: formData.cardLast4 || null,
                 receiptUrl: null,
                 voucherUrl: null,
@@ -503,7 +504,7 @@ export default function ExpenseForm() {
                 isCompanyExpense: isProjectExpense,
                 splitGroupId,
                 trm: NEEDS_RATE(formData.currency) ? (trmState.trm || null) : null,
-                amountCOP: NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null,
+                ...baseEquivalentFields(formData.currency || BASE_CURRENCY, NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null),
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
             },
         };
@@ -514,7 +515,7 @@ export default function ExpenseForm() {
         await enqueueSubmission({
             id: crypto.randomUUID(),
             uid: currentUser.uid,
-            label: `${formData.merchant || 'Sin comercio'} · ${formatCurrency(totalAmount, formData.currency || 'COP')}`,
+            label: `${formData.merchant || 'Sin comercio'} · ${formatCurrency(totalAmount, formData.currency || BASE_CURRENCY)}`,
             createdAt,
             files: { receipt: asQueued(files.receipt), voucher: asQueued(files.voucher) },
             docs,
@@ -571,7 +572,7 @@ export default function ExpenseForm() {
             {step === 'upload' && (
                 <button 
                     onClick={() => { setIsManual(true); setStep('review'); }}
-                    className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition"
+                    className="text-sm font-bold text-brand-600 hover:bg-brand-50 px-4 py-2 rounded-lg transition"
                 >
                     Ingresar Manualmente &rarr;
                 </button>
@@ -592,7 +593,7 @@ export default function ExpenseForm() {
                          loadedLabel="Recibo Cargado"
                          LoadedIcon={FileText}
                          EmptyIcon={Upload}
-                         emptyIconColor="text-blue-500"
+                         emptyIconColor="text-brand-500"
                          preview={previews.receipt}
                          fileName={files.receipt?.name}
                          isCompressing={compressing.receipt}
@@ -700,8 +701,8 @@ export default function ExpenseForm() {
                     
                     {/* Admin/Assistant Mode Selector (Moved Here for Layout) */}
                      {(isAdminRole(userRole) || userRole === 'assistant') && (
-                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
-                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Asignación del Gasto</label>
+                        <div className="p-4 bg-brand-50 rounded-xl border border-brand-100 shadow-sm">
+                            <label className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-3">Asignación del Gasto</label>
 
                             <div className="space-y-2">
                                 {[
@@ -712,7 +713,7 @@ export default function ExpenseForm() {
                                     <label key={opt.id} className={`
                                         flex items-center px-3 py-2 rounded-lg cursor-pointer text-sm font-medium transition border w-full
                                         ${expenseMode === opt.id 
-                                            ? 'bg-white border-blue-300 text-blue-700 shadow-sm ring-1 ring-blue-300' 
+                                            ? 'bg-white border-blue-300 text-brand-700 shadow-sm ring-1 ring-blue-300' 
                                             : 'border-transparent text-gray-500 hover:bg-white hover:text-gray-700'}
                                     `}>
                                         <input 
@@ -723,7 +724,7 @@ export default function ExpenseForm() {
                                             onChange={() => setExpenseMode(opt.id)}
                                             className="sr-only"
                                         />
-                                        <span className={`w-2 h-2 rounded-full mr-2 ${expenseMode === opt.id ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                                        <span className={`w-2 h-2 rounded-full mr-2 ${expenseMode === opt.id ? 'bg-brand-500' : 'bg-gray-300'}`}></span>
                                         {opt.label}
                                     </label>
                                 ))}
@@ -732,7 +733,7 @@ export default function ExpenseForm() {
                                 {expenseMode === 'other' && (
                                 <div className="mt-3 animate-fadeIn">
                                     <select 
-                                        className="w-full border border-blue-200 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full border border-blue-200 rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-brand-500 outline-none"
                                         value={selectedUserId}
                                         onChange={e => setSelectedUserId(e.target.value)}
                                         required
@@ -758,7 +759,7 @@ export default function ExpenseForm() {
                             <input 
                                 type="text" 
                                 list="events-list"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500 uppercase"
                                 placeholder="Ej: FERIA CHICAGO 2026"
                                 value={formData.eventName}
                                 onChange={e => setFormData({...formData, eventName: e.target.value.toUpperCase()})}
@@ -778,15 +779,15 @@ export default function ExpenseForm() {
                                             onChange={e => setIsSplitMode(e.target.checked)}
                                             className="sr-only peer"
                                         />
-                                        <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                        <span className="ms-2 text-xs font-bold text-blue-600">Multi</span>
+                                        <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                                        <span className="ms-2 text-xs font-bold text-brand-600">Multi</span>
                                     </label>
                                 )}
                             </div>
                             
                             {!isSplitMode ? (
                                 <select 
-                                    className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                     value={formData.projectId}
                                     onChange={e => setFormData({...formData, projectId: e.target.value})}
                                 >
@@ -806,7 +807,7 @@ export default function ExpenseForm() {
                                         {splitRows.map((row, idx) => (
                                             <div key={idx} className="flex gap-2 items-center">
                                                 <select 
-                                                    className="flex-grow border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
+                                                    className="flex-grow border border-gray-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
                                                     value={row.projectId}
                                                     onChange={e => handleSplitChange(idx, 'projectId', e.target.value)}
                                                 >
@@ -818,7 +819,7 @@ export default function ExpenseForm() {
                                                 <input 
                                                     type="number"
                                                     placeholder="0"
-                                                    className="w-24 border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 outline-none"
+                                                    className="w-24 border border-gray-200 rounded-lg p-2 text-sm focus:border-brand-500 outline-none"
                                                     value={row.amount}
                                                     onChange={e => handleSplitChange(idx, 'amount', e.target.value)}
                                                     required
@@ -833,7 +834,7 @@ export default function ExpenseForm() {
                                     </div>
                                     
                                     <div className="mt-3 flex justify-between items-center">
-                                        <button type="button" onClick={handleAddSplitRow} className="text-xs text-blue-600 font-bold hover:underline flex items-center bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
+                                        <button type="button" onClick={handleAddSplitRow} className="text-xs text-brand-600 font-bold hover:underline flex items-center bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
                                             <Plus className="w-3 h-3 mr-1" /> Agregar Línea
                                         </button>
                                         
@@ -859,7 +860,7 @@ export default function ExpenseForm() {
                              id="ef-eventName"
                              type="text"
                              list="events-list"
-                             className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                             className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500 uppercase"
                              placeholder="Ej: FERIA CHICAGO 2026"
                              value={formData.eventName}
                              onChange={e => setFormData({...formData, eventName: e.target.value.toUpperCase()})}
@@ -876,22 +877,30 @@ export default function ExpenseForm() {
                             <input
                                 id="ef-merchant"
                                 type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.merchant}
                                 onChange={e => setFormData({...formData, merchant: e.target.value})}
                                 placeholder="Ej: Restaurante El Buen Sabor"
                             />
                         </div>
                         <div>
-                            <label htmlFor="ef-taxId" className="block text-sm font-medium text-gray-700 mb-1">NIT / Identificación Fiscal</label>
+                            <label htmlFor="ef-taxId" className="block text-sm font-medium text-gray-700 mb-1">{country.taxIdLabel} / Identificación Fiscal</label>
                             <input
                                 id="ef-taxId"
                                 type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.taxId}
                                 onChange={e => setFormData({...formData, taxId: e.target.value})}
-                                placeholder="Ej: 900.123.456-7"
+                                onBlur={() => {
+                                    const check = formData.taxId ? country.validateTaxId(formData.taxId) : null;
+                                    if (check?.formatted) setFormData(prev => ({ ...prev, taxId: check.formatted }));
+                                }}
+                                placeholder={country.taxIdPlaceholder}
+                                aria-describedby="ef-taxId-hint"
                             />
+                            {formData.taxId && !country.validateTaxId(formData.taxId).valid && (
+                                <p id="ef-taxId-hint" className="mt-1 text-xs text-amber-700">El {country.taxIdLabel} no parece válido. Revísalo (puedes enviarlo igual).</p>
+                            )}
                         </div>
                     </div>
 
@@ -901,7 +910,7 @@ export default function ExpenseForm() {
                             <input
                                 id="ef-address"
                                 type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.address}
                                 onChange={e => setFormData({...formData, address: e.target.value})}
                                 placeholder="Ej: Calle 123 # 45-67"
@@ -912,10 +921,10 @@ export default function ExpenseForm() {
                             <input
                                 id="ef-city"
                                 type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.city}
                                 onChange={e => setFormData({...formData, city: e.target.value})}
-                                placeholder="Ej: Bogotá"
+                                placeholder={country.cityPlaceholder}
                             />
                         </div>
                     </div>
@@ -926,10 +935,10 @@ export default function ExpenseForm() {
                             <input
                                 id="ef-phone"
                                 type="text"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.phone}
                                 onChange={e => setFormData({...formData, phone: e.target.value})}
-                                placeholder="Ej: 300 123 4567"
+                                placeholder={country.phonePlaceholder}
                             />
                         </div>
                         <div>
@@ -938,7 +947,7 @@ export default function ExpenseForm() {
                                 id="ef-date"
                                 type="date"
                                 required
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.date}
                                 onChange={e => setFormData({...formData, date: e.target.value})}
                             />
@@ -948,7 +957,7 @@ export default function ExpenseForm() {
                             <input
                                 id="ef-time"
                                 type="time"
-                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                 value={formData.time}
                                 onChange={e => setFormData({...formData, time: e.target.value})}
                             />
@@ -960,7 +969,7 @@ export default function ExpenseForm() {
                         <input
                             id="ef-invoiceNumber"
                             type="text"
-                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                             value={formData.invoiceNumber}
                             onChange={e => setFormData({...formData, invoiceNumber: e.target.value})}
                             placeholder="Ej: A-123456"
@@ -976,7 +985,7 @@ export default function ExpenseForm() {
                                      <label htmlFor="ef-paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
                                      <select
                                          id="ef-paymentMethod"
-                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                          value={formData.paymentMethod}
                                          onChange={e => setFormData({...formData, paymentMethod: e.target.value})}
                                      >
@@ -991,7 +1000,7 @@ export default function ExpenseForm() {
                                      <select
                                          id="ef-cardBrand"
                                          disabled={!isCardPayment}
-                                         className={`w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 ${isCardPayment ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'}`}
+                                         className={`w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500 ${isCardPayment ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'}`}
                                          value={formData.cardBrand}
                                          onChange={e => setFormData({...formData, cardBrand: e.target.value})}
                                      >
@@ -1005,7 +1014,7 @@ export default function ExpenseForm() {
                                      <label htmlFor="ef-cardCompany" className="block text-sm font-medium text-gray-700 mb-1">Empresa Tarjeta</label>
                                      <select
                                          id="ef-cardCompany"
-                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                         className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                          value={formData.cardCompany}
                                          onChange={e => setFormData({...formData, cardCompany: e.target.value})}
                                      >
@@ -1025,7 +1034,7 @@ export default function ExpenseForm() {
                              <label htmlFor="ef-currency" className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
                              <select
                                  id="ef-currency"
-                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
                                  value={formData.currency}
                                  onChange={e => setFormData({...formData, currency: e.target.value})}
                              >
@@ -1041,7 +1050,7 @@ export default function ExpenseForm() {
                                  type="number"
                                  inputMode="decimal"
                                  required
-                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 font-mono text-base md:text-lg font-bold min-h-[44px]"
+                                 className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500 font-mono text-base md:text-lg font-bold min-h-[44px]"
                                  value={formData.amount}
                                  onChange={e => setFormData({...formData, amount: e.target.value})}
                              />
@@ -1050,21 +1059,21 @@ export default function ExpenseForm() {
 
                     {/* TRM Info Box (USD and EUR expenses) */}
                     {NEEDS_RATE(formData.currency) && (
-                      <div className={`p-4 rounded-xl border text-sm ${trmState.trm ? 'bg-blue-50 border-blue-100' : trmState.loading ? 'bg-blue-50 border-blue-100' : 'bg-yellow-50 border-yellow-200'}`}>
+                      <div className={`p-4 rounded-xl border text-sm ${trmState.trm ? 'bg-brand-50 border-brand-100' : trmState.loading ? 'bg-brand-50 border-brand-100' : 'bg-yellow-50 border-yellow-200'}`}>
                         {trmState.loading ? (
-                          <div className="flex items-center gap-2 text-blue-700">
+                          <div className="flex items-center gap-2 text-brand-700">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             <span>Obteniendo tasa de cambio...</span>
                           </div>
                         ) : trmState.trm ? (
                           <div className="flex items-start justify-between gap-4">
                             <div className="space-y-0.5">
-                              <p className="text-blue-800 font-medium">
-                                Tasa {formData.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-blue-600">COP/{formData.currency}</span>
+                              <p className="text-brand-800 font-medium">
+                                Tasa {formData.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-brand-600">COP/{formData.currency}</span>
                               </p>
                               {formData.amount > 0 && (
-                                <p className="text-blue-700">
-                                  Equivalente: <span className="font-mono font-bold">{formatCurrency(calculateCOPEquivalent(formData.amount, trmState.trm))}</span> COP
+                                <p className="text-brand-700">
+                                  Equivalente: <span className="font-mono font-bold">{formatCurrency(calculateCOPEquivalent(formData.amount, trmState.trm), BASE_CURRENCY)}</span> {BASE_CURRENCY}
                                 </p>
                               )}
                             </div>
@@ -1074,7 +1083,7 @@ export default function ExpenseForm() {
                                 setTrmState(prev => ({ ...prev, loading: true }));
                                 fetchRate(formData.currency, formData.date).then(r => setTrmState({ trm: r.rate, source: r.source, fetchedAt: r.fetchedAt, loading: false }));
                               }}
-                              className="text-xs text-blue-600 font-bold hover:underline whitespace-nowrap"
+                              className="text-xs text-brand-600 font-bold hover:underline whitespace-nowrap"
                             >
                               Actualizar tasa
                             </button>
@@ -1086,9 +1095,9 @@ export default function ExpenseForm() {
                     )}
 
                     {/* AI Extracted Details */}
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                             <label htmlFor="ef-category" className="block text-xs font-bold text-blue-800 uppercase mb-1">Categoría Sugerida</label>
+                             <label htmlFor="ef-category" className="block text-xs font-bold text-brand-800 uppercase mb-1">Categoría Sugerida</label>
                              <select
                                  id="ef-category"
                                  required
@@ -1101,7 +1110,7 @@ export default function ExpenseForm() {
                              </select>
                         </div>
                         <div>
-                             <label htmlFor="ef-cardLast4" className="block text-xs font-bold text-blue-800 uppercase mb-1">
+                             <label htmlFor="ef-cardLast4" className="block text-xs font-bold text-brand-800 uppercase mb-1">
                                Tarjeta (Últimos 4){formData.cardBrand === 'amex' && <span className="font-normal normal-case ml-1">(opcional)</span>}
                              </label>
                              <input
@@ -1114,7 +1123,7 @@ export default function ExpenseForm() {
                                  onChange={e => setFormData({...formData, cardLast4: e.target.value})}
                              />
                              {formData.cardBrand === 'amex' && (
-                               <p className="text-xs text-blue-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
+                               <p className="text-xs text-brand-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
                              )}
                         </div>
                     </div>
@@ -1123,7 +1132,7 @@ export default function ExpenseForm() {
                         <label htmlFor="ef-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                         <textarea
                             id="ef-description"
-                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                            className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500 resize-none h-24"
                             placeholder="Detalle del gasto..."
                             value={formData.description}
                             onChange={e => setFormData({...formData, description: e.target.value})}
@@ -1134,7 +1143,7 @@ export default function ExpenseForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="hidden md:flex w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition items-center justify-center text-lg shadow-lg hover:shadow-xl transform active:scale-[0.99] min-h-[44px]"
+                        className="hidden md:flex w-full bg-brand-600 text-white font-bold py-4 rounded-xl hover:bg-brand-700 transition items-center justify-center text-lg shadow-lg hover:shadow-xl transform active:scale-[0.99] min-h-[44px]"
                     >
                         {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Confirmar Rendición <CheckCircle className="w-6 h-6 ml-2" /></>}
                     </button>
@@ -1149,7 +1158,7 @@ export default function ExpenseForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex items-center justify-center text-base shadow-lg active:scale-[0.99] min-h-[44px]"
+                        className="w-full bg-brand-600 text-white font-bold py-3 rounded-xl hover:bg-brand-700 transition flex items-center justify-center text-base shadow-lg active:scale-[0.99] min-h-[44px]"
                     >
                         {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Confirmar Rendición <CheckCircle className="w-5 h-5 ml-2" /></>}
                     </button>
@@ -1182,7 +1191,7 @@ export default function ExpenseForm() {
             <p className="font-semibold text-xs uppercase tracking-wide text-yellow-600 mb-1">Gasto existente similar:</p>
             <p>
               {duplicateWarning.match.date} &mdash; {duplicateWarning.match.merchant} &mdash;{' '}
-              {formatCurrency(Number(duplicateWarning.match.amount), duplicateWarning.match.currency || 'COP')}
+              {formatCurrency(Number(duplicateWarning.match.amount), duplicateWarning.match.currency || BASE_CURRENCY)}
               {' '}({duplicateWarning.match.status === 'approved' ? 'Aprobado' : duplicateWarning.match.status === 'pending' ? 'Pendiente' : 'Rechazado'})
             </p>
           </div>

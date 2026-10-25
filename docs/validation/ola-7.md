@@ -1,0 +1,118 @@
+# Validación — Ola 7: País configurable y tenant demo
+
+**Fecha:** 2026-10-25
+**Impacto en SPI:** transparente. SPI sigue en COP con TRM de BanRep, NIT,
+Nequi/Daviplata, "Regístrate aquí" y sus categorías y centros de costo de
+siempre. El único cambio de datos es que los gastos nuevos guardan además
+`baseCurrency` y `amountBase` (iguales a `COP` y `amountCOP`).
+
+Formato: qué cambió → cómo probarlo → estado esperado. Marcar ✅ al verificar.
+
+---
+
+## 1. País por tenant (`src/lib/country.ts`)
+
+**Qué cambió:** registro `{ CO, CL }` con moneda base, proveedor de tipo de
+cambio, etiqueta y validador de ID fiscal (NIT con dígito DIAN, RUT con
+módulo 11 portado de ETFA), placeholders, billetera y locale. Todo lo que
+antes decía "COP", "TRM", "NIT" o "Colombia" sale de ahí:
+
+- Tipo de cambio: `banrep` (USD→COP histórico), `mindicador` (USD/EUR→CLP,
+  retrocede hasta 7 días por fines de semana) y `open.er-api` como respaldo.
+- Equivalente en moneda base: `amountBase` + `baseCurrency` en cada gasto;
+  `amountCOP` se sigue escribiendo solo cuando la base es COP. Los lectores
+  usan `amountBase ?? amountCOP`.
+- Totales: la moneda base ya no se excluye (antes CLP quedaba fuera).
+- "Aprobador Colombia" pasa a "Aprobador {país} ({moneda})": mismo permiso
+  (`isColombiaApprover`) y misma semántica para SPI; el claim lleva ahora
+  `baseCurrency` y las reglas comparan contra él.
+- Gemini: el prompt recibe el país. CO conserva el texto y el mapeo de
+  categorías de SPI tal cual; CL lee RUT, boleta/factura, IVA 19 %, CLP sin
+  decimales y bencineras chilenas (Copec, Shell, Aramco, Enex) como
+  COMBUSTIBLE.
+
+**Cómo probarlo (SPI):** Nueva Rendición en USD → el TRM sigue diciendo
+Banco de la República; el campo dice "NIT"; Reportes y Dashboard muestran
+los mismos totales que antes.
+
+**Estado esperado:** nada distinto a la vista. ☐
+
+## 2. Tenant demo "Expense Buddy" (Andes Energía SpA)
+
+**Qué cambió:** `tenants/demo.json` completo (CLP/CL/mindicador, verde
+`#059669`, logo e ícono propios en `public/brands/demo/`, categorías
+chilenas, empresas de tarjeta, conciliación apagada, región
+`southamerica-west1`). Login, sidebar, placeholders y pie de página salen
+del tenant. Las clases `blue-*` de la app pasaron a `brand-*`: para SPI es
+el mismo azul (su paleta es idéntica), para el demo es verde. Los centros
+de costo por defecto de SPI se movieron a `tenants/spi.json`
+(`defaultProjects`), así el bundle demo no contiene nada de SPI.
+
+**Cómo probarlo (emuladores):**
+
+```bash
+npm run emulators:demo      # terminal 1 (proyecto expense-buddy-demo)
+npm run seed:demo           # terminal 2
+npm run dev:demo:emu        # terminal 3
+```
+
+Entrar como `rodrigo.pizarro@andesenergia.demo` / `Demo2026!` (admin).
+
+**Estado esperado (verificado 2026-10-25 en emuladores):**
+- Login verde con logo Expense Buddy, sin "Regístrate aquí" ✅
+- Aprobaciones: 10 pendientes con insignias "Espera a Diego Muñoz",
+  "Espera a Paula Herrera" o "Lista para finanzas"; montos `$1.240.000`
+  sin decimales; el gasto en USD muestra `$149.00 USD` ✅
+- Peaje de `$7.400` aprobado solo (bajo el umbral de `$10.000`) ✅
+- Formulario manual: "RUT / Identificación Fiscal", `995200007` se formatea
+  a `99.520.000-7` al salir del campo; `99.520.000-1` muestra "El RUT no
+  parece válido" ✅
+- Selects con categorías chilenas, CLP primero, empresas Andes ✅
+- Claims: `tenantId: demo`, `baseCurrency: CLP` ✅
+- Bundle demo sin "SPI Americas"; bundle SPI sin "Andes"/"Expense Buddy" ✅
+
+## 3. Datos de demostración (`scripts/seed-demo.mjs`)
+
+**Qué cambió:** empresa ficticia con 8 personas (superadmin Camila, admin
+contador Rodrigo, dos jefaturas con equipo, tres profesionales y un
+asistente), 4 centros de costo, asignaciones, política "Por niveles"
+(responsable → finanzas, doble firma desde `$1.000.000`, auto-aprobación
+bajo `$10.000`) y 25 gastos en distintos estados, uno en USD. Los gastos se
+escriben como documentos normales: los triggers arman los flujos y saldos
+igual que en uso real.
+
+- `npm run seed:demo` — emuladores (idempotente).
+- `npm run reset:demo` — borra gastos, proyectos, asignaciones,
+  notificaciones y contadores (conserva cuentas) y vuelve a sembrar.
+- Producción: `node scripts/seed-demo.mjs --prod --key <sa.json>
+  [--password X] [--reset]`; se niega si el proyecto no contiene "demo";
+  sin `--password` genera una y la imprime una vez.
+
+**Estado esperado:** reset + seed en ~15 s; mismos saldos tras cada reset
+(verificado: `demo-matias` = `$1.745.790` en ambas corridas) ✅
+
+## 4. Alta de un tenant nuevo (`scripts/bootstrap-tenant.mjs`)
+
+**Qué cambió:** genera `tenants/<id>.json` desde la plantilla demo (paleta
+derivada de un color), `functions/.env.<proyecto>`, `.env.<id>.example` y
+el alias en `.firebaserc`, e imprime los pasos de consola. Procedimiento
+completo en `docs/runbooks/bootstrap-tenant.md`.
+
+**Cómo probarlo:** `npm run bootstrap-tenant -- --id prueba --name "Prueba
+SpA" --project prueba-gastos` y revisar los archivos; luego borrarlos.
+
+**Estado esperado:** archivos creados; una segunda corrida no los pisa sin
+`--force`. ☐
+
+## 5. Ambiente de emuladores por proyecto
+
+`functions/.env.local` quedó solo con `APP_URL=`: repetía los valores de
+SPI y, como tiene prioridad sobre `.env.<proyecto>`, hacía que el emulador
+del demo emitiera claims con `tenantId: spi`. Los parámetros de cada tenant
+viven únicamente en `functions/.env.<projectId>` (ahora versionados; no
+contienen secretos).
+
+## Calidad
+
+- `npm run lint` ✅ · 94 tests web ✅ · 46 tests functions ✅ · 20 tests de
+  reglas ✅ · `npm run build` y `npm run build:demo` ✅

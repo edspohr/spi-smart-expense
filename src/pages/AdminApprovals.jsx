@@ -26,6 +26,7 @@ import { useAuth } from '../context/useAuth';
 import { logger } from '../lib/logger';
 import { approveExpense, rejectExpense, deleteExpense } from '../lib/expenseActions';
 import { PinCancelled } from '../lib/pin';
+import { BASE_CURRENCY, country, baseEquivalentOf } from '../lib/country';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -40,9 +41,9 @@ const BULK_CHUNK_SIZE = 20;
 const ERROR_HIGHLIGHT_MS = 10000;
 
 const CSV_HEADERS = [
-  "Fecha","Hora","Usuario","Código Proyecto","Proyecto","Evento","Proveedor","NIT",
+  "Fecha","Hora","Usuario","Código Proyecto","Proyecto","Evento","Proveedor",country.taxIdLabel,
   "No. Factura","Dirección","Ciudad","Teléfono","Forma Pago","Tarjeta Last4","Empresa Tarjeta",
-  "Marca Tarjeta","Descripción","Categoría","Monto","Moneda","TRM","Equivalente COP",
+  "Marca Tarjeta","Descripción","Categoría","Monto","Moneda","TRM",`Equivalente ${BASE_CURRENCY}`,
   "Fuente TRM","Estado","Motivo Rechazo",
 ];
 
@@ -70,9 +71,9 @@ function expenseToCsvRow(e, projectMap) {
     `"${(e.description || "").replace(/"/g, '""')}"`,
     e.category || "",
     e.amount || 0,
-    e.currency || "COP",
+    e.currency || BASE_CURRENCY,
     e.trm || "",
-    e.amountCOP || "",
+    baseEquivalentOf(e) ?? "",
     e.trmSource || "",
     e.status === 'approved' ? 'Aprobado' : e.status === 'rejected' ? 'Rechazado' : 'Pendiente',
     `"${(e.rejectionReason || "").replace(/"/g, '""')}"`
@@ -104,7 +105,7 @@ function parseIsoDate(s) {
 }
 
 function formatTotalsLine(byCurrency) {
-  const order = ['COP', 'USD', 'EUR', 'CLP'];
+  const order = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),
@@ -295,7 +296,7 @@ export default function AdminApprovals() {
       if (filters.user && e.userName !== filters.user) return false;
       if (filters.cardCompany && e.cardCompany !== filters.cardCompany) return false;
       if (filters.cardBrand && e.cardBrand !== filters.cardBrand) return false;
-      if (filters.currency && (e.currency || 'COP') !== filters.currency) return false;
+      if (filters.currency && (e.currency || BASE_CURRENCY) !== filters.currency) return false;
       const amt = Number(e.amount) || 0;
       if (filters.minAmount !== '' && amt < Number(filters.minAmount)) return false;
       if (filters.maxAmount !== '' && amt > Number(filters.maxAmount)) return false;
@@ -359,7 +360,7 @@ export default function AdminApprovals() {
     const byCurrency = {};
     selectedList.forEach(e => {
       if (e.status === 'rejected') return;
-      const c = e.currency || 'COP';
+      const c = e.currency || BASE_CURRENCY;
       byCurrency[c] = (byCurrency[c] || 0) + (Number(e.amount) || 0);
     });
     return { count: selectedList.length, byCurrency };
@@ -465,7 +466,7 @@ export default function AdminApprovals() {
     if (selectedList.length === 0 || viewMode !== 'pending') return;
     const blocked = selectedList.filter(e => !canUserApprove(permissions, e));
     if (blocked.length > 0) {
-      toast.warning(`${blocked.length} rendición(es) de Colombia requieren aprobador autorizado y serán omitidas.`);
+      toast.warning(`${blocked.length} rendición(es) en ${BASE_CURRENCY} requieren aprobador autorizado y serán omitidas.`);
     }
     const approvable = selectedList.filter(e => canUserApprove(permissions, e));
     if (approvable.length === 0) {
@@ -947,14 +948,14 @@ export default function AdminApprovals() {
           <button
             type="button"
             onClick={() => handleTabChange('pending')}
-            className={`px-6 py-3 font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset ${viewMode === 'pending' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-3 font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset ${viewMode === 'pending' ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Pendientes ({pendingExpenses.length})
           </button>
           <button
             type="button"
             onClick={() => handleTabChange('history')}
-            className={`px-6 py-3 font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset ${viewMode === 'history' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-3 font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset ${viewMode === 'history' ? 'border-b-2 border-brand-600 text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Historial de Revisiones ({historyExpenses.length})
           </button>
@@ -1058,8 +1059,8 @@ export default function AdminApprovals() {
                       <td className="px-4 py-4 text-xs text-gray-500 align-top whitespace-nowrap">{e.category || '—'}</td>
                       <td className="px-4 py-4 text-sm text-gray-500 align-top whitespace-nowrap">{e.cardCompany || '-'}</td>
                       <td className="px-4 py-4 font-semibold text-right align-top whitespace-nowrap">
-                        {formatCurrency(Number(e.amount) || 0, e.currency || 'COP')}
-                        {e.currency && e.currency !== 'COP' && <span className="text-xs font-normal text-slate-400 ml-1">{e.currency}</span>}
+                        {formatCurrency(Number(e.amount) || 0, e.currency || BASE_CURRENCY)}
+                        {e.currency && e.currency !== BASE_CURRENCY && <span className="text-xs font-normal text-slate-400 ml-1">{e.currency}</span>}
                       </td>
                       {viewMode === 'history' && (
                         <td className="px-4 py-4 align-top">
@@ -1074,7 +1075,7 @@ export default function AdminApprovals() {
                           <button
                             type="button"
                             onClick={() => { setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
+                            className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
                             title="Ver detalles"
                             aria-label="Ver detalles"
                           >
@@ -1083,7 +1084,7 @@ export default function AdminApprovals() {
                           <button
                             type="button"
                             onClick={() => handleViewReceipt(e.receiptUrl || e.imageUrl)}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
+                            className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
                             title="Ver comprobante"
                             aria-label="Ver comprobante"
                           >
@@ -1113,8 +1114,8 @@ export default function AdminApprovals() {
                               ) : (
                                 <span
                                   className="text-gray-300 p-1.5 cursor-not-allowed"
-                                  title="Requiere aprobador Colombia"
-                                  aria-label="Requiere aprobador Colombia"
+                                  title={`Requiere aprobador ${country.name} (${BASE_CURRENCY})`}
+                                  aria-label={`Requiere aprobador ${country.name}`}
                                 >
                                   <Lock className="w-5 h-5" />
                                 </span>

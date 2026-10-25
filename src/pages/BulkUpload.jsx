@@ -15,9 +15,10 @@ import {
 import { compressImage } from '../utils/imageUtils';
 import { sortProjects } from '../utils/sort';
 import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { BASE_CURRENCY, baseEquivalentFields, needsRate } from '../lib/country';
 import { CATEGORIES_COMMON, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 
-const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
+const NEEDS_RATE = needsRate;
 import { toast } from 'sonner';
 
 const MAX_FILES = 25;
@@ -56,7 +57,7 @@ function mkItem(file, preview) {
     date: '',
     time: '',
     amount: '',
-    currency: 'COP',
+    currency: BASE_CURRENCY,
     invoiceNumber: '',
     taxId: '',
     category: '',
@@ -84,7 +85,7 @@ function extractFields(data) {
     date:          data?.date           || '',
     time:          data?.time           || '',
     amount:        data?.amount != null  ? String(data.amount) : '',
-    currency:      data?.currency       || 'COP',
+    currency:      data?.currency       || BASE_CURRENCY,
     invoiceNumber: data?.invoiceNumber  || '',
     taxId:         data?.taxId          || '',
     category:      data?.category       || '',
@@ -347,7 +348,7 @@ export default function BulkUpload() {
           cardCompany:   item.cardCompany || null,
           description:   item.description   || null,
           amount:        Number(item.amount),
-          currency:      item.currency      || 'COP',
+          currency:      item.currency      || BASE_CURRENCY,
           cardLast4:     item.cardLast4      || null,
           receiptUrl,
           voucherUrl:    null,
@@ -356,7 +357,7 @@ export default function BulkUpload() {
           isCompanyExpense: false,
           splitGroupId:  null,
           trm:           item.trm || null,
-          amountCOP:     item.amountCOP || (NEEDS_RATE(item.currency) ? calculateCOPEquivalent(item.amount, item.trm) : null),
+          ...baseEquivalentFields(item.currency || BASE_CURRENCY, item.amountCOP || (NEEDS_RATE(item.currency) ? calculateCOPEquivalent(item.amount, item.trm) : null)),
           trmSource:     item.trmSource || null,
           bulkUpload:    true,
         });
@@ -403,7 +404,7 @@ export default function BulkUpload() {
               </button>
               <button
                 onClick={() => navigate('/dashboard/expenses')}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                className="px-6 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition"
               >
                 Ver mis rendiciones
               </button>
@@ -424,7 +425,7 @@ export default function BulkUpload() {
             onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-2xl p-16 text-center transition cursor-pointer select-none ${
               isDragging
-                ? 'border-blue-400 bg-blue-50'
+                ? 'border-blue-400 bg-brand-50'
                 : 'border-gray-200 hover:border-blue-300 bg-white'
             }`}
           >
@@ -433,7 +434,7 @@ export default function BulkUpload() {
             <p className="text-sm text-gray-400 mb-6">
               o haz clic para seleccionar — máximo {MAX_FILES} imágenes por lote
             </p>
-            <span className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700 transition inline-block">
+            <span className="bg-brand-600 text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-brand-700 transition inline-block">
               Seleccionar Imágenes
             </span>
           </div>
@@ -492,7 +493,7 @@ export default function BulkUpload() {
                   {phase === 'review' && (
                     <button
                       onClick={handleSubmit}
-                      className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-700 transition"
+                      className="flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-brand-700 transition"
                     >
                       <CheckCircle className="w-4 h-4" aria-hidden="true" />
                       Enviar {items.length} rendición{items.length !== 1 ? 'es' : ''}
@@ -501,7 +502,7 @@ export default function BulkUpload() {
 
                   {phase === 'submitting' && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" aria-hidden="true" />
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-600" aria-hidden="true" />
                       Procesando... {submitProgress.done}/{submitProgress.total}
                     </div>
                   )}
@@ -532,7 +533,7 @@ export default function BulkUpload() {
                     />
                     <button
                       onClick={applyGlobalEvent}
-                      className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                      className="text-xs font-semibold text-brand-600 hover:underline whitespace-nowrap"
                     >
                       Aplicar
                     </button>
@@ -556,7 +557,7 @@ export default function BulkUpload() {
                     </select>
                     <button
                       onClick={applyGlobalProject}
-                      className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                      className="text-xs font-semibold text-brand-600 hover:underline whitespace-nowrap"
                     >
                       Aplicar
                     </button>
@@ -578,7 +579,7 @@ export default function BulkUpload() {
                     </select>
                     <button
                       onClick={applyGlobalCompany}
-                      className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                      className="text-xs font-semibold text-brand-600 hover:underline whitespace-nowrap"
                     >
                       Aplicar
                     </button>
@@ -589,9 +590,9 @@ export default function BulkUpload() {
 
             {/* Analyzing progress banner */}
             {phase === 'analyzing' && analyzingNow > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 flex items-center gap-3">
-                <Loader2 className="w-5 h-5 animate-spin text-blue-600 shrink-0" aria-hidden="true" />
-                <p className="text-sm text-blue-700 font-medium">
+              <div className="bg-brand-50 border border-blue-200 rounded-xl px-5 py-3 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-brand-600 shrink-0" aria-hidden="true" />
+                <p className="text-sm text-brand-700 font-medium">
                   Extrayendo datos con IA... ({analyzedCount + errorCount} / {items.length} procesados)
                 </p>
               </div>
@@ -605,7 +606,7 @@ export default function BulkUpload() {
                 </p>
                 <div className="w-full bg-gray-100 rounded-full h-2.5">
                   <div
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                    className="bg-brand-600 h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${(submitProgress.done / submitProgress.total) * 100}%` }}
                   />
                 </div>
@@ -668,7 +669,7 @@ export default function BulkUpload() {
                           {/* Status / row number */}
                           <td className="px-3 py-2 text-center">
                             {item.status === 'analyzing' && (
-                              <Loader2 className="w-4 h-4 animate-spin text-blue-500 mx-auto" aria-label="Analizando" />
+                              <Loader2 className="w-4 h-4 animate-spin text-brand-500 mx-auto" aria-label="Analizando" />
                             )}
                             {item.status === 'ready' && item.submitStatus === 'idle' && !item.dupeWarning && (
                               <CheckCircle className="w-4 h-4 text-green-500 mx-auto" aria-label="Listo" />
@@ -691,7 +692,7 @@ export default function BulkUpload() {
                                   <button
                                     onClick={() => retryOCR(item)}
                                     title="Reintentar OCR"
-                                    className="text-blue-400 hover:text-blue-600 transition"
+                                    className="text-blue-400 hover:text-brand-600 transition"
                                   >
                                     <RefreshCw className="w-3 h-3" aria-hidden="true" />
                                   </button>
@@ -702,7 +703,7 @@ export default function BulkUpload() {
                               <span className="text-gray-300 text-[11px]">{idx + 1}</span>
                             )}
                             {item.submitStatus === 'uploading' && (
-                              <Loader2 className="w-4 h-4 animate-spin text-blue-500 mx-auto" />
+                              <Loader2 className="w-4 h-4 animate-spin text-brand-500 mx-auto" />
                             )}
                             {item.submitStatus === 'done' && (
                               <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />

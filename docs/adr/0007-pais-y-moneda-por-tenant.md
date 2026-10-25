@@ -40,3 +40,15 @@ backlog.
 - El prompt de Gemini y las validaciones de formulario dependen del tenant;
   los tests deben correr para CO y CL.
 - Series históricas EUR (TD-007) siguen pendientes y van a backlog.
+
+## Implementación (2026-10-25)
+
+- Registro en `src/lib/country.ts` (web) y parámetro `COUNTRY` +
+  `BASE_CURRENCY` en `functions/.env.<proyecto>` (servidor). El país se
+  declara en `tenants/<id>.json` → `locale.country`.
+- Cada gasto guarda `baseCurrency` y `amountBase`; se lee como
+  `amountBase ?? amountCOP` para no migrar el histórico de SPI.
+- El permiso sigue llamándose `isColombiaApprover` en datos y claims (su
+  significado es "moneda base"); la UI lo rotula con el país.
+- El prompt de Gemini conserva el texto colombiano original para CO y
+  agrega reglas chilenas para CL; los tests cubren ambos.

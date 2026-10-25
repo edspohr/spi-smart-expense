@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { formatCurrency } from '../utils/format';
+import { BASE_CURRENCY } from '../lib/country';
 
 // Muted palette cycled deterministically by category name.
 const COLOR_PALETTE = [
@@ -14,7 +15,7 @@ function colorForCategory(name) {
 }
 
 function renderTotals(totalByCurrency) {
-  const order = ['COP', 'USD', 'EUR', 'CLP'];
+  const order = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
   const keys = [
     ...order.filter(c => totalByCurrency[c] !== undefined),
     ...Object.keys(totalByCurrency).filter(c => !order.includes(c)),

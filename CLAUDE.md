@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev              # Dev server for the spi tenant (http://localhost:5173)
-VITE_TENANT=demo npm run dev
+npm run dev:demo         # Dev server for the demo tenant (vite --mode demo loads .env.demo)
 npm run build            # Production build of the spi tenant → dist/
 npm run build:demo       # Same for the demo tenant
 npm run preview          # Preview the last build locally
@@ -27,6 +27,10 @@ npm run test:rules       # Firestore rules suite inside `firebase emulators:exec
 npm run claims:backfill -- --dry-run [--apply] [--prod]   # Mirror users/{uid} into custom claims (build functions first)
 npm run superadmin:bootstrap -- --email <x> --dry-run [--apply] [--prod]  # Promote/create the first superadmin
 npm run migrate:003 -- --dry-run [--apply] [--prod]   # Backfill active/tenantId/managerUid on users
+npm run emulators:demo   # Emulators for project expense-buddy-demo (loads functions/.env.expense-buddy-demo)
+npm run seed:demo        # Seed Andes Energía demo data (reset:demo wipes and reseeds; --prod --key <sa.json> for the demo project)
+npm run dev:demo:emu     # Demo tenant against the emulators
+npm run bootstrap-tenant -- --id <id> --name "<Name>" --project <firebase-project>   # Scaffold a new client (docs/runbooks/bootstrap-tenant.md)
 
 firebase deploy                            # Hosting + rules + indexes + functions
 firebase deploy --only firestore:indexes   # Composite indexes from firestore.indexes.json
@@ -39,7 +43,7 @@ Manual testing happens against the Emulator Suite (`docs/runbooks/emulators.md`)
 
 ## Environment Setup
 
-Copy `.env.example` to `.env` and populate every `VITE_FIREBASE_*` variable (no Gemini key: the client never calls Gemini). `src/lib/env.ts` validates them at boot and renders `EnvError.jsx` listing anything missing. `VITE_TENANT` (default `spi`) selects `tenants/<id>.json`.
+Copy `.env.example` to `.env` and populate every `VITE_FIREBASE_*` variable (no Gemini key: the client never calls Gemini). `src/lib/env.ts` validates them at boot and renders `EnvError.jsx` listing anything missing. `VITE_TENANT` (default `spi`) selects `tenants/<id>.json`; `vite --mode <tenant>` loads `.env.<tenant>` (gitignored, template `.env.<tenant>.example`). `functions/.env.local` holds emulator-only overrides and must not repeat tenant params (it wins over `.env.<projectId>`).
 
 ## Architecture
 
@@ -47,14 +51,16 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 
 ### Backend (`functions/`)
 
-- **Callables** (`onCall`, region `us-central1`): `extractReceipt` (Gemini via Vertex AI with `@google/genai` — IAM auth, no API key; param `VERTEX_LOCATION`; model fallback with retries, daily rate limits per user/tenant in `rateLimits/`, `mode: 'health'`), `reviewExpense` (`approve | reject | reopen`: authorises by claims, writes status + `reviewedAt/By*` + `movements` + notification in one transaction), `healthcheck`.
+- **Callables** (`onCall`, region from `FUNCTIONS_REGION`): `extractReceipt` (Gemini via Vertex AI with `@google/genai` — IAM auth, no API key; param `VERTEX_LOCATION`; model fallback with retries, daily rate limits per user/tenant in `rateLimits/`, `mode: 'health'`), `reviewExpense` (`approve | reject | reopen`: authorises by claims, writes status + `reviewedAt/By*` + `movements` + notification in one transaction), `healthcheck`.
 - **Triggers**: `onExpenseWritten` is the single writer of `users.balance` and `projects.expenses` for every expense create/update/delete/status change — pure rules in `aggregates.logic.ts`, idempotent via `aggregateLedger/{eventId}` (ADR 0010). `onUserWritten` mirrors `users/{uid}` role/permissions/active into custom claims (`claims.logic.ts`, shared with `scripts/migrations/002-backfill-claims.mjs`).
 - Client side: `src/lib/functions.ts` (`callFunction`, Spanish error mapping, emulator wiring), `src/lib/expenseActions.ts`, `src/lib/gemini.js` (thin client). Never write `balance`, `projects.expenses` or `expenses.status` from the browser; rules reject it.
-- Params per project in `functions/.env.<projectId>` (committed): `FUNCTIONS_REGION` must equal the tenant's Firestore location and `functionsRegion` in `tenants/<id>.json` (SPI: `southamerica-east1`), plus `TENANT_ID`, `VERTEX_LOCATION` and the Gemini daily limits. Vertex needs `aiplatform.googleapis.com` enabled and `roles/aiplatform.user` on the Functions service account (see `docs/runbooks/deploy-ola-2.md`); the emulator uses your gcloud ADC. App Check is monitor-only (`enforceAppCheck: false`) until the console shows a clean week.
+- Params per project in `functions/.env.<projectId>` (committed): `FUNCTIONS_REGION` must equal the tenant's Firestore location and `functionsRegion` in `tenants/<id>.json` (SPI: `southamerica-east1`), plus `TENANT_ID`, `BASE_CURRENCY`, `COUNTRY`, `VERTEX_LOCATION` and the Gemini daily limits. Vertex needs `aiplatform.googleapis.com` enabled and `roles/aiplatform.user` on the Functions service account (see `docs/runbooks/deploy-ola-2.md`); the emulator uses your gcloud ADC. App Check is monitor-only (`enforceAppCheck: false`) until the console shows a clean week.
 
 ### Tenant config (`tenants/*.json`, `src/lib/tenant.ts`)
 
-`vite.config.js` reads `tenants/${VITE_TENANT}.json`, injects it as the `__TENANT__` global (typed `TenantConfig`) and replaces `%TENANT_*%` placeholders in `index.html`. The Tailwind `brand` palette reads `--brand-*` CSS variables, which `applyTenantTheme()` sets from `branding.palette` in `main.jsx`. Build-time defaults only; runtime-editable settings (PIN toggle, approval policy) move to Firestore in Ola 3.
+`vite.config.js` reads `tenants/${VITE_TENANT}.json`, injects it as the `__TENANT__` global (typed `TenantConfig`) and replaces `%TENANT_*%` placeholders in `index.html`. The Tailwind `brand` palette reads `--brand-*` CSS variables, which `applyTenantTheme()` sets from `branding.palette` in `main.jsx`. Build-time defaults only; runtime-editable settings (PIN, modules, approval policy) live in `settings/tenant`.
+
+Country (Ola 7, ADR 0007): `src/lib/country.ts` resolves base currency, FX provider, tax-id label/validator (NIT/RUT), wallet label and locale from `locale.country`. Use `BASE_CURRENCY`, `baseAmountOf(expense)` (`amountBase ?? amountCOP`) and `baseEquivalentFields()` instead of COP/`amountCOP`; `isColombiaApprover` means "base-currency approver". Use `brand-*` Tailwind classes, never `blue-*` for the primary colour. Tenant-specific data (categories, card companies, default cost centres, product/legal name) belongs in `tenants/<id>.json`.
 
 ### PWA
 

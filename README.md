@@ -40,6 +40,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 
+### Ola 7 — Country per tenant and the Expense Buddy demo (2026-10-25)
+
+- **Country registry** (`src/lib/country.ts`): base currency, FX provider (BanRep for COP, mindicador.cl for CLP, open.er-api fallback), NIT/RUT label and validator, wallets and number formats come from `tenants/<id>.json`. Every expense stores `baseCurrency` + `amountBase`; the base currency now counts in all totals. SPI is unchanged (COP, TRM, NIT).
+- **Country-aware Gemini prompt**: Chilean receipts (RUT, boleta/factura, IVA 19 %, CLP without decimals, Copec/Shell/Aramco as fuel); the Colombian prompt stays verbatim.
+- **Demo tenant "Expense Buddy"** for a fictitious Chilean company (Andes Energía SpA): green branding, own logo/icon, Chilean categories, invitation-only login (`auth.selfSignup: false`). `npm run seed:demo` / `npm run reset:demo` load people with managers, cost centres, a two-level approval policy and 25 expenses.
+- **`npm run bootstrap-tenant`** scaffolds a new client (tenant JSON, functions env, web env example, Firebase alias) — see `docs/runbooks/bootstrap-tenant.md`.
+
 ### Ola 6 — Offline, push and share (2026-10-25)
 
 - **Submit without signal**: expenses (with photos) are kept on the device and sent automatically when the connection returns or the app opens; header pill "Sin conexión / N sin enviar", and a retry/discard list in Mi Espacio. Fixed document ids make retries duplicate-free.
@@ -268,7 +275,7 @@ flowchart TD
     npm run seed:emu    # terminal 2 — creates test accounts and sample data
     npm run dev:emu     # terminal 3
     ```
-    See `docs/runbooks/emulators.md` for the test accounts and details.
+    See `docs/runbooks/emulators.md` for the test accounts and details. For the Chilean demo tenant use `npm run emulators:demo`, `npm run seed:demo` and `npm run dev:demo:emu`.
 
 ---
 
@@ -315,7 +322,9 @@ The project is configured for deployment on **Firebase Hosting**.
     firebase deploy --project <tenant-project-id>
     ```
 
-    Hosting, Firestore rules and indexes, Storage rules and Cloud Functions deploy together. Deploy indexes before shipping any query that depends on them.
+    Hosting, Firestore rules and indexes, Storage rules and Cloud Functions deploy together. Deploy indexes before shipping any query that depends on them. Function parameters per project live in `functions/.env.<projectId>`.
+
+3.  **New client:** `npm run bootstrap-tenant -- --id <id> --name "<Name>" --project <firebase-project>` and follow `docs/runbooks/bootstrap-tenant.md`.
 
 ---
 

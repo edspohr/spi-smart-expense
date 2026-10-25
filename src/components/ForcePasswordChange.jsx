@@ -57,7 +57,7 @@ export default function ForcePasswordChange({ user }) {
                             type="password" 
                             value={newPass}
                             onChange={(e) => setNewPass(e.target.value)}
-                            className="mt-1 w-full p-3 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="mt-1 w-full p-3 border rounded focus:ring-2 focus:ring-brand-500 outline-none"
                             placeholder="Mínimo 6 caracteres"
                             required
                         />
@@ -78,7 +78,7 @@ export default function ForcePasswordChange({ user }) {
                     <button 
                         type="submit" 
                         disabled={!match || !valid || loading}
-                        className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 disabled:opacity-50 transition"
+                        className="w-full bg-brand-600 text-white py-3 rounded font-bold hover:bg-brand-700 disabled:opacity-50 transition"
                     >
                         {loading ? 'Actualizando...' : 'Cambiar Contraseña y Entrar'}
                     </button>

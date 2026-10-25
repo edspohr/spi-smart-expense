@@ -50,8 +50,13 @@ Marcar `[x]` con la fecha al cerrar.
   tu PIN en Mi Espacio → Seguridad y activarlo en Ajustes; avisar a los
   admins para que creen el suyo (verán un aviso amarillo).
 
-- [ ] Crear el proyecto Firebase del tenant demo (`expense-buddy-demo`) para
-  la Ola 7.
+- [ ] **Crear el proyecto Firebase del demo** `expense-buddy-demo` (para
+  mostrar a Elecnor), siguiendo `docs/runbooks/bootstrap-tenant.md` pasos
+  2-3: Blaze, Firestore y Storage en `southamerica-west1`, Email/contraseña
+  con registro **desactivado**, app Web (pásame la config o llena
+  `.env.demo` desde `.env.demo.example`), y los dos comandos `gcloud`
+  (APIs + rol Vertex). Luego yo deployo, siembro los datos y te paso las
+  cuentas. Opcional: clave reCAPTCHA para App Check.
 
 ## Cerrados
 

@@ -15,6 +15,12 @@ export interface TenantConfig {
   functionsRegion: string;
   branding: {
     logo: string;
+    // Square symbol used for app icons (scripts/generate-icons.py); defaults to logo.
+    icon?: string;
+    // Short product name shown in the login card and the sidebar.
+    productName: string;
+    legalName: string;
+    emailPlaceholder: string;
     themeColor: string;
     palette: BrandPalette;
   };
@@ -28,7 +34,15 @@ export interface TenantConfig {
   };
   auth: {
     googleLogin: boolean;
+    // false = no public "Regístrate aquí": people join only by invitation.
+    selfSignup: boolean;
   };
+  // Paying entities shown in "Empresa tarjeta" (empty list hides nothing).
+  cardCompanies: string[];
+  /** Starter cost centres offered by "Cargar centros por defecto" (AdminProjects). */
+  defaultProjects?: { code: string; name: string; client: string }[];
+  // Expense categories; omitted = the historical SPI list.
+  categories?: string[];
   modules: {
     bulkUpload: boolean;
     reports: boolean;

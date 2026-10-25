@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import { BASE_CURRENCY } from '../lib/country';
 
 const VISIBLE_DEFAULT = 10;
 
@@ -24,7 +25,7 @@ function relativeDays(dateStr) {
 }
 
 function renderCurrencyTotals(byCurrency) {
-  const order = ['COP', 'USD', 'EUR', 'CLP'];
+  const order = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
   const keys = [
     ...order.filter(c => byCurrency[c] !== undefined),
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),

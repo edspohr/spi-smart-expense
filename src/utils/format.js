@@ -1,4 +1,6 @@
-export const formatCurrency = (amount, currency = "COP") => {
+import { tenant } from "../lib/tenant";
+
+export const formatCurrency = (amount, currency = tenant.locale.baseCurrency) => {
   if (amount === undefined || amount === null) return "$0";
 
   switch (currency) {

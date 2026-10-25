@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
             <p className="text-gray-600 mb-6">Ha ocurrido un error inesperado en la aplicación.</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="bg-brand-600 text-white px-4 py-2 rounded hover:bg-brand-700 transition"
             >
               Recargar Página
             </button>

@@ -23,8 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment Variables
+# Environment Variables (one .env.<tenant> per tenant build; examples are committed)
 .env
+.env.*
+!.env.example
+!.env.*.example
+!functions/.env.*
 
 # Backup
 _backup/

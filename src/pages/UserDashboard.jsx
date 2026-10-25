@@ -8,6 +8,7 @@ import { PlusCircle, Wallet, FileText, ChevronDown, ChevronUp, AlertCircle, Imag
 import { Link } from 'react-router-dom';
 import ImageLightbox from '../components/ImageLightbox';
 import TableSkeleton from '../components/TableSkeleton';
+import { BASE_CURRENCY } from '../lib/country';
 
 export default function UserDashboard() {
   const { currentUser } = useAuth();
@@ -82,12 +83,12 @@ export default function UserDashboard() {
   return (
     <Layout title={`Hola, ${currentUser?.displayName?.split(' ')[0] || 'Usuario'}`}>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-2xl shadow-lg border border-blue-500 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-br from-brand-600 to-brand-800 p-6 rounded-2xl shadow-lg border border-brand-500 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Wallet className="w-24 h-24" />
                 </div>
                 <div className="relative z-10">
-                    <h3 className="text-blue-100 text-sm font-medium mb-1">Mi Saldo (Presupuesto)</h3>
+                    <h3 className="text-brand-100 text-sm font-medium mb-1">Mi Saldo (Presupuesto)</h3>
                     <p className="text-4xl font-bold mb-2">
                         {formatCurrency(balance)}
                     </p>
@@ -141,7 +142,7 @@ export default function UserDashboard() {
                                if (e.status === 'rejected') return; // Exclude rejected from sums
                                const pid = e.projectId || 'unknown';
                                if (!projectStats[pid]) projectStats[pid] = { expByCurrency: {}, totalAlloc: 0, name: e.projectName || 'Sin Proyecto' };
-                               const currency = e.currency || 'COP';
+                               const currency = e.currency || BASE_CURRENCY;
                                projectStats[pid].expByCurrency[currency] = (projectStats[pid].expByCurrency[currency] || 0) + (Number(e.amount) || 0);
                                if (e.projectName) projectStats[pid].name = e.projectName;
                            });
@@ -165,7 +166,7 @@ export default function UserDashboard() {
                                };
                            });
 
-                           const currencyOrder = ['COP', 'USD', 'EUR', 'CLP'];
+                           const currencyOrder = [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)];
 
                            if (rows.length === 0) return <tr><td colSpan="6" className="p-8 text-center text-gray-400">No hay actividad registrada.</td></tr>;
 
@@ -175,7 +176,7 @@ export default function UserDashboard() {
                                const projectAllocations = allocations.filter(a => a.projectId === row.id || (!a.projectId && row.id === 'unknown'));
                                const byCurrency = row.expByCurrency || {};
                                const activeCurrencies = currencyOrder.filter(c => byCurrency[c]);
-                               const copTotal = byCurrency['COP'] || 0;
+                               const copTotal = byCurrency[BASE_CURRENCY] || 0;
                                const copSaldo = copTotal - row.totalAlloc;
                                const totalExpAll = Object.values(byCurrency).reduce((s, v) => s + v, 0);
                                const hasUsd = byCurrency['USD'] > 0;
@@ -196,18 +197,18 @@ export default function UserDashboard() {
                                        </td>
                                        <td className="px-6 py-4 text-right">
                                            {activeCurrencies.length === 0 ? (
-                                               <span className="font-medium text-blue-600">{formatCurrency(0)}</span>
+                                               <span className="font-medium text-brand-600">{formatCurrency(0)}</span>
                                            ) : activeCurrencies.map((c, i) => (
-                                               <div key={c} className={i === 0 ? 'font-bold text-blue-600' : 'text-sm text-gray-400'}>
+                                               <div key={c} className={i === 0 ? 'font-bold text-brand-600' : 'text-sm text-gray-400'}>
                                                    {formatCurrency(byCurrency[c], c)}
                                                    <span className="text-xs font-normal ml-1">{c}</span>
                                                </div>
                                            ))}
                                        </td>
                                        <td className="px-6 py-4 text-right">
-                                           <div className={`font-bold ${copSaldo >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                                           <div className={`font-bold ${copSaldo >= 0 ? 'text-brand-600' : 'text-red-500'}`}>
                                                {formatCurrency(copSaldo)}
-                                               <span className="text-xs font-normal ml-1">COP</span>
+                                               <span className="text-xs font-normal ml-1">{BASE_CURRENCY}</span>
                                            </div>
                                            {hasUsd && (
                                                <div className="text-sm text-gray-400 mt-0.5">
@@ -296,7 +297,7 @@ export default function UserDashboard() {
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={(ev) => openLightbox(ev, e)}
-                                                                                            className="p-1 text-gray-400 hover:text-blue-600 transition rounded hover:bg-blue-50 focus-ring"
+                                                                                            className="p-1 text-gray-400 hover:text-brand-600 transition rounded hover:bg-brand-50 focus-ring"
                                                                                             title="Ver comprobante"
                                                                                             aria-label="Ver comprobante"
                                                                                         >

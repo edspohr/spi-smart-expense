@@ -3,7 +3,7 @@
 
 Usage: python3 scripts/generate-icons.py <tenant-id> [--bg #ffffff]
 
-Reads tenants/<id>.json for branding.logo (a path under public/), writes
+Reads tenants/<id>.json for branding.icon or branding.logo (paths under public/), writes
 public/icons/<id>/{icon-192,icon-512,icon-512-maskable,apple-touch-180}.png.
 Run once per tenant when the logo changes; outputs are committed.
 """
@@ -39,7 +39,9 @@ def main() -> int:
     args = parser.parse_args()
 
     cfg = json.loads((ROOT / 'tenants' / f'{args.tenant}.json').read_text())
-    logo_path = ROOT / 'public' / cfg['branding']['logo'].lstrip('/')
+    # branding.icon (a square symbol) wins over the wide logo when present.
+    source = cfg['branding'].get('icon') or cfg['branding']['logo']
+    logo_path = ROOT / 'public' / source.lstrip('/')
     out_dir = ROOT / 'public' / 'icons' / args.tenant
     out_dir.mkdir(parents=True, exist_ok=True)
 

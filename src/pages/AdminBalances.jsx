@@ -64,7 +64,7 @@ export default function AdminBalances() {
                     <RefreshCw className={`w-4 h-4 mr-2 ${repairing ? 'animate-spin' : ''}`} aria-hidden="true" />
                     {repairing ? 'Reparando...' : 'Recalcular Saldos (Repair)'}
                 </button>
-                <Link to="/admin/projects" className="text-sm text-blue-600 hover:text-blue-800 flex items-center px-3 py-2">
+                <Link to="/admin/projects" className="text-sm text-brand-600 hover:text-brand-800 flex items-center px-3 py-2">
                     Ir a Cargar Saldos <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
             </div>
@@ -84,10 +84,10 @@ export default function AdminBalances() {
                     {professionals.map(u => (
                         <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
                             <td className="px-6 py-4 font-medium text-gray-800 flex items-center">
-                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 font-bold text-xs">
+                                <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mr-3 font-bold text-xs">
                                     {u.displayName?.substring(0,2).toUpperCase()}
                                 </div>
-                                <Link to={`/admin/users/${u.id}`} className="hover:text-blue-600 hover:underline font-bold">
+                                <Link to={`/admin/users/${u.id}`} className="hover:text-brand-600 hover:underline font-bold">
                                     {u.displayName} {u.code ? `[${u.code}]` : ''} <span className="text-gray-400 font-normal text-xs ml-1">({u.email})</span>
                                 </Link>
                             </td>

@@ -52,6 +52,24 @@ Datos seed: 2 centros de costo (`proj-feria-bogota`, `proj-mision-miami`),
 2 asignaciones, 5 gastos (pendientes COP/USD, aprobado, rechazado, pendiente
 antiguo). Ningún gasto tiene imagen de recibo.
 
+## Tenant demo (Expense Buddy, Chile)
+
+```bash
+npm run emulators:demo   # terminal 1 — proyecto expense-buddy-demo, functions en southamerica-west1
+npm run seed:demo        # terminal 2 — Andes Energía SpA (npm run reset:demo para volver a cero)
+npm run dev:demo:emu     # terminal 3 — build demo (.env.demo) apuntando a los emuladores
+```
+
+Cuentas `@andesenergia.demo` con clave `Demo2026!`: `camila.rojas`
+(superadmin), `rodrigo.pizarro` (admin), `diego.munoz` y `paula.herrera`
+(jefaturas que aprueban a su equipo), `valentina.soto`, `matias.fuentes`,
+`javiera.contreras` (profesionales) e `ignacio.vera` (asistente). El script
+imprime la lista al terminar.
+
+`functions/.env.local` solo debe tener overrides propios del emulador
+(`APP_URL=`): tiene prioridad sobre `functions/.env.<proyecto>` y, si repite
+`TENANT_ID` u otros parámetros, contamina el tenant que estés probando.
+
 ## Inspección rápida sin UI
 
 El emulador de Firestore acepta REST con un token ficticio:

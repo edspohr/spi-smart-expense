@@ -4,8 +4,9 @@ import { db } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
+import { BASE_CURRENCY, baseEquivalentFields, country, needsRate } from '../lib/country';
 
-const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
+const NEEDS_RATE = needsRate;
 import { formatCurrency } from '../utils/format';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import FocusableModal from './FocusableModal';
@@ -26,7 +27,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
     city: expense?.city || '',
     phone: expense?.phone || '',
     amount: expense?.amount ?? '',
-    currency: expense?.currency || 'COP',
+    currency: expense?.currency || BASE_CURRENCY,
     category: expense?.category || '',
     paymentMethod: expense?.paymentMethod || '',
     cardLast4: expense?.cardLast4 || '',
@@ -88,7 +89,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         description: form.description,
         eventName: form.eventName ? form.eventName.toUpperCase() : '',
         trm: NEEDS_RATE(form.currency) ? (trmState.trm || null) : null,
-        amountCOP: NEEDS_RATE(form.currency) ? calculateCOPEquivalent(newAmount, trmState.trm) : null,
+        ...baseEquivalentFields(form.currency, NEEDS_RATE(form.currency) ? calculateCOPEquivalent(newAmount, trmState.trm) : null),
         trmSource: NEEDS_RATE(form.currency) ? (trmState.source || null) : null,
       };
 
@@ -160,7 +161,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
     }
   };
 
-  const inputClass = "w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500";
+  const inputClass = "w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500";
   const labelClass = "block text-xs font-medium text-gray-600 mb-1";
 
   return (
@@ -170,7 +171,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
         {/* Header */}
         <div className="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
           <h3 id="edit-expense-title" className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" aria-hidden="true" />
+            <FileText className="w-5 h-5 text-brand-600" aria-hidden="true" />
             Editar Rendición
           </h3>
           <button
@@ -194,7 +195,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                     href={expense.receiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 rounded-lg text-center text-sm font-medium transition flex items-center justify-center gap-2"
+                    className="flex-1 bg-brand-50 hover:bg-brand-100 text-brand-700 py-2 rounded-lg text-center text-sm font-medium transition flex items-center justify-center gap-2"
                   >
                     <FileText className="w-4 h-4" /> Ver Recibo
                   </a>
@@ -242,8 +243,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                 <input id="eem-merchant" type="text" required className={inputClass} value={form.merchant} onChange={set('merchant')} placeholder="Ej: Restaurante La 68" />
               </div>
               <div>
-                <label htmlFor="eem-taxId" className={labelClass}>NIT / ID Fiscal</label>
-                <input id="eem-taxId" type="text" className={inputClass} value={form.taxId} onChange={set('taxId')} placeholder="Ej: 900.123.456-7" />
+                <label htmlFor="eem-taxId" className={labelClass}>{country.taxIdLabel} / ID Fiscal</label>
+                <input id="eem-taxId" type="text" className={inputClass} value={form.taxId} onChange={set('taxId')} placeholder={country.taxIdPlaceholder} />
               </div>
               <div>
                 <label htmlFor="eem-invoiceNumber" className={labelClass}>No. Factura</label>
@@ -272,8 +273,8 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
               const isCardPayment = form.paymentMethod === 'Credit Card' || form.paymentMethod === 'Debit Card';
               const mutedSelectClass = 'w-full border border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed rounded-lg p-2.5 text-sm outline-none';
               return (
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-4">
-                  <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Clasificación y Pago</p>
+                <div className="p-4 bg-brand-50 rounded-xl border border-brand-100 space-y-4">
+                  <p className="text-xs font-bold text-brand-800 uppercase tracking-wider">Clasificación y Pago</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="eem-category" className={labelClass}>Categoría</label>
@@ -331,7 +332,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                         placeholder="1234"
                       />
                       {form.cardBrand === 'amex' && (
-                        <p className="text-xs text-blue-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
+                        <p className="text-xs text-brand-600 mt-1">Amex consolida en un único extracto; el número es opcional.</p>
                       )}
                     </div>
                   </div>
@@ -367,21 +368,21 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
 
             {/* TRM Info Box (USD and EUR expenses) */}
             {NEEDS_RATE(form.currency) && (
-              <div className={`p-3 rounded-lg border text-sm ${trmState.trm ? 'bg-blue-50 border-blue-100' : trmState.loading ? 'bg-blue-50 border-blue-100' : 'bg-yellow-50 border-yellow-200'}`}>
+              <div className={`p-3 rounded-lg border text-sm ${trmState.trm ? 'bg-brand-50 border-brand-100' : trmState.loading ? 'bg-brand-50 border-brand-100' : 'bg-yellow-50 border-yellow-200'}`}>
                 {trmState.loading ? (
-                  <div className="flex items-center gap-2 text-blue-700">
+                  <div className="flex items-center gap-2 text-brand-700">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span className="text-xs">Obteniendo tasa de cambio...</span>
                   </div>
                 ) : trmState.trm ? (
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-0.5">
-                      <p className="text-blue-800 text-xs font-medium">
+                      <p className="text-brand-800 text-xs font-medium">
                         Tasa {form.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> COP/{form.currency}
                       </p>
                       {form.amount > 0 && (
-                        <p className="text-blue-700 text-xs">
-                          Equivalente: <span className="font-mono font-bold">{formatCurrency(calculateCOPEquivalent(form.amount, trmState.trm))}</span> COP
+                        <p className="text-brand-700 text-xs">
+                          Equivalente: <span className="font-mono font-bold">{formatCurrency(calculateCOPEquivalent(form.amount, trmState.trm), BASE_CURRENCY)}</span> {BASE_CURRENCY}
                         </p>
                       )}
                     </div>
@@ -391,7 +392,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                         setTrmState(prev => ({ ...prev, loading: true }));
                         fetchRate(form.currency, form.date).then(r => setTrmState({ trm: r.rate, source: r.source, fetchedAt: r.fetchedAt, loading: false }));
                       }}
-                      className="text-xs text-blue-600 font-bold hover:underline whitespace-nowrap"
+                      className="text-xs text-brand-600 font-bold hover:underline whitespace-nowrap"
                     >
                       Actualizar tasa
                     </button>
@@ -430,7 +431,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 focus-ring"
+              className="bg-brand-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-brand-700 transition disabled:opacity-50 flex items-center gap-2 focus-ring"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               Guardar Cambios

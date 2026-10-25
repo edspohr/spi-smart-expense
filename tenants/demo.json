@@ -3,9 +3,9 @@
   "name": "Expense Buddy",
   "shortName": "Expense Buddy",
   "description": "Rendición de gastos inteligente para equipos en terreno.",
-  "functionsRegion": "us-central1",
+  "functionsRegion": "southamerica-west1",
   "branding": {
-    "logo": "/logo.png",
+    "logo": "/brands/demo/logo.png",
     "themeColor": "#059669",
     "palette": {
       "50": "#ecfdf5",
@@ -15,18 +15,27 @@
       "700": "#047857",
       "800": "#065f46",
       "900": "#064e3b"
-    }
+    },
+    "productName": "Expense Buddy",
+    "legalName": "Expense Buddy",
+    "emailPlaceholder": "nombre@empresa.cl",
+    "icon": "/brands/demo/icon.png"
   },
   "locale": {
     "country": "CL",
     "language": "es-CL",
     "baseCurrency": "CLP",
-    "currencies": ["CLP", "USD", "EUR"],
+    "currencies": [
+      "CLP",
+      "USD",
+      "EUR"
+    ],
     "taxIdLabel": "RUT",
     "fxProvider": "mindicador"
   },
   "auth": {
-    "googleLogin": false
+    "googleLogin": false,
+    "selfSignup": false
   },
   "modules": {
     "bulkUpload": true,
@@ -36,5 +45,23 @@
   },
   "security": {
     "pinEnabled": false
-  }
+  },
+  "cardCompanies": [
+    "Andes Energía SpA",
+    "Andes Servicios Ltda."
+  ],
+  "categories": [
+    "ALIMENTACIÓN",
+    "ALOJAMIENTO",
+    "TRANSPORTE TERRESTRE",
+    "PASAJES AÉREOS",
+    "COMBUSTIBLE",
+    "PEAJES Y TAG",
+    "ESTACIONAMIENTOS",
+    "MATERIALES Y HERRAMIENTAS",
+    "EPP Y SEGURIDAD",
+    "TELEFONÍA E INTERNET",
+    "GASTOS DE REPRESENTACIÓN",
+    "VARIOS"
+  ]
 }

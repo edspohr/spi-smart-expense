@@ -10,8 +10,9 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { toast } from 'sonner';
 import { useTenantSettings } from '../context/SettingsContext';
+import { BASE_CURRENCY, baseEquivalentOf, country } from '../lib/country';
 import { ensureExportAllowed } from '../lib/pin';
-import { CARD_BRANDS, CARD_BRAND_LABELS, CURRENCIES } from '../lib/constants';
+import { CARD_BRANDS, CARD_BRAND_LABELS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 
 const STATUS_LABELS = {
   approved: 'Aprobado',
@@ -22,9 +23,9 @@ const STATUS_LABELS = {
 // Column headers for CSV (24 columns)
 const CSV_HEADERS = [
   'Fecha', 'Hora', 'Persona', 'Empresa Tarjeta', 'Marca Tarjeta', 'Tarjeta Last4', 'Evento',
-  'Proyecto', 'Código Proyecto', 'Comercio', 'NIT', 'No. Factura', 'Dirección', 'Ciudad',
+  'Proyecto', 'Código Proyecto', 'Comercio', country.taxIdLabel, 'No. Factura', 'Dirección', 'Ciudad',
   'Categoría', 'Forma Pago', 'Descripción', 'Monto', 'Moneda',
-  'TRM', 'Equivalente COP', 'Fuente TRM', 'Estado', 'Motivo Rechazo',
+  'TRM', `Equivalente ${BASE_CURRENCY}`, 'Fuente TRM', 'Estado', 'Motivo Rechazo',
 ];
 
 // Excel adds one extra column (24 total)
@@ -60,17 +61,17 @@ function expenseToRow(e, forExcel = false, projectsMap = {}) {
     e.paymentMethod || '',
     e.description || '',
     e.amount ?? '',
-    e.currency || 'COP',
+    e.currency || BASE_CURRENCY,
     e.trm || '',
-    e.amountCOP || '',
+    baseEquivalentOf(e) ?? '',
     e.trmSource || '',                                 // Fuente TRM
     STATUS_LABELS[e.status] || e.status || '',
     e.rejectionReason || '',
   ];
   if (forExcel) {
     let diff = '';
-    if ((e.currency === 'USD' || e.currency === 'EUR') && e.trm && e.amountCOP) {
-      diff = e.amountCOP - Math.round(Number(e.amount) * Number(e.trm));
+    if (e.currency && e.currency !== BASE_CURRENCY && e.trm && baseEquivalentOf(e)) {
+      diff = baseEquivalentOf(e) - Math.round(Number(e.amount) * Number(e.trm));
     }
     base.push(diff);
   }
@@ -297,7 +298,7 @@ export default function AdminReports() {
     const dataRows = results.map(e => expenseToRow(e, true, projectsMap));
     const allData = [XLSX_HEADERS, ...dataRows];
 
-    ['COP', 'USD', 'EUR', 'CLP'].forEach(cur => {
+    [BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)].forEach(cur => {
       const subset = results.filter(e => e.currency === cur && e.status !== 'rejected');
       if (subset.length === 0) return;
       const total = subset.reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -514,17 +515,17 @@ export default function AdminReports() {
   let fxCOPEquiv = 0;
   if (results) {
     results.forEach(e => {
-      const cur = e.currency || 'COP';
+      const cur = e.currency || BASE_CURRENCY;
       if (!totals[cur]) totals[cur] = { total: 0, count: 0 };
       totals[cur].count += 1;
       if (e.status !== 'rejected') {
         totals[cur].total += Number(e.amount) || 0;
-        if ((cur === 'USD' || cur === 'EUR') && e.amountCOP) fxCOPEquiv += Number(e.amountCOP);
+        if (cur !== BASE_CURRENCY && baseEquivalentOf(e)) fxCOPEquiv += Number(baseEquivalentOf(e));
       }
     });
   }
 
-  const inputClass = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white';
+  const inputClass = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 bg-white';
   const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -592,8 +593,7 @@ export default function AdminReports() {
             <label className={labelClass}>Empresa Tarjeta</label>
             <select className={inputClass} value={filters.cardCompany} onChange={setFilter('cardCompany')}>
               <option value="">Todas</option>
-              <option value="SPI Americas">SPI Americas</option>
-              <option value="SPI Advisors">SPI Advisors</option>
+              {CARD_COMPANIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
 
@@ -679,7 +679,7 @@ export default function AdminReports() {
           <button
             onClick={handleSearch}
             disabled={searching}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium text-sm disabled:opacity-50"
+            className="flex items-center gap-2 bg-brand-600 text-white px-6 py-2.5 rounded-lg hover:bg-brand-700 transition font-medium text-sm disabled:opacity-50"
           >
             {searching
               ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -702,10 +702,10 @@ export default function AdminReports() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Totales</p>
               <div className="flex flex-col mt-1">
-                {['COP', 'USD', 'EUR', 'CLP'].filter(c => totals[c]).map((c, i) => (
+                {[BASE_CURRENCY, ...['COP', 'USD', 'EUR', 'CLP'].filter(c => c !== BASE_CURRENCY)].filter(c => totals[c]).map((c, i) => (
                   <span
                     key={c}
-                    className={i === 0 ? 'text-xl font-bold text-blue-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}
+                    className={i === 0 ? 'text-xl font-bold text-brand-600' : 'text-sm font-semibold text-gray-400 mt-0.5'}
                   >
                     {formatCurrency(totals[c].total, c)}
                     <span className="text-xs font-normal ml-1">{c}</span>
@@ -719,14 +719,14 @@ export default function AdminReports() {
             </div>
 
             {fxCOPEquiv > 0 ? (
-              <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-5 flex flex-col justify-center">
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Equiv. COP (USD + EUR)</p>
-                <p className="text-xl font-bold text-blue-700">{formatCurrency(fxCOPEquiv)}</p>
+              <div className="bg-brand-50 rounded-xl shadow-sm border border-brand-100 p-5 flex flex-col justify-center">
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Equiv. {BASE_CURRENCY} (moneda extranjera)</p>
+                <p className="text-xl font-bold text-brand-700">{formatCurrency(fxCOPEquiv, BASE_CURRENCY)}</p>
                 <p className="text-xs text-blue-400 mt-0.5">Según tasa capturada al registro</p>
               </div>
             ) : (
               <div className="bg-gray-50 rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Equiv. COP (USD + EUR)</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Equiv. {BASE_CURRENCY} (moneda extranjera)</p>
                 <p className="text-sm text-gray-400 italic">Sin gastos USD/EUR con tasa</p>
               </div>
             )}
@@ -785,7 +785,7 @@ export default function AdminReports() {
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Categoría</th>
                       <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Monto</th>
                       <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">TRM</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Equiv COP</th>
+                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Equiv {BASE_CURRENCY}</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Estado</th>
                     </tr>
                   </thead>
@@ -806,15 +806,15 @@ export default function AdminReports() {
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{e.category || '—'}</td>
                         <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(e.amount, e.currency)}
-                          {e.currency && e.currency !== 'COP' && (
+                          {e.currency && e.currency !== BASE_CURRENCY && (
                             <span className="text-xs text-gray-400 ml-1">{e.currency}</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-500 text-xs whitespace-nowrap">
-                          {e.trm ? formatCurrency(e.trm, 'COP') : '—'}
+                          {e.trm ? formatCurrency(e.trm, BASE_CURRENCY) : '—'}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
-                          {e.amountCOP ? formatCurrency(e.amountCOP) : '—'}
+                          {baseEquivalentOf(e) ? formatCurrency(baseEquivalentOf(e), BASE_CURRENCY) : '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold

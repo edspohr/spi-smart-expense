@@ -12,7 +12,7 @@ export default function AdminModuleSelector() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+        <Loader2 className="w-10 h-10 text-brand-600 animate-spin" />
         <p className="mt-4 text-slate-500">Redirigiendo...</p>
     </div>
   );

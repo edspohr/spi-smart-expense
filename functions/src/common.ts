@@ -10,6 +10,8 @@ export const TENANT_ID = defineString('TENANT_ID', { default: 'spi' });
 // Tenant base currency; foreign-currency expenses compare `amountCOP` (the
 // stored base-currency equivalent, TD-026) against PIN thresholds.
 export const BASE_CURRENCY = defineString('BASE_CURRENCY', { default: 'COP' });
+// Country profile for prompts and formatting: CO | CL (see src/lib/country.ts).
+export const COUNTRY = defineString('COUNTRY', { default: 'CO' });
 export const GEMINI_DAILY_LIMIT_USER = defineInt('GEMINI_DAILY_LIMIT_USER', { default: 60 });
 export const GEMINI_DAILY_LIMIT_TENANT = defineInt('GEMINI_DAILY_LIMIT_TENANT', { default: 1500 });
 
@@ -23,6 +25,7 @@ export interface AppClaims {
   canDelete?: boolean;
   canExport?: boolean;
   isColombiaApprover?: boolean;
+  baseCurrency?: string;
 }
 
 export interface Actor {
