@@ -1,11 +1,11 @@
 import { initializeApp } from 'firebase-admin/app';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
-import { REGION } from './common';
+import { FUNCTIONS_REGION } from './common';
 
 initializeApp();
 
-setGlobalOptions({ region: REGION, maxInstances: 10 });
+setGlobalOptions({ region: FUNCTIONS_REGION, maxInstances: 10 });
 
 // Smoke-test callable: confirms the deployment, auth propagation and App
 // Check wiring for a tenant.

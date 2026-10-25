@@ -49,7 +49,15 @@ firebase deploy --only functions --project spi-smart-expense
 ```
 
 Se despliegan `healthcheck`, `extractReceipt`, `reviewExpense`,
-`onExpenseWritten` y `onUserWritten`. Desde este momento cualquier
+`onExpenseWritten` y `onUserWritten`. La región sale de `FUNCTIONS_REGION`
+en `functions/.env.<projectId>` y debe ser la ubicación de Firestore del
+tenant (`gcloud firestore databases describe --project <id>
+--format="value(locationId)"`) y coincidir con `functionsRegion` en
+`tenants/<id>.json`; SPI usa `southamerica-east1`. En el primer deploy de
+2.ª gen de un proyecto es normal que los triggers fallen con "Permission
+denied while using the Eventarc Service Agent": esperar 2-3 minutos y
+repetir el comando con `--force` (también fija la política de limpieza de
+imágenes en Artifact Registry). Desde este momento cualquier
 escritura en `expenses` ajusta balances en el servidor; el cliente viejo
 sigue escribiendo también, por eso el paso 4 va inmediatamente después.
 

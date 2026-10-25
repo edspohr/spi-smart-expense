@@ -196,4 +196,15 @@ por los triggers. ☐
   `spi-smart-expense.web.app`, `spi-smart-expense.firebaseapp.com`,
   `localhost`), en modo monitor; `VITE_RECAPTCHA_SITE_KEY` ya está en el
   `.env` de build. Enforce queda para una semana después del deploy.
-- Pasos 2-5 y 7 pendientes. Seguir `docs/runbooks/deploy-ola-2.md`.
+- 2026-10-25: pasos 2-4 ejecutados. Functions desplegadas en
+  `southamerica-east1` (la región de Firestore; el primer intento en
+  `us-central1` falló por la propagación inicial del agente de Eventarc y
+  se borró). Claims backfilled a los 12 usuarios (`Applied: 12`). Hosting +
+  rules de Firestore y Storage liberados en un solo deploy; el bundle en vivo
+  lleva la región, la clave de App Check y ningún rastro de Gemini.
+  `healthcheck` responde en producción; `reviewExpense` sin sesión devuelve
+  `UNAUTHENTICATED`.
+- Pendiente (paso 5, manual con sesión real): subir un recibo, aprobar y
+  rechazar una rendición, revisar la campana y correr la reconciliación de
+  saldos en `/admin/reconciliation`. Pendiente paso 7: borrar la key de AI
+  Studio. Paso 6 (enforce de App Check) a partir del 2026-11-01.

@@ -11,6 +11,8 @@ export interface TenantConfig {
   name: string;
   shortName: string;
   description: string;
+  // Must match FUNCTIONS_REGION in functions/.env.<projectId> (Firestore location).
+  functionsRegion: string;
   branding: {
     logo: string;
     themeColor: string;

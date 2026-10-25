@@ -3,6 +3,7 @@
   "name": "Expense Buddy",
   "shortName": "Expense Buddy",
   "description": "Rendición de gastos inteligente para equipos en terreno.",
+  "functionsRegion": "us-central1",
   "branding": {
     "logo": "/logo.png",
     "themeColor": "#059669",

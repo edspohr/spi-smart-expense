@@ -3,6 +3,7 @@
   "name": "SPI Smart Expense",
   "shortName": "SPI Expense",
   "description": "Plataforma de gestión de proyectos y gastos para SPI.",
+  "functionsRegion": "southamerica-east1",
   "branding": {
     "logo": "/logo.png",
     "themeColor": "#2563eb",

@@ -1,10 +1,11 @@
 import type { FirebaseApp } from 'firebase/app';
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions';
 import { app, useEmulators } from './firebase';
+import { tenant } from './tenant';
 
 const firebaseApp = app as FirebaseApp | undefined;
 
-export const functions = firebaseApp ? getFunctions(firebaseApp, 'us-central1') : null;
+export const functions = firebaseApp ? getFunctions(firebaseApp, tenant.functionsRegion) : null;
 
 if (functions && useEmulators) {
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
