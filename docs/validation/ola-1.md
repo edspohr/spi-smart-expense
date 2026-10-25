@@ -129,4 +129,11 @@ Detectado y registrado sin corregir (requiere decisión de modelo de datos):
 
 ## Estado del deploy
 
-- Pendiente.
+- 2026-10-25: commit `f2ff128` pusheado a `main` y `firebase deploy --only
+  hosting` ejecutado contra `spi-smart-expense`. Verificado por HTTP:
+  `index.html` enlaza manifest e íconos del tenant, `sw.js` y
+  `manifest.webmanifest` se sirven con `Cache-Control: no-cache`, los assets
+  con hash como `immutable`, y los íconos 192/512/maskable responden 200.
+- Pendiente de verificación manual en dispositivos: prompt nativo en
+  Chrome/Android, modal iOS, toast de actualización en el próximo deploy
+  (puntos 1 y 2 de este documento).

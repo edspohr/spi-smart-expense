@@ -23,7 +23,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | Ola | Nombre | Impacto en SPI | Estado |
 |-----|--------|----------------|--------|
 | 0 | Fundaciones (tenant config, TS, tests, Functions scaffold, CI) | Transparente | Deployada 2026-10-25 (`3a7b8e2`) |
-| 1 | PWA instalable | Visible positivo | En curso |
+| 1 | PWA instalable | Visible positivo | Deployada 2026-10-25 (`f2ff128`) |
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Pendiente |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Pendiente |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Pendiente |
