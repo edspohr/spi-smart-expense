@@ -5,21 +5,27 @@
   "description": "Rendición de gastos inteligente para equipos en terreno.",
   "functionsRegion": "southamerica-west1",
   "branding": {
-    "logo": "/brands/demo/logo.png",
-    "themeColor": "#059669",
+    "logo": "/brands/demo/icon.svg",
+    "themeColor": "#0097B2",
     "palette": {
-      "50": "#ecfdf5",
-      "100": "#d1fae5",
-      "500": "#10b981",
-      "600": "#059669",
-      "700": "#047857",
-      "800": "#065f46",
-      "900": "#064e3b"
+      "50": "#E8F7FA",
+      "100": "#CCEEF4",
+      "500": "#0097B2",
+      "600": "#007C93",
+      "700": "#005E70",
+      "800": "#0A4552",
+      "900": "#062B34"
     },
     "productName": "Expense Buddy",
     "legalName": "Expense Buddy",
     "emailPlaceholder": "nombre@empresa.cl",
-    "icon": "/brands/demo/icon.png"
+    "icon": "/brands/demo/icon.svg",
+    "designSystem": "growth-buddies-light",
+    "iconsBy": "scripts/brand/expense-buddy-icon.py",
+    "ctaPalette": {
+      "600": "#007C93",
+      "700": "#005E70"
+    }
   },
   "locale": {
     "country": "CL",

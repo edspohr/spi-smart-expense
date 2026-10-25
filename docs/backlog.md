@@ -29,4 +29,6 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Dictado por voz en descripciones (`useSpeechToText`, ETFA) | Previsto en Ola 7 y postergado: útil en terreno pero no bloquea la demo; Web Speech API solo es fiable en Chrome/Android. | Tras feedback de Elecnor |
 | Usuarios de sistema ocultos (`isSystemUser()`, patrón ETFA) | Los datos demo usan personas ficticias visibles a propósito. Volver a esto si aparecen cuentas técnicas (soporte, integraciones). | A demanda |
 | Renombrar `isColombiaApprover` → `isBaseCurrencyApprover` | Semántica ya genérica (ADR 0007); el renombre exige migrar `users.permissions` y claims en cada tenant. | Ola 9 |
+| Paquete compartido `@growth-buddies/design` | La paleta Growth Buddies Light vive en `design/growth-buddies-light/` de este repo (ADR 0013). Publicarla como paquete cuando una segunda app buddies la use. | Segunda app buddies |
+| Avatar del sidebar con degradado `indigo` | Color fijo fuera de la paleta; cambiarlo a `brand` también altera el look de SPI. | Cuando SPI acepte retoques visuales |
 | Niveles de aprobación genéricos | Hoy: responsable → finanzas con doble firma (ADR 0012). Un arreglo arbitrario de niveles por monto si un cliente lo pide. | A demanda |

@@ -17,6 +17,12 @@ export interface TenantConfig {
     logo: string;
     // Square symbol used for app icons (scripts/generate-icons.py); defaults to logo.
     icon?: string;
+    /** Shared design tokens this tenant follows, e.g. design/growth-buddies-light. */
+    designSystem?: string;
+    /** Primary call-to-action colour (600/700); green when absent. */
+    ctaPalette?: Partial<Record<'600' | '700', string>>;
+    /** Script that owns this tenant's PWA icons (generate-icons.py skips it). */
+    iconsBy?: string;
     // Short product name shown in the login card and the sidebar.
     productName: string;
     legalName: string;
@@ -73,5 +79,8 @@ export function hexToRgbTriplet(hex: string): string {
 export function applyTenantTheme(config: TenantConfig = tenant, root: HTMLElement = document.documentElement): void {
   for (const [step, hex] of Object.entries(config.branding.palette)) {
     root.style.setProperty(`--brand-${step}`, hexToRgbTriplet(hex));
+  }
+  for (const [step, hex] of Object.entries(config.branding.ctaPalette ?? {})) {
+    root.style.setProperty(`--cta-${step}`, hexToRgbTriplet(hex));
   }
 }

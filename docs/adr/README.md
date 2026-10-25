@@ -40,3 +40,4 @@ nombre en kebab-case en español.
 | [0010](0010-agregados-por-trigger.md) | Agregados de dinero por trigger, no por callables | Aceptada | 2 |
 | [0011](0011-gemini-via-vertex-ai.md) | Gemini vía Vertex AI (IAM, sin API key) | Aceptada | 2 |
 | [0012](0012-politica-de-aprobacion.md) | Política de aprobación por tenant (simple o por niveles) | Aceptada | 5 |
+| [0013](0013-paleta-growth-buddies-light.md) | Paleta Growth Buddies Light compartida por las apps "buddies" | Aceptada | 7 |

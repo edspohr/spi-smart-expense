@@ -9,6 +9,12 @@ export default {
       colors: {
         // Values come from `--brand-*` CSS variables (index.css) so the
         // palette can be swapped per tenant at runtime via applyTenantTheme().
+        // Primary call-to-action ("Rendir un Gasto"). Defaults to Tailwind green
+        // (SPI); tenants override it with branding.ctaPalette.
+        cta: {
+          600: "rgb(var(--cta-600) / <alpha-value>)",
+          700: "rgb(var(--cta-700) / <alpha-value>)",
+        },
         brand: {
           50: "rgb(var(--brand-50) / <alpha-value>)",
           100: "rgb(var(--brand-100) / <alpha-value>)",

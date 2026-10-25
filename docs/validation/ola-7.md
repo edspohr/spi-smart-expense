@@ -137,3 +137,18 @@ contienen secretos).
 - Ajuste: `staleApprovalReminders` corre en `SCHEDULER_REGION` porque Cloud
   Scheduler no existe en `southamerica-west1` (demo: `southamerica-east1`;
   SPI no cambia).
+
+## Marca Growth Buddies Light y logo ExB (2026-10-25)
+
+**Qué cambió:** paleta clara compartida en `design/growth-buddies-light/`
+(ADR 0013) aplicada al demo: `brand` turquesa (`600 = #007C93` para botones
+AA, `500 = #0097B2` identidad), `themeColor #0097B2`, CTA "Rendir un Gasto"
+vía `branding.ctaPalette` (escala `cta` nueva; SPI conserva el verde por
+defecto). Logo/ícono **ExB** ("Ex" en tinta, B en turquesa) generado por `scripts/brand/expense-buddy-icon.py`
+(SVG para login y sidebar, PNG para PWA; maskable y apple-touch a sangre).
+
+**Estado (verificado):** valores computados en el navegador
+(`#007C93` botón y CTA, `#0097B2` theme-color) ✅; login, sidebar y
+dashboard móvil con el logo ExB ✅; íconos legibles de 512 a 32 px ✅; build
+SPI con `--cta-600: 22 163 74` (verde) ✅; demo publicado con el manifest
+nuevo ✅. Pendiente: ver el ícono instalado en un teléfono real ☐

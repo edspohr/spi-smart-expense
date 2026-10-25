@@ -39,6 +39,10 @@ def main() -> int:
     args = parser.parse_args()
 
     cfg = json.loads((ROOT / 'tenants' / f'{args.tenant}.json').read_text())
+    if cfg['branding'].get('iconsBy'):
+        # Tenants with a dedicated icon script own their icons (e.g. full-bleed app icons).
+        print(f"skip {args.tenant}: icons come from {cfg['branding']['iconsBy']}")
+        return 0
     # branding.icon (a square symbol) wins over the wide logo when present.
     source = cfg['branding'].get('icon') or cfg['branding']['logo']
     logo_path = ROOT / 'public' / source.lstrip('/')

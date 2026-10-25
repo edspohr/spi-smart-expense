@@ -14,7 +14,7 @@ No contienen código ejecutable. No se importan desde `src/`.
 | Archivo / carpeta | Qué contiene | Cuándo se actualiza |
 |-------------------|--------------|---------------------|
 | `implementation-plan.md` | Plan v3 por olas (0-9): objetivo, scope, prompt ejecutable, dependencias e impacto en SPI. Tabla de estado al inicio. | Al cerrar cada ola |
-| `adr/` | Architecture Decision Records (0001-0012) con plantilla e índice en `adr/README.md`. | Cuando se toma o reemplaza una decisión de arquitectura |
+| `adr/` | Architecture Decision Records (0001-0013) con plantilla e índice en `adr/README.md`. | Cuando se toma o reemplaza una decisión de arquitectura |
 | `technical-debt.md` | Deuda técnica conocida (TD-NNN) con severidad, impacto y fix recomendado. | Al cerrar o descubrir deuda en cada ola |
 | `backlog.md` | Fuera de alcance deliberado, con razón y ola tras la cual reevaluar. | Al cerrar cada ola (podar lo que entró) |
 | `validation/ola-N.md` | Doc de validación por ola: qué cambió / cómo probarlo / estado esperado. | Al cerrar cada ola |

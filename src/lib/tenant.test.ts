@@ -30,4 +30,14 @@ describe('applyTenantTheme', () => {
     expect(el.style.getPropertyValue('--brand-600')).toBe('37 99 235');
     expect(el.style.getPropertyValue('--brand-50')).toBe('239 246 255');
   });
+
+  it('leaves the CTA green (index.css default) unless the tenant sets ctaPalette', () => {
+    const el = document.createElement('div');
+    applyTenantTheme(tenant, el);
+    expect(el.style.getPropertyValue('--cta-600')).toBe('');
+    const withCta = { ...tenant, branding: { ...tenant.branding, ctaPalette: { '600': '#007C93', '700': '#005E70' } } };
+    applyTenantTheme(withCta, el);
+    expect(el.style.getPropertyValue('--cta-600')).toBe('0 124 147');
+    expect(el.style.getPropertyValue('--cta-700')).toBe('0 94 112');
+  });
 });

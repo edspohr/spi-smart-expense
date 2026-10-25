@@ -1,0 +1,29 @@
+/* Growth Buddies Light — shared by every "buddies" app. Source of truth: tokens.json */
+:root {
+  --gb-teal-50: #E8F7FA; --gb-teal-100: #CCEEF4; --gb-teal-200: #99DDE9; --gb-teal-300: #5CCADD;
+  --gb-teal-400: #00B5D6; --gb-teal-500: #00A5C3; --gb-teal-600: #0097B2; --gb-teal-700: #007C93;
+  --gb-teal-800: #005E70; --gb-teal-900: #0A4552; --gb-teal-950: #062B34;
+
+  --gb-ink-50: #F6F6F8; --gb-ink-100: #ECECEF; --gb-ink-200: #DCDCE3; --gb-ink-300: #C4C4CE;
+  --gb-ink-400: #A7A7B2; --gb-ink-500: #6E6E7A; --gb-ink-600: #55555F; --gb-ink-700: #3A3A45;
+  --gb-ink-800: #232330; --gb-ink-900: #14141A; --gb-ink-950: #0B0B0F;
+
+  --gb-bg: var(--gb-ink-50);
+  --gb-surface: #FFFFFF;
+  --gb-surface-muted: var(--gb-ink-100);
+  --gb-line: var(--gb-ink-200);
+  --gb-line-strong: var(--gb-ink-300);
+  --gb-fg: var(--gb-ink-950);
+  --gb-fg-secondary: var(--gb-ink-600);
+  --gb-fg-muted: var(--gb-ink-500);
+  --gb-fg-disabled: var(--gb-ink-400);
+  --gb-brand: var(--gb-teal-600);       /* identity: logo, accents, borders — not body text on white */
+  --gb-brand-soft: var(--gb-teal-50);
+  --gb-action: var(--gb-teal-700);      /* primary buttons and links (white text 4.88:1) */
+  --gb-action-hover: var(--gb-teal-800);
+  --gb-on-action: #FFFFFF;
+  --gb-link: var(--gb-teal-700);
+  --gb-focus-ring: var(--gb-teal-400);
+  --gb-success: #15803D; --gb-warning: #B45309; --gb-danger: #DC2626;
+  --gb-brand-gradient: linear-gradient(135deg, #00B5D6 0%, #0097B2 45%, #005E70 100%);
+}
