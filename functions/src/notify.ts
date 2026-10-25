@@ -53,15 +53,16 @@ export async function notifyUser(input: NotifyInput): Promise<void> {
   });
 }
 
-const BREVO_API_KEY = defineSecret('BREVO_API_KEY');
-
 function branding(): Branding {
   return { appName: APP_NAME.value(), appUrl: APP_URL.value(), color: BRAND_COLOR.value() };
 }
 
 // Sends one queued email through Brevo's transactional API and records the
 // outcome on the queue document (status sent | failed).
+// The secret is declared here, not at module scope: the CLI resolves every
+// declared secret on deploy, even for functions that are not exported.
 export function makeEmailSender() {
+  const BREVO_API_KEY = defineSecret('BREVO_API_KEY');
   return onDocumentCreated({ document: 'mailQueue/{id}', secrets: [BREVO_API_KEY] }, async (event) => {
     const snap = event.data;
     if (!snap) return;

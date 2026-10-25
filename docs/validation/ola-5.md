@@ -87,4 +87,14 @@ rendición y la línea de tiempo en el detalle.
 
 ## Estado del deploy
 
-- Pendiente.
+- 2026-10-25: índices nuevos, 18 Functions (nuevas: `onExpenseCreated`,
+  `setDelegation`, `staleApprovalReminders`), hosting + rules liberados.
+  Política Simple por defecto (sin `settings/tenant`), correo apagado
+  (`EMAIL_PROVIDER=none`; `sendQueuedEmail` no desplegada).
+- Hallazgo en el deploy: el CLI resolvía el secreto `BREVO_API_KEY` aunque
+  la función de correo no se exportara (falló por Secret Manager
+  deshabilitado). Corregido declarando el secreto dentro de
+  `makeEmailSender()`. Al activar Brevo habrá que habilitar Secret Manager
+  (lo hace `firebase functions:secrets:set`).
+- Pendiente: prueba con sesión real si SPI adopta niveles (ver
+  `docs/pendientes.md`).

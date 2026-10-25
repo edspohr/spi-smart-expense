@@ -27,7 +27,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Deployada 2026-10-25 (`cb7e8bf`) |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Deployada 2026-10-25 (`47a5827`) |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Deployada 2026-10-25 (`23bfff1`) |
-| 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | En curso |
+| 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
 | 7 | País configurable + tenant demo | Transparente | Pendiente |
 | 8 | Observabilidad y operación | Transparente | Pendiente |
