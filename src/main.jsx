@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { SettingsProvider } from './context/SettingsContext'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import EnvError from './components/EnvError.jsx'
 import UpdateToast from './components/UpdateToast'
@@ -22,7 +23,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     {env.ok ? (
       <ErrorBoundary>
         <AuthProvider>
-          <App />
+          <SettingsProvider>
+            <App />
+          </SettingsProvider>
           <Toaster position="top-right" richColors />
         </AuthProvider>
         <UpdateToast />

@@ -76,7 +76,7 @@ de Auth se listan y se omiten.
 Si algún admin de arranque todavía no tiene `role: admin`:
 
 ```bash
-npm run admins:bootstrap -- --tenant spi --dry-run --prod
+npm run admins:bootstrap -- --tenant spi --dry-run --prod   # retirado en Ola 3: usar superadmin:bootstrap
 npm run admins:bootstrap -- --tenant spi --apply --prod
 ```
 

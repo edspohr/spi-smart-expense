@@ -16,6 +16,7 @@ service cloud.firestore {
     function role() { return isAuth() && ('role' in claims()) ? claims().role : null; }
     function isActive() { return isAuth() && claims().get('active', true) != false; }
     function isAdmin() { return isActive() && role() in ['admin', 'superadmin']; }
+    function isSuperadmin() { return isActive() && role() == 'superadmin'; }
     function isAssistant() { return isActive() && role() == 'assistant'; }
     function hasFlag(name) { return isActive() && claims().get(name, false) == true; }
     function isSelf(uid) { return isAuth() && request.auth.uid == uid; }
@@ -59,10 +60,24 @@ service cloud.firestore {
         && incoming().get('role', 'professional') == 'professional'
         && !('permissions' in incoming())
         && incoming().get('balance', 0) == 0;
-      allow update: if isAdmin()
+      // Privilege fields belong to superadmins (normally via the
+      // adminUpdateUser callable); admins keep editing the rest (e.g. balance
+      // adjustments from allocations). Nobody changes their own privileges.
+      allow update: if (isSuperadmin() && !(isSelf(userId) && changesPrivileges()))
+        || (isAdmin() && !changesPrivileges())
         || (isSelf(userId)
             && changedKeys().hasOnly(['displayName', 'photoURL', 'forcePasswordChange', 'fcmTokens', 'updatedAt']));
-      allow delete: if isAdmin();
+      allow delete: if isSuperadmin() && !isSelf(userId);
+
+      function changesPrivileges() {
+        return changedKeys().hasAny(['role', 'permissions', 'active', 'managerUid', 'requiresApproval', 'tenantId']);
+      }
+    }
+
+    // ---------- runtime tenant settings (PIN toggle, modules, AI limits)
+    match /settings/{docId} {
+      allow read: if isActive();
+      allow write: if isSuperadmin();
     }
 
     // ---------- projects (cost centers)

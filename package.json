@@ -20,8 +20,9 @@
     "dev:emu": "VITE_USE_EMULATORS=true vite",
     "test:rules": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:exec --only firestore --project rules-test-expense-buddy \"vitest --run --config vitest.rules.config.ts\"",
     "claims:backfill": "node scripts/migrations/002-backfill-claims.mjs",
-    "admins:bootstrap": "node scripts/bootstrap-admins.mjs",
-    "vertex:check": "node scripts/vertex-check.mjs"
+    "vertex:check": "node scripts/vertex-check.mjs",
+    "superadmin:bootstrap": "node scripts/bootstrap-superadmin.mjs",
+    "migrate:003": "node scripts/migrations/003-users-active-tenant.mjs"
   },
   "dependencies": {
     "firebase": "^12.6.0",

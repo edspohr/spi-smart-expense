@@ -25,7 +25,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 0 | Fundaciones (tenant config, TS, tests, Functions scaffold, CI) | Transparente | Deployada 2026-10-25 (`3a7b8e2`) |
 | 1 | PWA instalable | Visible positivo | Deployada 2026-10-25 (`f2ff128`) |
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Deployada 2026-10-25 (`cb7e8bf`) |
-| 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Pendiente |
+| 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | En curso |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Pendiente |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Pendiente |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
@@ -369,6 +369,21 @@ tenant desde la UI, sin tocar lo que hacen los admins hoy.
   `tenantId`, `managerUid: null`.
 
 **Dependencies:** Ola 2 (claims y callables).
+
+**Desviaciones implementadas (2026-10-25):**
+- Sin colección `user_invitations` ni `claimInvite`: `adminInviteUser` crea
+  la cuenta con Admin SDK y el cliente envía el correo nativo de "crear
+  contraseña". El registro abierto actual de SPI se mantiene (siempre como
+  profesional); restringirlo por tenant queda en backlog.
+- Ajustes en `settings/tenant` (un proyecto por tenant hace innecesario el
+  prefijo `tenants/{id}`), escritos por el callable `adminUpdateSettings`.
+  Branding editable en runtime no se incluyó: manifest, íconos y colores son
+  de build (Ola 1); queda en backlog.
+- La asignación de proyectos sigue en el detalle del usuario
+  (asignaciones con monto); el reset de PIN llega con la Ola 4.
+- Los permisos finos (aprobador, Colombia, borrar, exportar) pasan a ser solo
+  de superadmin, tanto en UI como en rules.
+- Scripts en `.mjs` (como los de Ola 2) en vez de `.ts`.
 **Impacto en SPI:** Transparente para admins y profesionales. Edmundo es el
 único superadmin inicial. `/admin/users-seeder` deja de existir.
 

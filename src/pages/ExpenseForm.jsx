@@ -16,6 +16,7 @@ const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+import { isAdminRole } from '../lib/roles';
 
 /**
  * Checks a set of existing expenses for a potential duplicate of the given formData.
@@ -225,7 +226,7 @@ export default function ExpenseForm() {
           // Event-name suggestions. Rules only let admins list the whole
           // collection; everyone else can read their own expenses.
           try {
-              const qExp = userRole === 'admin'
+              const qExp = isAdminRole(userRole)
                   ? query(collection(db, "expenses"))
                   : query(collection(db, "expenses"), where("userId", "==", currentUser.uid));
               const snapExp = await getDocs(qExp);
@@ -240,7 +241,7 @@ export default function ExpenseForm() {
           }
 
           // Fetch Users (If Admin or Assistant)
-          if (userRole === 'admin' || userRole === 'assistant') {
+          if (isAdminRole(userRole) || userRole === 'assistant') {
               const uQuery = query(collection(db, "users"), where("role", "in", ["professional", "admin", "assistant"]));
               const uSnap = await getDocs(uQuery);
               const uData = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -432,8 +433,8 @@ export default function ExpenseForm() {
         let targetName = currentUser.displayName;
         let isProjectExpense = false;
 
-        if (userRole === 'admin' || userRole === 'assistant') {
-            if (expenseMode === 'project' && userRole === 'admin') {
+        if (isAdminRole(userRole) || userRole === 'assistant') {
+            if (expenseMode === 'project' && isAdminRole(userRole)) {
                 targetUid = 'company_expense';
                 targetName = 'Gasto Empresa';
                 isProjectExpense = true;
@@ -667,14 +668,14 @@ export default function ExpenseForm() {
                     </button>
                     
                     {/* Admin/Assistant Mode Selector (Moved Here for Layout) */}
-                     {(userRole === 'admin' || userRole === 'assistant') && (
+                     {(isAdminRole(userRole) || userRole === 'assistant') && (
                         <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
                             <label className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Asignación del Gasto</label>
 
                             <div className="space-y-2">
                                 {[
                                     { id: 'me', label: 'Mí mismo' },
-                                    ...(userRole === 'admin' ? [{ id: 'project', label: 'Empresa / Centro de Costo' }] : []),
+                                    ...(isAdminRole(userRole) ? [{ id: 'project', label: 'Empresa / Centro de Costo' }] : []),
                                     { id: 'other', label: 'Otro(a)' }
                                 ].map(opt => (
                                     <label key={opt.id} className={`
@@ -738,7 +739,7 @@ export default function ExpenseForm() {
                         <div>
                             <div className="flex justify-between items-center mb-1">
                                 <label className="block text-sm font-medium text-gray-700">Centro de Costo <span className="text-gray-400 font-normal">(Opcional)</span></label>
-                                {userRole === 'admin' && (
+                                {isAdminRole(userRole) && (
                                     <label className="inline-flex items-center cursor-pointer">
                                         <input 
                                             type="checkbox" 

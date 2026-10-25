@@ -28,6 +28,22 @@ export interface UserDoc {
   photoURL?: string | null;
   permissions?: UserPermissions;
   forcePasswordChange?: boolean;
+  active?: boolean;
+  managerUid?: string | null;
+  tenantId?: string;
+  requiresApproval?: boolean;
+  invitedAt?: string;
+  invitedByUid?: string;
+  invitedByName?: string;
+}
+
+export interface TenantSettingsDoc {
+  security?: { pinEnabled?: boolean };
+  modules?: Partial<Record<'bulkUpload' | 'reports' | 'reconciliation' | 'balances', boolean>>;
+  ai?: { dailyLimitUser?: number; dailyLimitTenant?: number };
+  updatedAt?: string;
+  updatedByUid?: string;
+  updatedByName?: string;
 }
 
 export interface ProjectDoc {

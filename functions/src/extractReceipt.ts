@@ -56,8 +56,10 @@ async function consumeQuota(uid: string) {
   const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const userRef = db.doc(`rateLimits/${day}_user_${uid}`);
   const tenantRef = db.doc(`rateLimits/${day}_tenant_${TENANT_ID.value()}`);
-  const userLimit = GEMINI_DAILY_LIMIT_USER.value();
-  const tenantLimit = GEMINI_DAILY_LIMIT_TENANT.value();
+  // Superadmins tune limits at runtime in settings/tenant; params are the default.
+  const ai = (await db.doc('settings/tenant').get()).data()?.ai ?? {};
+  const userLimit = Number.isInteger(ai.dailyLimitUser) ? (ai.dailyLimitUser as number) : GEMINI_DAILY_LIMIT_USER.value();
+  const tenantLimit = Number.isInteger(ai.dailyLimitTenant) ? (ai.dailyLimitTenant as number) : GEMINI_DAILY_LIMIT_TENANT.value();
 
   await db.runTransaction(async (tx) => {
     const [u, t] = await Promise.all([tx.get(userRef), tx.get(tenantRef)]);

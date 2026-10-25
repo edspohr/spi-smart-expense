@@ -166,8 +166,30 @@ describe('users', () => {
     await assertFails(updateDoc(doc(pro(), 'users', ADMIN), { displayName: 'x' }));
   });
 
-  it('admin manages users, projects may not have their totals edited', async () => {
-    await assertSucceeds(updateDoc(doc(admin(), 'users', PRO), { role: 'assistant', balance: 10 }));
+  it('only superadmins change privileges, never their own', async () => {
+    const superadmin = () => ctx('super-1', { role: 'superadmin', canApprove: true });
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'users', 'super-1'), { uid: 'super-1', role: 'superadmin', balance: 0 });
+    });
+    await assertFails(updateDoc(doc(admin(), 'users', PRO), { role: 'assistant' }));
+    await assertFails(updateDoc(doc(admin(), 'users', PRO), { permissions: { canApprove: true } }));
+    await assertFails(updateDoc(doc(admin(), 'users', PRO), { active: false }));
+    await assertSucceeds(updateDoc(doc(superadmin(), 'users', PRO), { role: 'assistant', active: false, managerUid: ADMIN }));
+    await assertFails(updateDoc(doc(superadmin(), 'users', 'super-1'), { role: 'admin' }));
+    await assertSucceeds(updateDoc(doc(superadmin(), 'users', 'super-1'), { displayName: 'Edmundo' }));
+    await assertFails(deleteDoc(doc(admin(), 'users', PRO)));
+  });
+
+  it('settings: everyone active reads, only superadmin writes', async () => {
+    const superadmin = () => ctx('super-1', { role: 'superadmin' });
+    await assertSucceeds(setDoc(doc(superadmin(), 'settings', 'tenant'), { security: { pinEnabled: true } }));
+    await assertSucceeds(getDoc(doc(pro(), 'settings', 'tenant')));
+    await assertFails(setDoc(doc(admin(), 'settings', 'tenant'), { security: { pinEnabled: false } }));
+    await assertFails(getDoc(doc(inactive(), 'settings', 'tenant')));
+  });
+
+  it('admin edits non-privilege user fields, projects may not have their totals edited', async () => {
+    await assertSucceeds(updateDoc(doc(admin(), 'users', PRO), { balance: 10 }));
     await assertSucceeds(updateDoc(doc(admin(), 'projects', 'p1'), { budget: 500 }));
     await assertFails(updateDoc(doc(admin(), 'projects', 'p1'), { expenses: 500 }));
     await assertFails(updateDoc(doc(pro(), 'projects', 'p1'), { budget: 500 }));

@@ -26,8 +26,7 @@
     "fxProvider": "banrep"
   },
   "auth": {
-    "googleLogin": true,
-    "bootstrapAdminEmails": ["edmundo@spohr.cl", "admin@spi.cl", "gerencia@spi.cl"]
+    "googleLogin": true
   },
   "modules": {
     "bulkUpload": true,

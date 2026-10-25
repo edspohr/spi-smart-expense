@@ -21,3 +21,4 @@ export { extractReceipt } from './extractReceipt';
 export { reviewExpense } from './expenses';
 export { onExpenseWritten } from './aggregates';
 export { onUserWritten } from './claims';
+export { adminListUsers, adminInviteUser, adminUpdateUser, adminDeleteUser, adminUpdateSettings } from './users';

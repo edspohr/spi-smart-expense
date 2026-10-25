@@ -18,7 +18,8 @@ No contienen código ejecutable. No se importan desde `src/`.
 | `technical-debt.md` | Deuda técnica conocida (TD-NNN) con severidad, impacto y fix recomendado. | Al cerrar o descubrir deuda en cada ola |
 | `backlog.md` | Fuera de alcance deliberado, con razón y ola tras la cual reevaluar. | Al cerrar cada ola (podar lo que entró) |
 | `validation/ola-N.md` | Doc de validación por ola: qué cambió / cómo probarlo / estado esperado. | Al cerrar cada ola |
-| `runbooks/` | Procedimientos operativos. Hoy: `emulators.md` (entorno de pruebas local con cuentas seed) y `deploy-ola-2.md` (primera salida de Functions, claims y rules, con orden de cutover y rollback). Olas 7-8 añaden bootstrap de tenant, handover a cliente, secretos, restore. | Cuando cambia la operación |
+| `runbooks/` | Procedimientos operativos. Hoy: `emulators.md` (entorno de pruebas local con cuentas seed), `deploy-ola-2.md` (primera salida de Functions, claims y rules, con orden de cutover y rollback) y `deploy-ola-3.md` (usuarios, ajustes y primer superadmin). Olas 7-8 añaden bootstrap de tenant, handover a cliente, secretos, restore. | Cuando cambia la operación |
+| `pendientes.md` | Tareas que solo puede hacer el responsable (consola, pruebas en producción). Se revisan al cierre de cada ola. | Cada vez que surge o se cierra una |
 | `testing-backlog-deploy.md` | Checklist de pruebas pre-deploy heredado del plan v2. | Según uso |
 | `archive/` | Documentos obsoletos con banner de fecha (plan v2, fases 1-6). | Nunca se editan |
 

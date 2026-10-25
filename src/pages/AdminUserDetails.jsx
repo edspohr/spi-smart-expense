@@ -16,6 +16,8 @@ import {
 } from "firebase/firestore";
 import { formatCurrency } from "../utils/format";
 import { reviewExpense } from "../lib/expenseActions";
+import { useAuth } from "../context/useAuth";
+import { isSuperadmin } from "../lib/roles";
 import {
   ArrowLeft,
   CheckCircle,
@@ -39,6 +41,7 @@ import { resolvePermissions } from '../lib/permissions';
 
 export default function AdminUserDetails() {
   const { id } = useParams();
+  const { userRole } = useAuth();
   const [user, setUser] = useState(null);
   const [projectsList, setProjectsList] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -351,8 +354,8 @@ export default function AdminUserDetails() {
         </div>
       </div>
 
-      {/* Permisos Card */}
-      {(() => {
+      {/* Permisos Card — privilege flags are superadmin-only (rules enforce it too) */}
+      {isSuperadmin(userRole) && (() => {
         const effectivePerms = resolvePermissions(user);
         const PERM_ROWS = [
           { key: 'canApprove',         label: 'Puede aprobar rendiciones',         defaultVal: effectivePerms.canApprove },

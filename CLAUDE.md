@@ -25,7 +25,8 @@ npm run seed:emu         # Seed test accounts + sample data into the emulators (
 npm run dev:emu          # Dev server pointed at the emulators — use this for manual testing, never a client's project
 npm run test:rules       # Firestore rules suite inside `firebase emulators:exec` (needs Java)
 npm run claims:backfill -- --dry-run [--apply] [--prod]   # Mirror users/{uid} into custom claims (build functions first)
-npm run admins:bootstrap -- --tenant spi --dry-run [--apply] [--prod]   # Promote tenants/<id>.json bootstrapAdminEmails to admin
+npm run superadmin:bootstrap -- --email <x> --dry-run [--apply] [--prod]  # Promote/create the first superadmin
+npm run migrate:003 -- --dry-run [--apply] [--prod]   # Backfill active/tenantId/managerUid on users
 
 firebase deploy                            # Hosting + rules + indexes + functions
 firebase deploy --only firestore:indexes   # Composite indexes from firestore.indexes.json
@@ -61,13 +62,18 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 
 ### Auth & Roles
 
-`src/context/AuthContext.jsx` wraps the app. On login it resolves the Firebase user, reads `users/{uid}` for `role` and `permissions`, migrates seeded users by email, and calls `syncClaims()` to force `getIdToken(true)` when the token's claims lag the document. Roles today: `admin | assistant | professional`; `superadmin` arrives in Ola 3. Security rules authorise from custom claims only (no `get()`), mirrored by `onUserWritten`. Self-registration always creates a `professional`; the tenant's `auth.bootstrapAdminEmails` are promoted with `npm run admins:bootstrap -- --tenant <id> --apply --prod`. Granular flags live in `src/lib/permissions.js` (UI) and in the claims (rules + callables).
+`src/context/AuthContext.jsx` wraps the app. On login it resolves the Firebase user, reads `users/{uid}` for `role` and `permissions`, migrates seeded users by email, and calls `syncClaims()` to force `getIdToken(true)` when the token's claims lag the document. Roles: `superadmin > admin > assistant > professional` (`src/lib/roles.ts`; `roleSatisfies` makes `requiredRole="admin"` admit superadmins). The profile is a live `onSnapshot` of `users/{uid}`: a role change applies immediately and `active === false` signs the user out with a notice on `/login` (`src/context/authNotice.js`). Security rules authorise from custom claims only (no `get()`), mirrored by `onUserWritten`; privilege fields (`role`, `permissions`, `active`, `managerUid`, `requiresApproval`, `tenantId`) are superadmin-only and never on oneself. Users are managed in `/admin/users` through the `admin*` callables; self-registration always creates a `professional`; the first superadmin comes from `npm run superadmin:bootstrap -- --email <x> --apply --prod`.
+
+### Tenant settings at runtime
+
+`settings/tenant` (written only via the `adminUpdateSettings` callable from `/admin/settings`) overrides the build-time `tenants/<id>.json` defaults for `security.pinEnabled`, `modules.*` and `ai.dailyLimit*`. `SettingsProvider` (`src/context/SettingsContext.tsx`) subscribes live; read it with `useTenantSettings()`. Gate routes with `<ProtectedRoute module="reports">` and hide menu entries from `settings.modules`. Granular flags live in `src/lib/permissions.js` (UI) and in the claims (rules + callables).
 
 ### Routing (`src/App.jsx`)
 
 - `/login` — public
 - `/` — redirects by role
-- `/admin/*` — admin-only
+- `/admin/*` — admins and superadmins
+- `/admin/users`, `/admin/settings` — superadmin only
 - `/dashboard/*` — professionals, assistants and admins
 
 ### Key Data Flow

@@ -31,7 +31,14 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Money is written server-side only**: the `onExpenseWritten` Cloud Function derives `users.balance` and `projects.expenses` from every expense create/edit/delete/status change (idempotent via `aggregateLedger`). No page writes balances anymore.
 - **Approvals through `reviewExpense`**: approve / reject / reopen run in one server transaction that authorises by claims, stamps the reviewer, appends the audit movement and notifies the submitter.
 - **Gemini behind `extractReceipt`, on Vertex AI**: Functions call Gemini through Vertex AI with IAM (`@google/genai`), so there is no API key anywhere; model fallback, retries and daily rate limits (per user and per tenant) live on the server. The web bundle no longer contains a key nor the Gemini SDK.
-- **Custom claims**: `onUserWritten` mirrors role/permissions into the ID token; `firestore.rules` and `storage.rules` authorise from claims with field-level schema validation (15 rules tests, `npm run test:rules`). Self-registration is always `professional`; `scripts/bootstrap-admins.mjs` promotes a tenant's bootstrap admins.
+- **Custom claims**: `onUserWritten` mirrors role/permissions into the ID token; `firestore.rules` and `storage.rules` authorise from claims with field-level schema validation (15 rules tests, `npm run test:rules`). Self-registration is always `professional`.
+
+### Ola 3 — Superadmin, users and settings (2026-10-25)
+
+- **Superadmin role** above admin: sees Configuración → Usuarios and Ajustes; admins keep approving as before.
+- **`/admin/users`** replaces the old seeder: invite by email (account created server-side, the person sets a password from Firebase's native email), change role (including promoting superadmins, never demoting oneself, always one superadmin left), assign a manager, activate/deactivate (an open session is signed out within seconds), resend invitation / password reset, delete users without financial history.
+- **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
+- **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 - **App Check** (reCAPTCHA Enterprise) wired behind `VITE_RECAPTCHA_SITE_KEY`, monitor mode first.
 - Deploy order and cutover: `docs/runbooks/deploy-ola-2.md`.
 

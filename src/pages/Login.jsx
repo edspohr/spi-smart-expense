@@ -7,11 +7,12 @@ import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { toast } from 'sonner';
 import InstallButton from '../components/InstallButton';
+import { consumeAuthNotice } from '../context/authNotice';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => consumeAuthNotice() ?? '');
   
   const [isRegistering, setIsRegistering] = useState(false);
   

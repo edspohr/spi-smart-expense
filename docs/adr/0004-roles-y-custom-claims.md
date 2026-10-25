@@ -55,7 +55,13 @@ reemplazando la lista hardcodeada (patrón ETFA `user_invitations` +
   difiere del documento; no hay re-login manual.
 - El registro propio siempre crea `professional`; la auto-promoción por
   email en el cliente se eliminó y la reemplaza
-  `scripts/bootstrap-admins.mjs` (lee `tenants/<id>.json`). El
-  `bootstrap-superadmin` y `/admin/users` llegan en Ola 3.
+  un script de bootstrap.
+- Ola 3 (2026-10-25): rol `superadmin` operativo. `/admin/users` y los
+  callables `admin*` de `functions/src/users.ts` son la única vía para
+  cambiar rol, permisos, responsable o estado; las rules lo refuerzan
+  (`changesPrivileges()` solo para superadmin y nunca sobre sí mismo).
+  `scripts/bootstrap-superadmin.mjs` crea al primero; `bootstrap-admins.mjs`
+  y `auth.bootstrapAdminEmails` se eliminaron. Siempre queda al menos un
+  superadmin activo (validado en `users.logic.ts`).
 - `firestore.rules` y `storage.rules` ya leen solo claims; 15 tests en
   `tests/rules/firestore.rules.test.ts`.

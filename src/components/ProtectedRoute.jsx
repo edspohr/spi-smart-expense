@@ -1,10 +1,26 @@
+import { useEffect } from 'react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../context/useAuth';
+import { useTenantSettings } from '../context/SettingsContext';
+import { isAdminRole, roleSatisfies } from '../lib/roles';
+import { MODULE_LABELS } from '../lib/tenantSettings';
 
-export default function ProtectedRoute({ children, requiredRole }) {
+function Redirect({ to, message }) {
+  useEffect(() => {
+    // Fixed id: StrictMode runs effects twice in dev; one toast either way.
+    if (message) toast.error(message, { id: `route-guard:${message}` });
+  }, [message]);
+  return <Navigate to={to} replace />;
+}
+
+// `requiredRole`: a role or list; requiring 'admin' also admits superadmins.
+// `module`: a tenant module key that a superadmin may switch off at runtime.
+export default function ProtectedRoute({ children, requiredRole, module }) {
   const { currentUser, userRole } = useAuth();
+  const settings = useTenantSettings();
 
   if (!currentUser) {
     return <Navigate to="/login" />;
@@ -23,7 +39,7 @@ export default function ProtectedRoute({ children, requiredRole }) {
                   <p className="text-sm text-gray-500 mb-6 bg-gray-100 p-2 rounded">
                       Por favor, contacta al administrador para habilitar tu cuenta o revisa las reglas de Firebase.
                   </p>
-                  <button 
+                  <button
                       onClick={() => signOut(auth)}
                       className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
                   >
@@ -34,15 +50,14 @@ export default function ProtectedRoute({ children, requiredRole }) {
       );
   }
 
-  if (requiredRole) {
-    const hasRole = Array.isArray(requiredRole) 
-        ? requiredRole.includes(userRole) 
-        : userRole === requiredRole;
+  const home = isAdminRole(userRole) ? '/admin' : '/dashboard';
 
-    if (!hasRole) {
-        // If user is logged in but tries to access unauthorized route, redirect
-        return <Navigate to={userRole === 'admin' ? '/admin' : '/dashboard'} />;
-    }
+  if (requiredRole && !roleSatisfies(userRole, requiredRole)) {
+    return <Redirect to={home} message="No tienes permiso para ver esa sección." />;
+  }
+
+  if (module && settings.modules[module] === false) {
+    return <Redirect to={home} message={`El módulo ${MODULE_LABELS[module] ?? module} está desactivado.`} />;
   }
 
   return children;

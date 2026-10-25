@@ -12,6 +12,7 @@ import { auth, googleProvider, db, isConfigured } from "../lib/firebase";
 import {
   doc,
   getDoc,
+  onSnapshot,
   setDoc,
   query,
   collection,
@@ -23,6 +24,7 @@ import {
 import { AuthContext } from "./AuthContextDefinition";
 import { resolvePermissions } from "../lib/permissions";
 import { tenant } from "../lib/tenant";
+import { AUTH_NOTICE_KEY } from "./authNotice";
 
 // Security rules read role/permissions from custom claims that a Cloud
 // Function mirrors from users/{uid}. When the cached ID token lags behind the
@@ -156,40 +158,75 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          if (db) {
-            await ensureUserExists(user);
-          }
-        } catch (e) {
-          console.error("Error ensuring user exists:", e);
-        }
+    let unsubscribeDoc = null;
 
-        try {
-          if (db) {
-            const userRef = doc(db, "users", user.uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-              const data = userSnap.data();
-              setUserRole(data.role);
-              setPermissions(resolvePermissions(data));
-              await syncClaims(user, data);
-            }
-          }
-        } catch (e) {
-          console.error("Error fetching user role:", e);
-        }
-        setCurrentUser(user);
-      } else {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (unsubscribeDoc) {
+        unsubscribeDoc();
+        unsubscribeDoc = null;
+      }
+
+      if (!user) {
         setCurrentUser(null);
         setUserRole(null);
         setPermissions(resolvePermissions(null));
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        if (db) await ensureUserExists(user);
+      } catch (e) {
+        console.error("Error ensuring user exists:", e);
+      }
+
+      if (!db) {
+        setCurrentUser(user);
+        setLoading(false);
+        return;
+      }
+
+      // Live profile: a superadmin's role change or deactivation reaches an
+      // open session within seconds, without a reload.
+      let first = true;
+      let lastClaimsKey = null;
+      unsubscribeDoc = onSnapshot(
+        doc(db, "users", user.uid),
+        async (snap) => {
+          const data = snap.exists() ? snap.data() : null;
+          if (data?.active === false) {
+            sessionStorage.setItem(AUTH_NOTICE_KEY, "deactivated");
+            await signOut(auth);
+            return;
+          }
+          setUserRole(data?.role ?? null);
+          setPermissions(resolvePermissions(data));
+          const claimsKey = data ? `${data.role}|${JSON.stringify(data.permissions ?? {})}` : null;
+          if (data && claimsKey !== lastClaimsKey) {
+            lastClaimsKey = claimsKey;
+            await syncClaims(user, data);
+          }
+          if (first) {
+            first = false;
+            setCurrentUser(user);
+            setLoading(false);
+          }
+        },
+        (e) => {
+          console.error("Error listening to user profile:", e);
+          if (first) {
+            first = false;
+            setCurrentUser(user);
+            setLoading(false);
+          }
+        },
+      );
     });
 
-    return unsubscribe;
+    return () => {
+      if (unsubscribeDoc) unsubscribeDoc();
+      unsubscribe();
+    };
   }, []);
 
   async function loginWithGoogle() {

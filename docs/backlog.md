@@ -23,3 +23,6 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | PIN al abrir la app (`AppLock` de Comandas) | Se decidió PIN por acción (ADR 0005). Puede ofrecerse como opción por tenant si un cliente lo pide. | Ola 4 |
 | Mover la app a `app/` (estructura tipo Comandas) | Se mantiene la app en la raíz para evitar mover cientos de archivos (ADR 0002). | Ola 9 |
 | Focus-ring sweep en `AdminReports`, `AdminModuleSelector` y páginas nuevas (heredado del parking lot v2) | Find-replace de la utility `.focus-ring`; sin lógica. Hacerlo al refactorizar cada página. | Ola 9 |
+| Registro abierto configurable por tenant (`auth.selfSignup`) | SPI mantiene "Regístrate aquí" (siempre como profesional). Para Elecnor/demo conviene apagarlo y entrar solo por invitación desde `/admin/users`. | Ola 7 (tenant demo) |
+| Branding editable en runtime desde `/admin/settings` | Manifest, íconos y paleta son de build (Ola 1); editarlos en caliente exige generar el manifest dinámicamente. | Cuando un cliente lo pida |
+| Invitaciones para cuentas Google sin contraseña (`claimInvite`) | Hoy la invitación crea cuenta email/contraseña; si la persona entra con Google con el mismo correo verificado, Firebase la vincula. Revisar si un tenant usa solo Google. | Ola 7 |

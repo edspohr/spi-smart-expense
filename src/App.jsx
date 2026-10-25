@@ -6,7 +6,8 @@ import AdminApprovals from './pages/AdminApprovals';
 import AdminBalances from './pages/AdminBalances';
 import AdminProjectDetails from './pages/AdminProjectDetails';
 import AdminUserDetails from './pages/AdminUserDetails';
-import AdminUserSeeder from './pages/AdminUserSeeder';
+import AdminUsers from './pages/AdminUsers';
+import AdminSettings from './pages/AdminSettings';
 import AdminReports from './pages/AdminReports';
 import AdminReconciliation from './pages/AdminReconciliation';
 import UserDashboard from './pages/UserDashboard';
@@ -16,6 +17,7 @@ import BulkUpload from './pages/BulkUpload';
 import MiEspacio from './pages/MiEspacio';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/useAuth';
+import { isAdminRole } from './lib/roles';
 
 import AdminModuleSelector from './pages/AdminModuleSelector';
 
@@ -23,8 +25,7 @@ import AdminModuleSelector from './pages/AdminModuleSelector';
 function RootRedirect() {
   const { currentUser, userRole } = useAuth();
   if (!currentUser) return <Navigate to="/login" />;
-  if (userRole === 'admin') return <Navigate to="/admin/select-module" />;
-  if (userRole === 'assistant' || userRole === 'professional') return <Navigate to="/dashboard" />;
+  if (isAdminRole(userRole)) return <Navigate to="/admin/select-module" />;
   return <Navigate to="/dashboard" />;
 }
 
@@ -43,17 +44,20 @@ function App() {
         <Route path="/admin/projects/:id" element={<ProtectedRoute requiredRole="admin"><AdminProjectDetails /></ProtectedRoute>} />
         <Route path="/admin/users/:id" element={<ProtectedRoute requiredRole="admin"><AdminUserDetails /></ProtectedRoute>} />
         <Route path="/admin/approvals" element={<ProtectedRoute requiredRole="admin"><AdminApprovals /></ProtectedRoute>} />
-        <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin"><AdminBalances /></ProtectedRoute>} />
-        <Route path="/admin/users-seeder" element={<ProtectedRoute requiredRole="admin"><AdminUserSeeder /></ProtectedRoute>} />
-        <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><AdminReports /></ProtectedRoute>} />
-        <Route path="/admin/reconciliation" element={<ProtectedRoute requiredRole="admin"><AdminReconciliation /></ProtectedRoute>} />
+        <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin" module="balances"><AdminBalances /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin" module="reports"><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/reconciliation" element={<ProtectedRoute requiredRole="admin" module="reconciliation"><AdminReconciliation /></ProtectedRoute>} />
+
+        {/* Superadmin */}
+        <Route path="/admin/users" element={<ProtectedRoute requiredRole="superadmin"><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute requiredRole="superadmin"><AdminSettings /></ProtectedRoute>} />
 
 
         {/* User Routes */}
         <Route path="/dashboard" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><UserDashboard /></ProtectedRoute>} />
         <Route path="/dashboard/expenses" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><UserExpenses /></ProtectedRoute>} />
         <Route path="/dashboard/new-expense" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><ExpenseForm /></ProtectedRoute>} />
-        <Route path="/dashboard/bulk-upload" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><BulkUpload /></ProtectedRoute>} />
+        <Route path="/dashboard/bulk-upload" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']} module="bulkUpload"><BulkUpload /></ProtectedRoute>} />
         <Route path="/dashboard/mi-espacio" element={<ProtectedRoute requiredRole={['professional', 'admin', 'assistant']}><MiEspacio /></ProtectedRoute>} />
 
         <Route path="/" element={<RootRedirect />} />

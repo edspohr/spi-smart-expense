@@ -28,7 +28,6 @@ export interface TenantConfig {
   };
   auth: {
     googleLogin: boolean;
-    bootstrapAdminEmails: string[];
   };
   modules: {
     bulkUpload: boolean;

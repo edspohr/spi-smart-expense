@@ -26,8 +26,7 @@
     "fxProvider": "mindicador"
   },
   "auth": {
-    "googleLogin": false,
-    "bootstrapAdminEmails": []
+    "googleLogin": false
   },
   "modules": {
     "bulkUpload": true,

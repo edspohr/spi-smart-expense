@@ -43,6 +43,7 @@ usarse en un proyecto real.
 
 | Email | Rol | Notas |
 |-------|-----|-------|
+| `superadmin.prueba@expensebuddy.test` | superadmin | Ve Configuración → Usuarios y Ajustes |
 | `admin.prueba@expensebuddy.test` | admin | `permissions.isColombiaApprover: true` (puede aprobar COP) |
 | `profesional.prueba@expensebuddy.test` | professional | Tiene 2 asignaciones y 4 gastos seed en distintos estados |
 | `asistente.prueba@expensebuddy.test` | assistant | Un gasto pendiente de 30 días (alerta de "sin revisar") |

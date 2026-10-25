@@ -31,6 +31,12 @@ const db = getFirestore();
 export const TEST_PASSWORD = 'Prueba2026!';
 export const TEST_USERS = [
   {
+    uid: 'test-superadmin',
+    email: 'superadmin.prueba@expensebuddy.test',
+    displayName: 'Sara Superadmin',
+    role: 'superadmin',
+  },
+  {
     uid: 'test-admin',
     email: 'admin.prueba@expensebuddy.test',
     displayName: 'Ana Admin',
@@ -198,7 +204,7 @@ async function main() {
     await upsertAuthUser(u);
     const { uid, email, displayName, role, permissions } = u;
     await db.doc(`users/${uid}`).set(
-      { uid, email, displayName, role, balance: 0, ...(permissions ? { permissions } : {}) },
+      { uid, email, displayName, role, active: true, tenantId: 'spi', managerUid: null, balance: 0, ...(permissions ? { permissions } : {}) },
       { merge: true },
     );
   }

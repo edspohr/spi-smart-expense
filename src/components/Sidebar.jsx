@@ -2,13 +2,16 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell, Users, Settings
 } from 'lucide-react';
 import InstallButton from './InstallButton';
+import { useTenantSettings } from '../context/SettingsContext';
+import { ROLE_LABELS, isAdminRole, isSuperadmin } from '../lib/roles';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { userRole, logout, currentUser } = useAuth();
   const location = useLocation();
+  const { modules } = useTenantSettings();
 
   const isActive = (path) => location.pathname === path;
 
@@ -46,14 +49,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <div className="overflow-hidden">
                 <p className="text-sm font-semibold text-zinc-800 truncate">{currentUser?.displayName || 'Usuario'}</p>
                  <p className="text-xs text-zinc-500 truncate">
-                    {userRole === 'admin' ? 'Administrador' : userRole === 'assistant' ? 'Asistente' : 'Usuario'}
+                    {ROLE_LABELS[userRole] ?? 'Usuario'}
                 </p>
             </div>
         </div>
       </div>
 
       <nav className="space-y-0.5">
-        {userRole === 'admin' && (
+        {isAdminRole(userRole) && (
             <>
                 <p className={groupTitleClass}>Gestión</p>
                 
@@ -69,17 +72,37 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <CheckCircle className={`w-4 h-4 mr-3 ${isActive('/admin/approvals') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Aprobaciones
                 </Link>
+                {modules.balances && (
                 <Link to="/admin/balances" className={linkClass('/admin/balances')} aria-current={ariaCurrent('/admin/balances')} onClick={() => setIsOpen(false)}>
                 <Wallet className={`w-4 h-4 mr-3 ${isActive('/admin/balances') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Finanzas
                 </Link>
+                )}
+                {modules.reports && (
                 <Link to="/admin/reports" className={linkClass('/admin/reports')} aria-current={ariaCurrent('/admin/reports')} onClick={() => setIsOpen(false)}>
                 <Download className={`w-4 h-4 mr-3 ${isActive('/admin/reports') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Reportes
                 </Link>
+                )}
+                {modules.reconciliation && (
                 <Link to="/admin/reconciliation" className={linkClass('/admin/reconciliation')} aria-current={ariaCurrent('/admin/reconciliation')} onClick={() => setIsOpen(false)}>
                 <GitCompare className={`w-4 h-4 mr-3 ${isActive('/admin/reconciliation') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
                 Conciliación
+                </Link>
+                )}
+            </>
+        )}
+
+        {isSuperadmin(userRole) && (
+            <>
+                <p className={groupTitleClass}>Configuración</p>
+                <Link to="/admin/users" className={linkClass('/admin/users')} aria-current={ariaCurrent('/admin/users')} onClick={() => setIsOpen(false)}>
+                <Users className={`w-4 h-4 mr-3 ${isActive('/admin/users') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+                Usuarios
+                </Link>
+                <Link to="/admin/settings" className={linkClass('/admin/settings')} aria-current={ariaCurrent('/admin/settings')} onClick={() => setIsOpen(false)}>
+                <Settings className={`w-4 h-4 mr-3 ${isActive('/admin/settings') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
+                Ajustes
                 </Link>
             </>
         )}
@@ -93,10 +116,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <Receipt className={`w-4 h-4 mr-3 ${isActive('/dashboard/expenses') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Mis Rendiciones
         </Link>
+        {modules.bulkUpload && (
         <Link to="/dashboard/bulk-upload" className={linkClass('/dashboard/bulk-upload')} aria-current={ariaCurrent('/dashboard/bulk-upload')} onClick={() => setIsOpen(false)}>
             <Layers className={`w-4 h-4 mr-3 ${isActive('/dashboard/bulk-upload') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Carga Masiva
         </Link>
+        )}
         <Link to="/dashboard/mi-espacio" className={linkClass('/dashboard/mi-espacio')} aria-current={ariaCurrent('/dashboard/mi-espacio')} onClick={() => setIsOpen(false)}>
             <Bell className={`w-4 h-4 mr-3 ${isActive('/dashboard/mi-espacio') ? 'text-brand-500' : 'text-zinc-400'}`} aria-hidden="true" />
             Notificaciones
