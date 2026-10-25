@@ -2,6 +2,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { auth } from './firebase';
 import { callFunction } from './functions';
+import { withPin } from './pin';
 import type { Role } from '../types/models';
 
 export interface ManagedUser {
@@ -18,6 +19,8 @@ export interface ManagedUser {
   lastSignInAt: string | null;
   providers: string[];
   hasAuthAccount: boolean;
+  hasPin: boolean;
+  pinDisabled: boolean;
 }
 
 export interface UserPatch {
@@ -37,7 +40,9 @@ export async function listUsers(): Promise<ManagedUser[]> {
 // Invitation = account created server-side + Firebase's native email to set
 // a password. Re-sending is just another reset email.
 export async function inviteUser(input: { email: string; displayName: string; role: Role; managerUid?: string | null }) {
-  const res = await callFunction<typeof input, { uid: string; email: string }>('adminInviteUser', input);
+  const res = await withPin('invitar a una persona', (pin) =>
+    callFunction<typeof input & { pin?: string }, { uid: string; email: string }>('adminInviteUser', { ...input, ...(pin ? { pin } : {}) }),
+  );
   await sendPasswordSetupEmail(res.email);
   return res;
 }
@@ -47,19 +52,25 @@ export function sendPasswordSetupEmail(email: string): Promise<void> {
 }
 
 export function updateUser(uid: string, patch: UserPatch) {
-  return callFunction<UserPatch & { uid: string }, { ok: boolean; changed: boolean }>('adminUpdateUser', { uid, ...patch });
+  return withPin('cambiar los permisos de un usuario', (pin) =>
+    callFunction<UserPatch & { uid: string; pin?: string }, { ok: boolean; changed: boolean }>('adminUpdateUser', { uid, ...patch, ...(pin ? { pin } : {}) }),
+  );
 }
 
 export function deleteUser(uid: string) {
-  return callFunction<{ uid: string }, { ok: boolean }>('adminDeleteUser', { uid });
+  return withPin('eliminar un usuario', (pin) => callFunction<{ uid: string; pin?: string }, { ok: boolean }>('adminDeleteUser', { uid, ...(pin ? { pin } : {}) }));
 }
 
-export function updateSettings(patch: {
-  security?: { pinEnabled: boolean };
+export interface SettingsPatch {
+  security?: { pinEnabled?: boolean; pinApprovalThreshold?: number | null; pinActions?: Record<string, boolean> };
   modules?: Record<string, boolean>;
   ai?: { dailyLimitUser?: number; dailyLimitTenant?: number };
-}) {
-  return callFunction<typeof patch, { ok: boolean }>('adminUpdateSettings', patch);
+}
+
+export function updateSettings(patch: SettingsPatch) {
+  return withPin('cambiar los ajustes', (pin) =>
+    callFunction<SettingsPatch & { pin?: string }, { ok: boolean }>('adminUpdateSettings', { ...patch, ...(pin ? { pin } : {}) }),
+  );
 }
 
 const AUTH_ERRORS: Record<string, string> = {

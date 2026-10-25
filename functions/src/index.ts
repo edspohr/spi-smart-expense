@@ -18,7 +18,8 @@ export const healthcheck = onCall((request) => ({
 }));
 
 export { extractReceipt } from './extractReceipt';
-export { reviewExpense } from './expenses';
+export { reviewExpense, deleteExpense } from './expenses';
+export { setOwnPin, verifyPin, adminResetPin, adminListPinLog } from './pin';
 export { onExpenseWritten } from './aggregates';
 export { onUserWritten } from './claims';
 export { adminListUsers, adminInviteUser, adminUpdateUser, adminDeleteUser, adminUpdateSettings } from './users';

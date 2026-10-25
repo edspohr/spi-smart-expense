@@ -31,6 +31,10 @@ Marcar `[x]` con la fecha al cerrar.
 
 ## Más adelante (no urgente)
 
+- [ ] Cuando quieras mostrar el PIN a SPI (tras el deploy de Ola 4): crear
+  tu PIN en Mi Espacio → Seguridad y activarlo en Ajustes; avisar a los
+  admins para que creen el suyo (verán un aviso amarillo).
+
 - [ ] Crear el proyecto Firebase del tenant demo (`expense-buddy-demo`) para
   la Ola 7.
 

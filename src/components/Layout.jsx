@@ -8,6 +8,7 @@ import ForcePasswordChange from './ForcePasswordChange';
 import PageTransition from './PageTransition';
 import NotificationBell from './NotificationBell';
 import InstallButton from './InstallButton';
+import PinSetupBanner from './PinSetupBanner';
 import { useLocation } from 'react-router-dom';
 
 export default function Layout({ children, title }) {
@@ -54,6 +55,7 @@ export default function Layout({ children, title }) {
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-zinc-50/50 p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
+                <PinSetupBanner />
                 <PageTransition key={location.pathname}>
                     {children}
                 </PageTransition>

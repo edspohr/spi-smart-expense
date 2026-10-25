@@ -10,6 +10,7 @@ import { SettingsProvider } from './context/SettingsContext'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import EnvError from './components/EnvError.jsx'
 import UpdateToast from './components/UpdateToast'
+import PinPrompt from './components/PinPrompt'
 import { Toaster } from 'sonner'
 import { validateEnv } from './lib/env'
 import { applyTenantTheme } from './lib/tenant'
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <SettingsProvider>
             <App />
           </SettingsProvider>
+          <PinPrompt />
           <Toaster position="top-right" richColors />
         </AuthProvider>
         <UpdateToast />

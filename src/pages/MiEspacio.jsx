@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import EmptyState from '../components/EmptyState';
+import PinSecurityCard from '../components/PinSecurityCard';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { subscribeNotifications, markRead, markAllRead } from '../lib/notifications';
@@ -70,6 +71,7 @@ export default function MiEspacio() {
   return (
     <Layout title="Mi Espacio">
       <div className="max-w-2xl mx-auto space-y-6">
+        <PinSecurityCard />
 
         {/* Header row */}
         <div className="flex items-center justify-between">

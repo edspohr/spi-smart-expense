@@ -9,6 +9,8 @@ import { Download, Search, FileSpreadsheet, Loader2, Filter, ImageDown } from 'l
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { toast } from 'sonner';
+import { useTenantSettings } from '../context/SettingsContext';
+import { ensureExportAllowed } from '../lib/pin';
 import { CARD_BRANDS, CARD_BRAND_LABELS, CURRENCIES } from '../lib/constants';
 
 const STATUS_LABELS = {
@@ -135,6 +137,15 @@ function buildImageFilename(expense, type, ext, _projectsMap, usedNames) {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function AdminReports() {
+  const tenantSettings = useTenantSettings();
+  const allowExport = async () => {
+    try {
+      return await ensureExportAllowed(tenantSettings.security);
+    } catch (e) {
+      toast.error(e.message);
+      return false;
+    }
+  };
   const [filters, setFilters] = useState({
     cardCompany: '',
     cardBrand: '',
@@ -267,7 +278,8 @@ export default function AdminReports() {
     return `${parts.join('_')}.${ext}`;
   };
 
-  const handleDownloadCSV = () => {
+  const handleDownloadCSV = async () => {
+    if (!(await allowExport())) return;
     if (!results?.length) { toast.error('No hay datos para exportar.'); return; }
     const rows = results.map(e => expenseToRow(e, false, projectsMap).map(escapeCSV));
     const csv = [CSV_HEADERS.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -278,7 +290,8 @@ export default function AdminReports() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
+    if (!(await allowExport())) return;
     if (!results?.length) { toast.error('No hay datos para exportar.'); return; }
 
     const dataRows = results.map(e => expenseToRow(e, true, projectsMap));
@@ -314,6 +327,7 @@ export default function AdminReports() {
   // ── Image ZIP ─────────────────────────────────────────────────────────────
 
   const handleDownloadImages = async () => {
+    if (!(await allowExport())) return;
     const withImages = (results || []).filter(e => e.receiptUrl || e.voucherUrl);
     if (withImages.length === 0) {
       toast.error('Ningún gasto en los resultados tiene imágenes adjuntas.');

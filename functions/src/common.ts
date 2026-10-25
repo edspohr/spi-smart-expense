@@ -7,6 +7,9 @@ import { defineInt, defineString } from 'firebase-functions/params';
 // routed there) and the client's `functionsRegion` in tenants/<id>.json.
 export const FUNCTIONS_REGION = defineString('FUNCTIONS_REGION', { default: 'us-central1' });
 export const TENANT_ID = defineString('TENANT_ID', { default: 'spi' });
+// Tenant base currency; foreign-currency expenses compare `amountCOP` (the
+// stored base-currency equivalent, TD-026) against PIN thresholds.
+export const BASE_CURRENCY = defineString('BASE_CURRENCY', { default: 'COP' });
 export const GEMINI_DAILY_LIMIT_USER = defineInt('GEMINI_DAILY_LIMIT_USER', { default: 60 });
 export const GEMINI_DAILY_LIMIT_TENANT = defineInt('GEMINI_DAILY_LIMIT_TENANT', { default: 1500 });
 

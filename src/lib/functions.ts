@@ -11,7 +11,9 @@ if (functions && useEmulators) {
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }
 
-const GENERIC_MESSAGES: Record<string, string> = {
+// Transport-level failures get a generic Spanish message; HttpsError
+// messages thrown by our functions are already user-facing Spanish.
+const TRANSPORT_MESSAGES: Record<string, string> = {
   'functions/unauthenticated': 'Tu sesión expiró. Vuelve a iniciar sesión.',
   'functions/unavailable': 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.',
   'functions/deadline-exceeded': 'El servidor tardó demasiado en responder. Intenta de nuevo.',
@@ -20,25 +22,26 @@ const GENERIC_MESSAGES: Record<string, string> = {
 
 export class CallableError extends Error {
   code: string;
-  constructor(code: string, message: string) {
+  details: Record<string, unknown> | undefined;
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
     super(message);
     this.code = code;
+    this.details = details;
   }
 }
 
-// Thin wrapper around httpsCallable: server-side HttpsError messages are
-// already in Spanish, so they are surfaced as-is; transport failures get a
-// generic Spanish message.
 export async function callFunction<TReq, TRes>(name: string, data: TReq): Promise<TRes> {
-  if (!functions) throw new CallableError('functions/unavailable', GENERIC_MESSAGES['functions/unavailable'] as string);
+  if (!functions) throw new CallableError('functions/unavailable', TRANSPORT_MESSAGES['functions/unavailable'] as string);
   try {
     const result = await httpsCallable<TReq, TRes>(functions, name)(data);
     return result.data;
   } catch (err) {
-    const code = (err as { code?: string }).code ?? 'functions/internal';
-    const serverMessage = (err as { message?: string }).message;
-    const generic = GENERIC_MESSAGES[code];
-    const message = generic && !['functions/unauthenticated'].includes(code) ? generic : serverMessage || generic || 'Error inesperado.';
-    throw new CallableError(code, code === 'functions/unauthenticated' ? (generic as string) : message);
+    const { code = 'functions/internal', message, details } = err as { code?: string; message?: string; details?: Record<string, unknown> };
+    const transport = TRANSPORT_MESSAGES[code];
+    // The SDK reports an unreachable server as 'internal' with message 'internal'.
+    const useServerMessage = message && message !== 'internal' && code !== 'functions/unauthenticated';
+    // Some SDK/emulator paths append the HTTP status, e.g. "... [400]".
+    const clean = useServerMessage ? message.replace(/\s*\[\d{3}\]$/, '') : transport ?? 'Error inesperado.';
+    throw new CallableError(code, clean, details);
   }
 }

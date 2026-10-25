@@ -64,9 +64,13 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 
 `src/context/AuthContext.jsx` wraps the app. On login it resolves the Firebase user, reads `users/{uid}` for `role` and `permissions`, migrates seeded users by email, and calls `syncClaims()` to force `getIdToken(true)` when the token's claims lag the document. Roles: `superadmin > admin > assistant > professional` (`src/lib/roles.ts`; `roleSatisfies` makes `requiredRole="admin"` admit superadmins). The profile is a live `onSnapshot` of `users/{uid}`: a role change applies immediately and `active === false` signs the user out with a notice on `/login` (`src/context/authNotice.js`). Security rules authorise from custom claims only (no `get()`), mirrored by `onUserWritten`; privilege fields (`role`, `permissions`, `active`, `managerUid`, `requiresApproval`, `tenantId`) are superadmin-only and never on oneself. Users are managed in `/admin/users` through the `admin*` callables; self-registration always creates a `professional`; the first superadmin comes from `npm run superadmin:bootstrap -- --email <x> --apply --prod`.
 
+### PIN (Ola 4)
+
+Server: `functions/src/pin.ts` (`requirePinFor(req, action, { amount })` at the top of sensitive callables; `userPins`/`pinLog` are server-only). Client: wrap any sensitive callable with `withPin(reason, (pin) => callFunction(name, { ...data, pin }))` from `src/lib/pin.ts`; browser-side actions (exports) call `ensureExportAllowed(settings.security)`. Never delete another user's expense with `deleteDoc` — use `deleteExpense` (rules forbid it). `PinCancelled` means the user dismissed the prompt: don't toast it as an error.
+
 ### Tenant settings at runtime
 
-`settings/tenant` (written only via the `adminUpdateSettings` callable from `/admin/settings`) overrides the build-time `tenants/<id>.json` defaults for `security.pinEnabled`, `modules.*` and `ai.dailyLimit*`. `SettingsProvider` (`src/context/SettingsContext.tsx`) subscribes live; read it with `useTenantSettings()`. Gate routes with `<ProtectedRoute module="reports">` and hide menu entries from `settings.modules`. Granular flags live in `src/lib/permissions.js` (UI) and in the claims (rules + callables).
+`settings/tenant` (written only via the `adminUpdateSettings` callable from `/admin/settings`) overrides the build-time `tenants/<id>.json` defaults for `security.pinEnabled`, `security.pinApprovalThreshold`, `security.pinActions.*`, `modules.*` and `ai.dailyLimit*`. `SettingsProvider` (`src/context/SettingsContext.tsx`) subscribes live; read it with `useTenantSettings()`. Gate routes with `<ProtectedRoute module="reports">` and hide menu entries from `settings.modules`. Granular flags live in `src/lib/permissions.js` (UI) and in the claims (rules + callables).
 
 ### Routing (`src/App.jsx`)
 

@@ -26,7 +26,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 1 | PWA instalable | Visible positivo | Deployada 2026-10-25 (`f2ff128`) |
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Deployada 2026-10-25 (`cb7e8bf`) |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Deployada 2026-10-25 (`47a5827`) |
-| 4 | PIN por acción | Transparente (apagado por defecto) | Pendiente |
+| 4 | PIN por acción | Transparente (apagado por defecto) | En curso |
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Pendiente |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Pendiente |
 | 7 | País configurable + tenant demo | Transparente | Pendiente |
@@ -458,6 +458,19 @@ server-side, activable por el superadmin. Apagado en SPI por defecto.
   backlog como feature opcional por tenant.
 
 **Dependencies:** Ola 3 (settings y superadmin).
+
+**Desviaciones implementadas (2026-10-25):**
+- El registro de uso del PIN vive en Ajustes (sección "PIN de seguridad"),
+  no en una ruta `/admin/security` aparte.
+- Nuevo callable `deleteExpense`: las rules ya no dejan a un admin borrar
+  rendiciones directo, para que el PIN no se pueda esquivar. El dueño sigue
+  borrando su propia rendición pendiente sin PIN.
+- Exportar es una confirmación (`verifyPin`) previa a la descarga en el
+  navegador: protege el flujo normal; los datos siguen siendo legibles para
+  quien ya tiene permiso por rules.
+- Invitar usuarios también queda bajo la acción "usuarios".
+- El umbral usa la moneda base del tenant (`BASE_CURRENCY`); para moneda
+  extranjera compara `amountCOP` y, sin tasa, siempre pide PIN (TD-026).
 **Impacto en SPI:** Transparente. `security.pinEnabled = false`; Edmundo lo activa
 desde settings cuando quiera mostrarlo.
 

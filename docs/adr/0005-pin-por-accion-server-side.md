@@ -42,3 +42,13 @@ de acciones protegidas.
 - Con el toggle apagado no existe ninguna UI de PIN: cero cambio para SPI.
 - Un PIN de 4 dígitos no sustituye la contraseña: el lockout y la
   verificación server-side son lo que lo hace razonable.
+
+## Estado de implementación (2026-10-25, Ola 4)
+
+- `functions/src/pin.ts` + `pin.logic.ts` (puro, con tests). Acciones
+  protegibles: `approve`, `reject`, `delete`, `export`, `users`,
+  `settings`, cada una activable en `settings/tenant.security.pinActions`,
+  más `pinApprovalThreshold` para aprobar/rechazar.
+- No se portó `pinLogin` ni `AppLock` (backlog).
+- Declaración versionada `v1-2026-10-25`; cambiar el texto exige subir la
+  versión en `pin.logic.ts` y `src/lib/pin.ts`.

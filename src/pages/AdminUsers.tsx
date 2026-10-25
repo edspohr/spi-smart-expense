@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Loader2, Mail, Search, Trash2, UserPlus, ExternalLink } from 'lucide-react';
+import { KeyRound, Loader2, Mail, Search, Trash2, UserPlus, ExternalLink } from 'lucide-react';
+import { PinCancelled, resetUserPin } from '../lib/pin';
 import Layout from '../components/Layout';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/useAuth';
@@ -89,7 +90,7 @@ export default function AdminUsers() {
       setUsers((prev) => prev.map((u) => (u.uid === user.uid ? { ...u, ...patch } : u)));
       toast.success(success);
     } catch (err) {
-      toast.error((err as Error).message);
+      if (!(err instanceof PinCancelled)) toast.error((err as Error).message);
     } finally {
       setBusyUid(null);
     }
@@ -121,6 +122,19 @@ export default function AdminUsers() {
       toast.success(`Correo enviado a ${user.email}.`);
     } catch (err) {
       toast.error(authErrorMessage(err));
+    } finally {
+      setBusyUid(null);
+    }
+  }
+
+  async function handleResetPin(user: ManagedUser) {
+    setBusyUid(user.uid);
+    try {
+      await resetUserPin(user.uid);
+      setUsers((prev) => prev.map((u) => (u.uid === user.uid ? { ...u, hasPin: false, pinDisabled: false } : u)));
+      toast.success(`PIN de ${user.displayName} restablecido. Deberá crear uno nuevo.`);
+    } catch (err) {
+      if (!(err instanceof PinCancelled)) toast.error((err as Error).message);
     } finally {
       setBusyUid(null);
     }
@@ -283,6 +297,18 @@ export default function AdminUsers() {
                             >
                               <Mail className="h-4 w-4" />
                             </button>
+                            {(u.hasPin || u.pinDisabled) && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetPin(u)}
+                                disabled={busy}
+                                className={`rounded-lg p-2 hover:bg-zinc-100 focus-ring disabled:opacity-40 ${u.pinDisabled ? 'text-red-500' : 'text-zinc-500 hover:text-zinc-800'}`}
+                                title={u.pinDisabled ? 'PIN desactivado por intentos fallidos — restablecer' : 'Restablecer PIN'}
+                                aria-label={`Restablecer PIN de ${u.displayName}`}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </button>
+                            )}
                             <Link
                               to={`/admin/users/${u.uid}`}
                               className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 focus-ring"

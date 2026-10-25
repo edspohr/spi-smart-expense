@@ -47,6 +47,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [permissions, setPermissions] = useState(resolvePermissions(null));
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(isConfigured);
 
   async function ensureUserExists(user) {
@@ -169,6 +170,7 @@ export function AuthProvider({ children }) {
       if (!user) {
         setCurrentUser(null);
         setUserRole(null);
+        setProfile(null);
         setPermissions(resolvePermissions(null));
         setLoading(false);
         return;
@@ -200,6 +202,7 @@ export function AuthProvider({ children }) {
             return;
           }
           setUserRole(data?.role ?? null);
+          setProfile(data);
           setPermissions(resolvePermissions(data));
           const claimsKey = data ? `${data.role}|${JSON.stringify(data.permissions ?? {})}` : null;
           if (data && claimsKey !== lastClaimsKey) {
@@ -256,6 +259,7 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     permissions,
+    profile,
     loginWithGoogle,
     login,
     resetPassword,

@@ -39,6 +39,12 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/users`** replaces the old seeder: invite by email (account created server-side, the person sets a password from Firebase's native email), change role (including promoting superadmins, never demoting oneself, always one superadmin left), assign a manager, activate/deactivate (an open session is signed out within seconds), resend invitation / password reset, delete users without financial history.
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
+
+### Ola 4 — Per-action PIN (2026-10-25)
+
+- **4-digit personal PIN**, verified only on the server (scrypt, lockout after 5 failures, disabled after 10, weak PINs rejected), with a versioned responsibility statement accepted at creation.
+- **Superadmin-controlled**: off by default; enabled in Ajustes with per-action switches (approve, reject, delete others' expenses, export, user management, settings) and an amount threshold for approvals.
+- **Seamless UX**: a single global prompt appears only when the server asks, the PIN is remembered for 2 minutes, bulk approvals ask once; people create or change it in Mi Espacio → Seguridad; superadmins reset PINs from Usuarios and review the PIN audit log in Ajustes.
 - **App Check** (reCAPTCHA Enterprise) wired behind `VITE_RECAPTCHA_SITE_KEY`, monitor mode first.
 - Deploy order and cutover: `docs/runbooks/deploy-ola-2.md`.
 

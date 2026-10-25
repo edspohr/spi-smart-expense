@@ -134,10 +134,10 @@ describe('expenses — assistant, approvers, admin', () => {
     await assertFails(updateDoc(doc(approverCop(), 'expenses', 'own-pending'), { status: 'rejected' }));
   });
 
-  it('admin reads, edits and deletes anything', async () => {
+  it('admin reads and edits anything but deletes only through the callable', async () => {
     await assertSucceeds(getDocs(collection(admin(), 'expenses')));
     await assertSucceeds(updateDoc(doc(admin(), 'expenses', 'own-approved'), { amount: 999, merchant: 'Admin edit' }));
-    await assertSucceeds(deleteDoc(doc(admin(), 'expenses', 'own-approved')));
+    await assertFails(deleteDoc(doc(admin(), 'expenses', 'own-approved')));
   });
 
   it('movements are append-only and stamped with the author', async () => {
@@ -205,8 +205,20 @@ describe('notifications and server-only collections', () => {
     await assertFails(deleteDoc(doc(pro(), 'notifications', 'n1')));
   });
 
-  it('rateLimits and aggregateLedger are invisible even to admins', async () => {
+  it('rateLimits, aggregateLedger, userPins and pinLog are invisible even to admins', async () => {
+    const superadmin = () => ctx('super-1', { role: 'superadmin' });
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'userPins', PRO), { hash: 'x', salt: 'y' });
+    });
     await assertFails(getDoc(doc(admin(), 'rateLimits', 'r1')));
     await assertFails(setDoc(doc(admin(), 'aggregateLedger', 'x'), { a: 1 }));
+    await assertFails(getDoc(doc(pro(), 'userPins', PRO)));
+    await assertFails(getDoc(doc(superadmin(), 'userPins', PRO)));
+    await assertFails(setDoc(doc(pro(), 'userPins', PRO), { hash: 'mine' }));
+    await assertFails(getDocs(collection(superadmin(), 'pinLog')));
+  });
+
+  it('users cannot grant themselves PIN state', async () => {
+    await assertFails(updateDoc(doc(pro(), 'users', PRO), { hasPin: true }));
   });
 });

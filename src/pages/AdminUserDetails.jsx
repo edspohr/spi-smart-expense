@@ -10,12 +10,12 @@ import {
   where,
   getDocs,
   updateDoc,
-  deleteDoc,
   increment,
   runTransaction,
 } from "firebase/firestore";
 import { formatCurrency } from "../utils/format";
-import { reviewExpense } from "../lib/expenseActions";
+import { reviewExpense, deleteExpense } from "../lib/expenseActions";
+import { PinCancelled } from "../lib/pin";
 import { useAuth } from "../context/useAuth";
 import { isSuperadmin } from "../lib/roles";
 import {
@@ -261,7 +261,7 @@ export default function AdminUserDetails() {
       const balanceChange =
           expense.status !== 'rejected' && !expense.isCompanyExpense ? -(Number(expense.amount) || 0) : 0;
       try {
-          await deleteDoc(doc(db, "expenses", expense.id));
+          await deleteExpense(expense.id);
 
           setExpenses(prev => prev.filter(e => e.id !== expense.id));
           if (balanceChange !== 0) {
@@ -270,7 +270,7 @@ export default function AdminUserDetails() {
           toast.success("Gasto eliminado y saldos revertidos.");
       } catch (e) {
           console.error("Error deleting expense:", e);
-          toast.error("Error al eliminar gasto.");
+          if (!(e instanceof PinCancelled)) toast.error(e.message || "Error al eliminar gasto.");
       }
   };
 

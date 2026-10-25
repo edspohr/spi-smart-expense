@@ -4,6 +4,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { TENANT_ID, nowIso, requireAuth } from './common';
 import type { Role } from './claims.logic';
+import { loadPinPolicy, requirePinFor } from './pin';
+import { PIN_ACTIONS } from './pin.logic';
 import { ValidationError, buildUserPatch, normalizeEmail, validateDisplayName, validateInviteRole } from './users.logic';
 
 // User management for superadmins. users/{uid} is the source of truth; the
@@ -65,6 +67,8 @@ export const adminListUsers = onCall(async (req) => {
         lastSignInAt: lastSeen(a),
         providers: a?.providerData.map((p) => p.providerId) ?? [],
         hasAuthAccount: Boolean(a),
+        hasPin: data.hasPin === true,
+        pinDisabled: data.pinDisabled === true,
       };
     }),
   };
@@ -86,6 +90,7 @@ export const adminInviteUser = onCall(async (req) => {
     asHttps(e);
   }
   const managerUid = typeof req.data?.managerUid === 'string' && req.data.managerUid ? req.data.managerUid : null;
+  await requirePinFor(req, 'users', { ref: email });
 
   const auth = getAuth();
   const db = getFirestore();
@@ -141,6 +146,8 @@ export const adminUpdateUser = onCall(async (req) => {
     asHttps(e);
   }
   if (Object.keys(patch).length === 0) return { ok: true, changed: false };
+  const privileged = ['role', 'permissions', 'active', 'requiresApproval'].some((k) => k in patch);
+  if (privileged) await requirePinFor(req, 'users', { ref: uid });
 
   const auth = getAuth();
   if (patch.active !== undefined) {
@@ -170,6 +177,7 @@ export const adminDeleteUser = onCall(async (req) => {
   if (!expenses.empty || !allocations.empty) {
     throw new HttpsError('failed-precondition', 'El usuario tiene rendiciones o asignaciones. Desactívalo en lugar de eliminarlo.');
   }
+  await requirePinFor(req, 'users', { ref: uid });
   const target = await db.doc(`users/${uid}`).get();
   if (target.data()?.role === 'superadmin' && (await activeSuperadminCount()) <= 1) {
     throw new HttpsError('failed-precondition', 'Debe quedar al menos un superadministrador.');
@@ -194,8 +202,32 @@ export const adminUpdateSettings = onCall(async (req) => {
   const update: Record<string, unknown> = {};
 
   if (input.security !== undefined) {
-    if (typeof input.security?.pinEnabled !== 'boolean') throw new HttpsError('invalid-argument', 'Valor de PIN no válido.');
-    update['security.pinEnabled'] = input.security.pinEnabled;
+    const sec = input.security ?? {};
+    if (sec.pinEnabled !== undefined) {
+      if (typeof sec.pinEnabled !== 'boolean') throw new HttpsError('invalid-argument', 'Valor de PIN no válido.');
+      if (sec.pinEnabled) {
+        const me = await getFirestore().doc(`users/${actor.uid}`).get();
+        if (me.data()?.hasPin !== true) {
+          throw new HttpsError('failed-precondition', 'Crea tu propio PIN en Mi Espacio → Seguridad antes de activarlo para la organización.');
+        }
+      }
+      update['security.pinEnabled'] = sec.pinEnabled;
+    }
+    if (sec.pinApprovalThreshold !== undefined) {
+      const t = sec.pinApprovalThreshold;
+      if (t !== null && (typeof t !== 'number' || !Number.isFinite(t) || t < 0)) {
+        throw new HttpsError('invalid-argument', 'El umbral debe ser un monto positivo o vacío.');
+      }
+      update['security.pinApprovalThreshold'] = t;
+    }
+    if (sec.pinActions !== undefined) {
+      for (const [key, value] of Object.entries(sec.pinActions as Record<string, unknown>)) {
+        if (!(PIN_ACTIONS as readonly string[]).includes(key) || typeof value !== 'boolean') {
+          throw new HttpsError('invalid-argument', `Acción protegida no válida: ${key}.`);
+        }
+        update[`security.pinActions.${key}`] = value;
+      }
+    }
   }
   if (input.modules !== undefined) {
     for (const [key, value] of Object.entries(input.modules as Record<string, unknown>)) {
@@ -216,19 +248,21 @@ export const adminUpdateSettings = onCall(async (req) => {
     }
   }
   if (Object.keys(update).length === 0) throw new HttpsError('invalid-argument', 'No hay cambios.');
+  // Changing settings needs the PIN only while it is already enforced.
+  await requirePinFor(req, 'settings', { policy: await loadPinPolicy() });
 
-  const ref = getFirestore().doc('settings/tenant');
-  const meta = { updatedAt: nowIso(), updatedByUid: actor.uid, updatedByName: actor.name };
-  const existing = await ref.get();
-  if (existing.exists) await ref.update({ ...update, ...meta });
-  else {
-    // update() needs an existing doc; seed it with nested objects instead.
-    const seeded: Record<string, Record<string, unknown>> = {};
-    for (const [path, value] of Object.entries(update)) {
-      const [group, key] = path.split('.') as [string, string];
-      seeded[group] = { ...(seeded[group] ?? {}), [key]: value };
-    }
-    await ref.set({ ...seeded, ...meta });
+  // set(merge) deep-merges maps, so building a nested object from the dotted
+  // paths works whether or not the doc exists yet.
+  const nested: Record<string, unknown> = { updatedAt: nowIso(), updatedByUid: actor.uid, updatedByName: actor.name };
+  for (const [path, value] of Object.entries(update)) {
+    const keys = path.split('.');
+    let node = nested;
+    keys.slice(0, -1).forEach((k) => {
+      node[k] = (node[k] as Record<string, unknown> | undefined) ?? {};
+      node = node[k] as Record<string, unknown>;
+    });
+    node[keys[keys.length - 1] as string] = value;
   }
+  await getFirestore().doc('settings/tenant').set(nested, { merge: true });
   return { ok: true };
 });

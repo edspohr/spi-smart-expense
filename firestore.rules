@@ -112,10 +112,11 @@ service cloud.firestore {
                 && resource.data.get('status', 'pending') == 'pending'
                 && unchanged('userId')));
 
+      // Owners delete their own pending expenses directly; any other delete
+      // goes through the deleteExpense callable so the PIN can be enforced.
       allow delete: if isActive()
-        && (isAdmin()
-            || (resource.data.userId == request.auth.uid
-                && resource.data.get('status', 'pending') == 'pending'));
+        && resource.data.userId == request.auth.uid
+        && resource.data.get('status', 'pending') == 'pending';
 
       // Append-only audit trail; Functions write the status entries.
       match /movements/{movementId} {
@@ -149,6 +150,8 @@ service cloud.firestore {
 
     // ---------- server-only collections
     match /rateLimits/{doc} { allow read, write: if false; }
+    match /userPins/{doc} { allow read, write: if false; }
+    match /pinLog/{doc} { allow read, write: if false; }
     match /aggregateLedger/{doc} { allow read, write: if false; }
   }
 }

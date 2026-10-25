@@ -1,6 +1,13 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { isAdminRole, nowIso, requireAuth, requireString, type AppClaims } from './common';
+import { BASE_CURRENCY, isAdminRole, nowIso, requireAuth, requireString, type AppClaims } from './common';
+import { requirePinFor } from './pin';
+
+function baseAmount(expense: FirebaseFirestore.DocumentData): number | null {
+  const currency = expense.currency ?? BASE_CURRENCY.value();
+  if (currency === BASE_CURRENCY.value()) return Number(expense.amount) || 0;
+  return typeof expense.amountCOP === 'number' ? expense.amountCOP : null;
+}
 
 type Action = 'approve' | 'reject' | 'reopen';
 type Status = 'pending' | 'approved' | 'rejected';
@@ -30,6 +37,11 @@ export const reviewExpense = onCall(async (req) => {
   const db = getFirestore();
   const ref = db.doc(`expenses/${expenseId}`);
   const at = nowIso();
+
+  const pre = await ref.get();
+  if (!pre.exists) throw new HttpsError('not-found', 'Rendición no encontrada.');
+  assertCanReview(claims, action, pre.data() ?? {});
+  await requirePinFor(req, action === 'reject' ? 'reject' : 'approve', { ref: expenseId, amount: baseAmount(pre.data() ?? {}) });
 
   const outcome = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -87,4 +99,24 @@ export const reviewExpense = onCall(async (req) => {
   }
 
   return { ok: true, status: outcome.to, noop: outcome.noop };
+});
+
+// Deleting someone else's expense (admins) goes through here so the PIN can
+// be enforced; rules only let owners delete their own pending expenses
+// directly. Balances and project totals follow via onExpenseWritten.
+export const deleteExpense = onCall(async (req) => {
+  const { uid, claims } = requireAuth(req);
+  const expenseId = requireString(req.data?.expenseId, 'expenseId', 128);
+  const db = getFirestore();
+  const ref = db.doc(`expenses/${expenseId}`);
+  const snap = await ref.get();
+  if (!snap.exists) return { ok: true, noop: true };
+  const expense = snap.data() ?? {};
+  const isOwnPending = expense.userId === uid && (expense.status ?? 'pending') === 'pending';
+  if (!isAdminRole(claims.role) && !isOwnPending) {
+    throw new HttpsError('permission-denied', 'No tienes permiso para eliminar esta rendición.');
+  }
+  if (!isOwnPending) await requirePinFor(req, 'delete', { ref: expenseId });
+  await ref.delete();
+  return { ok: true, noop: false };
 });

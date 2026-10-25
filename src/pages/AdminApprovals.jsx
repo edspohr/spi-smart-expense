@@ -8,13 +8,15 @@ import RejectionModal from '../components/RejectionModal';
 import ExpenseDetailsModal from '../components/ExpenseDetailsModal';
 import EditExpenseModal from '../components/EditExpenseModal';
 import { db } from '../lib/firebase';
-import { collection, query, getDocs, doc, deleteDoc, orderBy, limit } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
 import {
   CheckCircle, XCircle, Download, FileText, Eye, Pencil, Trash2,
   Filter, Keyboard, AlertCircle, ChevronDown, ChevronUp, Search, X as XIcon, Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTenantSettings } from '../context/SettingsContext';
+import { ensureExportAllowed } from '../lib/pin';
 import { motion as Motion } from 'framer-motion';
 import { CARD_BRAND_LABELS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES, CATEGORIES_COMMON } from '../lib/constants';
 import { canUserApprove } from '../lib/permissions';
@@ -22,7 +24,8 @@ import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../context/useAuth';
 import { logger } from '../lib/logger';
-import { approveExpense, rejectExpense } from '../lib/expenseActions';
+import { approveExpense, rejectExpense, deleteExpense } from '../lib/expenseActions';
+import { PinCancelled } from '../lib/pin';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -111,6 +114,15 @@ function formatTotalsLine(byCurrency) {
 }
 
 export default function AdminApprovals() {
+  const tenantSettings = useTenantSettings();
+  const allowExport = async () => {
+    try {
+      return await ensureExportAllowed(tenantSettings.security);
+    } catch (e) {
+      toast.error(e.message);
+      return false;
+    }
+  };
   const { permissions } = useAuth();
 
   // Data
@@ -546,6 +558,7 @@ export default function AdminApprovals() {
 
   // Historical export (preserved)
   const handleExportCSV = async () => {
+    if (!(await allowExport())) return;
     try {
       const q = query(collection(db, "expenses"), orderBy("date", "desc"));
       const snapshot = await getDocs(q);
@@ -580,6 +593,7 @@ export default function AdminApprovals() {
   };
 
   const handleExportSelectionCSV = async () => {
+    if (!(await allowExport())) return;
     if (selectedList.length === 0) return;
     try {
       const pSnap = await getDocs(collection(db, "projects"));
@@ -624,14 +638,14 @@ export default function AdminApprovals() {
       const e = selectedExpenseToDelete;
       // Balance and project reversals are derived server-side by the
       // onExpenseWritten trigger from the deleted document's status.
-      await deleteDoc(doc(db, "expenses", e.id));
+      await deleteExpense(e.id);
       toast.success("Rendición eliminada.");
       setPendingExpenses(prev => prev.filter(item => item.id !== e.id));
       setHistoryExpenses(prev => prev.filter(item => item.id !== e.id));
       setSelectedIds(prev => { const n = new Set(prev); n.delete(e.id); return n; });
     } catch (err) {
       console.error("Error deleting expense:", err);
-      toast.error("Error al eliminar");
+      if (!(err instanceof PinCancelled)) toast.error(err.message || "Error al eliminar");
     } finally {
       setDeleteConfirmOpen(false);
       setSelectedExpenseToDelete(null);

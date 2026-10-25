@@ -3,7 +3,9 @@ import { toast } from 'sonner';
 import { KeyRound, LayoutGrid, Loader2, Sparkles } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useTenantSettings } from '../context/SettingsContext';
-import { MODULE_LABELS, type ModuleKey, type TenantSettings } from '../lib/tenantSettings';
+import { MODULE_LABELS, PIN_ACTION_LABELS, type ModuleKey, type PinAction, type TenantSettings } from '../lib/tenantSettings';
+import { useAuth } from '../context/useAuth';
+import { PinCancelled, listPinLog, type PinLogEntry } from '../lib/pin';
 import { updateSettings } from '../lib/userAdmin';
 import { tenant } from '../lib/tenant';
 
@@ -42,10 +44,45 @@ function Card({ icon: Icon, title, description, children }: { icon: typeof KeyRo
   );
 }
 
+const LOG_ACTION_LABELS: Record<string, string> = {
+  approve: 'Aprobar',
+  reject: 'Rechazar',
+  delete: 'Eliminar rendición',
+  export: 'Exportar',
+  users: 'Gestión de usuarios',
+  settings: 'Ajustes',
+  pin_creado: 'Creó su PIN',
+  pin_restablecido: 'PIN restablecido',
+};
+
+const LOG_REASON_LABELS: Record<string, string> = {
+  invalid: 'PIN incorrecto',
+  'locked-now': 'Bloqueado (15 min)',
+  locked: 'Intento con PIN bloqueado',
+  'disabled-now': 'PIN desactivado',
+  disabled: 'Intento con PIN desactivado',
+};
+
 export default function AdminSettings() {
   const settings = useTenantSettings();
+  const { profile } = useAuth() as unknown as { profile: { hasPin?: boolean } | null };
+  const ownHasPin = profile?.hasPin === true;
   const [saving, setSaving] = useState<string | null>(null);
   const [limits, setLimits] = useState({ user: '', tenant: '' });
+  const [threshold, setThreshold] = useState('');
+  const [log, setLog] = useState<PinLogEntry[] | null>(null);
+
+  useEffect(() => {
+    setThreshold(settings.security.pinApprovalThreshold?.toString() ?? '');
+  }, [settings.security.pinApprovalThreshold]);
+
+  async function loadLog() {
+    try {
+      setLog(await listPinLog());
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
 
   useEffect(() => {
     setLimits({
@@ -60,7 +97,7 @@ export default function AdminSettings() {
       await updateSettings(patch);
       toast.success(message);
     } catch (err) {
-      toast.error((err as Error).message);
+      if (!(err instanceof PinCancelled)) toast.error((err as Error).message);
     } finally {
       setSaving(null);
     }
@@ -89,18 +126,104 @@ export default function AdminSettings() {
           {lastUpdate(settings) && <span className="block text-xs text-zinc-400 mt-1">{lastUpdate(settings)}</span>}
         </p>
 
-        <Card icon={KeyRound} title="PIN de seguridad" description="PIN de 4 dígitos para autorizar acciones sensibles (aprobar, borrar, exportar, cambiar permisos).">
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-zinc-50 p-4">
-            <div>
-              <p className="text-sm font-medium text-zinc-800">Exigir PIN en acciones sensibles</p>
-              <p className="text-xs text-zinc-500">Cada usuario definirá su PIN la primera vez que se le pida. Disponible desde la próxima actualización.</p>
+        <Card icon={KeyRound} title="PIN de seguridad" description="PIN personal de 4 dígitos, verificado en el servidor, para autorizar acciones sensibles.">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-zinc-50 p-4">
+              <div>
+                <p className="text-sm font-medium text-zinc-800">Exigir PIN en acciones sensibles</p>
+                <p className="text-xs text-zinc-500">
+                  {ownHasPin
+                    ? 'Cada persona crea su PIN en Mi Espacio; se le pide al momento de la acción y se recuerda 2 minutos.'
+                    : 'Primero crea tu propio PIN en Mi Espacio → Seguridad.'}
+                </p>
+              </div>
+              <Toggle
+                label="Exigir PIN"
+                checked={settings.security.pinEnabled}
+                disabled={saving === 'pin' || (!ownHasPin && !settings.security.pinEnabled)}
+                onChange={(v) => save('pin', { security: { pinEnabled: v } }, v ? 'PIN activado para toda la organización.' : 'PIN desactivado.')}
+              />
             </div>
-            <Toggle
-              label="Exigir PIN"
-              checked={settings.security.pinEnabled}
-              disabled={saving === 'pin'}
-              onChange={(v) => save('pin', { security: { pinEnabled: v } }, v ? 'PIN activado.' : 'PIN desactivado.')}
-            />
+
+            <div className={settings.security.pinEnabled ? '' : 'opacity-60'}>
+              <p className="mb-2 text-sm font-medium text-zinc-700">Acciones protegidas</p>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {(Object.keys(PIN_ACTION_LABELS) as PinAction[]).map((a) => (
+                  <li key={a}>
+                    <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50">
+                      <input
+                        type="checkbox"
+                        checked={settings.security.pinActions[a]}
+                        disabled={saving === `action-${a}`}
+                        onChange={(e) => save(`action-${a}`, { security: { pinActions: { [a]: e.target.checked } } }, 'Acción protegida actualizada.')}
+                        className="h-4 w-4 rounded border-zinc-300 text-brand-600 focus-ring"
+                      />
+                      {PIN_ACTION_LABELS[a]}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={`grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end ${settings.security.pinEnabled ? '' : 'opacity-60'}`}>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-zinc-700">Pedir PIN al aprobar o rechazar desde (monto en {tenant.locale.baseCurrency})</span>
+                <input
+                  inputMode="numeric"
+                  value={threshold}
+                  onChange={(e) => setThreshold(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="Vacío = todas las rendiciones"
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm focus-ring"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  save('threshold', { security: { pinApprovalThreshold: threshold === '' ? null : Number(threshold) } }, 'Umbral actualizado.')
+                }
+                disabled={saving === 'threshold'}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 focus-ring disabled:opacity-60"
+              >
+                {saving === 'threshold' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                Guardar
+              </button>
+            </div>
+
+            <div>
+              <button type="button" onClick={loadLog} className="text-sm font-semibold text-brand-700 hover:underline focus-ring rounded">
+                {log === null ? 'Ver registro de uso del PIN' : 'Actualizar registro'}
+              </button>
+              {log !== null && (
+                <div className="mt-3 max-h-72 overflow-auto rounded-xl ring-1 ring-zinc-100">
+                  {log.length === 0 ? (
+                    <p className="p-4 text-sm text-zinc-500">Sin registros todavía.</p>
+                  ) : (
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-zinc-50 text-left text-zinc-500">
+                        <tr>
+                          <th className="px-3 py-2">Fecha</th>
+                          <th className="px-3 py-2">Persona</th>
+                          <th className="px-3 py-2">Acción</th>
+                          <th className="px-3 py-2">Resultado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        {log.map((entry) => (
+                          <tr key={entry.id}>
+                            <td className="px-3 py-2 text-zinc-500">{new Date(entry.at).toLocaleString('es-CO')}</td>
+                            <td className="px-3 py-2">{entry.userName}</td>
+                            <td className="px-3 py-2">{LOG_ACTION_LABELS[entry.action] ?? entry.action}</td>
+                            <td className={`px-3 py-2 font-semibold ${entry.ok ? 'text-emerald-700' : 'text-red-600'}`}>
+                              {entry.ok ? 'OK' : LOG_REASON_LABELS[entry.reason ?? ''] ?? 'Rechazado'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </Card>
 
