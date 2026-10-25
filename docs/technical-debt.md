@@ -231,6 +231,12 @@ pivote (filas = proyecto/usuario, columnas = meses, celdas = allocated / spent
 
 ## TD-016 — Historial de aprobaciones enriquecido en modal de detalle
 
+**Status:** Parcial (2026-10-25). Aprobar y rechazar (individual y masivo) ya
+escriben `reviewedAt`, `reviewedByUid`, `reviewedByName` en el gasto y
+registran el cambio de `status` (y `rejectionReason`) en `movements` con el
+actor. Falta el componente `AuditTimeline` y el comentario opcional de
+aprobación (Ola 5).
+
 **Severity:** Medium (auditoría)  
 **Impact:** Medium · **Effort:** Medium  
 **Files:** `src/lib/audit.js`, `src/components/ExpenseDetailsModal.jsx`
@@ -395,6 +401,10 @@ para que este tipo de fallo no vuelva a pasar desapercibido.
 
 ## TD-025 — Manifest e íconos PWA no son por tenant
 
+**Status:** ✅ Resuelto en Ola 1 (2026-10-25). Manifest generado por
+`vite-plugin-pwa` desde el tenant; íconos en `public/icons/<id>/` vía
+`scripts/generate-icons.py`.
+
 **Severity:** Low (hasta Ola 1)  
 **Impact:** Low · **Effort:** Low  
 **Files:** `public/manifest.webmanifest`, `public/logo.png`
@@ -406,3 +416,26 @@ siendo estáticos de SPI. Un build con `VITE_TENANT=demo` instala con nombre e
 
 **Recommended fix:** Ola 1 (`vite-plugin-pwa`) genera el manifest desde
 `tenants/<id>.json` y los íconos 192/512/maskable desde `branding.logo`.
+
+---
+
+## TD-026 — `projects.expenses` y `users.balance` suman montos de distintas monedas
+
+**Severity:** High (integridad financiera)  
+**Impact:** High · **Effort:** Medium  
+**Files:** `src/pages/AdminApprovals.jsx` (approve: `increment(expense.amount)`),
+`src/pages/ExpenseForm.jsx` (submit: `balance: increment(item.amount)`),
+`src/pages/AdminApprovals.jsx` (reject: `increment(-amount)`)
+
+**Problem:** Reproducido en emuladores (2026-10-25): aprobar un gasto de
+42.50 USD dejó `projects/proj-mision-miami.expenses = 42.5`, sumado al mismo
+campo donde se acumulan pesos. Lo mismo ocurre con `users.balance` al enviar
+o rechazar gastos en USD/EUR/CLP. Los dashboards mitigan esto recalculando
+por moneda desde los gastos, pero los campos agregados están corruptos para
+cualquier tenant con gasto en moneda extranjera.
+
+**Recommended fix:** En Ola 5, cuando aprobar/rechazar pasen a callables
+server-side, acumular siempre en moneda base del tenant usando `amountCOP`
+(o el equivalente que defina `country.ts`) y rechazar la aprobación si un
+gasto FX no tiene tasa. Script de migración `recalculate-aggregates` con
+dry-run para corregir los acumulados históricos.

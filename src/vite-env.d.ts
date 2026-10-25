@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/react" />
 
 interface ImportMetaEnv {
   readonly VITE_FIREBASE_API_KEY: string;
@@ -9,4 +10,5 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID: string;
   readonly VITE_GEMINI_API_KEY: string;
   readonly VITE_TENANT?: string;
+  readonly VITE_USE_EMULATORS?: string;
 }

@@ -33,6 +33,11 @@ vercel_env.txt
 # ESLint cache
 node_modules/.cache/
 
+# Firebase Emulator Suite exports
+emulator-data/
+firebase-export-*/
+*-debug.log
+
 # Test coverage & compiled Cloud Functions
 coverage/
 functions/lib/

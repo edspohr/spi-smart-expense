@@ -12,7 +12,12 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "build:demo": "VITE_TENANT=demo vite build",
-    "functions:build": "npm --prefix functions run build"
+    "functions:build": "npm --prefix functions run build",
+    "icons": "python3 scripts/generate-icons.py spi && python3 scripts/generate-icons.py demo",
+    "emulators": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage --project spi-smart-expense --export-on-exit ./emulator-data",
+    "emulators:resume": "PATH=\"/opt/homebrew/opt/openjdk/bin:$PATH\" firebase emulators:start --only auth,firestore,storage --project spi-smart-expense --import ./emulator-data --export-on-exit ./emulator-data",
+    "seed:emu": "node scripts/seed-emulator.mjs",
+    "dev:emu": "VITE_USE_EMULATORS=true vite"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -48,6 +53,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",
     "vite": "^7.2.4",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.5"
   }
 }

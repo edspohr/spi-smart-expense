@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { toast } from 'sonner';
+import InstallButton from '../components/InstallButton';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
@@ -208,7 +209,11 @@ export default function Login() {
             </button>
         </div>
         
-        <p className="mt-8 text-xs text-gray-400">© 2026 SPI Americas. Todos los derechos reservados.</p>
+        <div className="mt-6 flex justify-center">
+            <InstallButton variant="pill" />
+        </div>
+
+        <p className="mt-6 text-xs text-gray-400">© 2026 SPI Americas. Todos los derechos reservados.</p>
       </div>
     </div>
   );

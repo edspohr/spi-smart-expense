@@ -4,6 +4,7 @@ import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
   FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell
 } from 'lucide-react';
+import InstallButton from './InstallButton';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { userRole, logout, currentUser } = useAuth();
@@ -102,7 +103,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         </Link>
 
 
-        <div className="mt-8 pt-6 border-t border-zinc-100">
+        <div className="mt-8 pt-6 border-t border-zinc-100 space-y-1">
+            <InstallButton variant="menu" />
             <button type="button" onClick={logout} className="w-full flex items-center py-2.5 px-4 rounded-full text-zinc-500 hover:bg-red-50 hover:text-red-600 transition duration-200 group focus-ring">
                 <LogOut className="w-4 h-4 mr-3 group-hover:rotate-180 transition-transform duration-300" aria-hidden="true" />
                 <span className="font-medium text-sm">Cerrar Sesión</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/useAuth';
 import { db } from '../lib/firebase';
@@ -181,8 +181,8 @@ export default function UserDashboard() {
                                const hasUsd = byCurrency['USD'] > 0;
 
                                return (
-                                   <>
-                                   <tr key={row.id} tabIndex={0} role="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} detalles del proyecto ${row.name}`} className={`hover:bg-gray-50 transition cursor-pointer focus-ring ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(row.id); } }}>
+                                   <Fragment key={row.id}>
+                                   <tr tabIndex={0} role="button" aria-expanded={isExpanded} aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} detalles del proyecto ${row.name}`} className={`hover:bg-gray-50 transition cursor-pointer focus-ring ${isExpanded ? 'bg-gray-50' : ''}`} onClick={() => toggleProject(row.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProject(row.id); } }}>
                                        <td className="px-6 py-4">
                                            <span className="font-medium text-gray-800">
                                                 {row.code ? `[${row.code}] ` : ''}{row.name}
@@ -317,7 +317,7 @@ export default function UserDashboard() {
                                            </td>
                                        </tr>
                                    )}
-                                   </>
+                                   </Fragment>
                                );
                            });
                       })()}

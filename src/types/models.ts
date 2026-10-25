@@ -85,6 +85,9 @@ export interface ExpenseDoc {
   amountCOP: number | null;
   trmSource: string | null;
   rejectionReason?: string | null;
+  reviewedAt?: string;
+  reviewedByUid?: string | null;
+  reviewedByName?: string | null;
 }
 
 export interface MovementDoc {

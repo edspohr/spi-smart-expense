@@ -23,6 +23,15 @@ import EmptyState from '../components/EmptyState';
 import { useAuth } from '../context/useAuth';
 import { notify } from '../lib/notifications';
 import { logger } from '../lib/logger';
+import { logMovements } from '../lib/audit';
+
+function stampReview(reviewer) {
+  return {
+    reviewedAt: new Date().toISOString(),
+    reviewedByUid: reviewer.uid,
+    reviewedByName: reviewer.name,
+  };
+}
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -111,7 +120,17 @@ function formatTotalsLine(byCurrency) {
 }
 
 export default function AdminApprovals() {
-  const { permissions } = useAuth();
+  const { permissions, currentUser } = useAuth();
+
+  // Ref (not state) so the approve/reject handlers stay free of captured
+  // values and the keyboard-shortcut effect below need not depend on them.
+  const reviewerRef = useRef({ uid: 'unknown', name: 'unknown' });
+  useEffect(() => {
+    reviewerRef.current = {
+      uid: currentUser?.uid || 'unknown',
+      name: currentUser?.displayName || currentUser?.email || 'unknown',
+    };
+  }, [currentUser]);
 
   // Data
   const [pendingExpenses, setPendingExpenses] = useState([]);
@@ -400,13 +419,14 @@ export default function AdminApprovals() {
         const data = snap.data();
         if (data.status === 'approved') return;
         if (data.status === 'rejected') throw new Error("La rendición ya fue rechazada.");
-        tx.update(expRef, { status: "approved" });
+        tx.update(expRef, { status: "approved", ...stampReview(reviewerRef.current) });
         if (expense.projectId) {
           tx.update(doc(db, "projects", expense.projectId), {
             expenses: increment(Number(expense.amount) || 0),
           });
         }
       });
+      logMovements(expense.id, [{ field: 'status', from: 'pending', to: 'approved' }], reviewerRef.current);
       toast.success("Gasto aprobado.");
       setPendingExpenses(prev => prev.filter(e => e.id !== expense.id));
       setHistoryExpenses(prev => [{ ...expense, status: 'approved' }, ...prev]);
@@ -441,13 +461,17 @@ export default function AdminApprovals() {
         const data = snap.data();
         if (data.status === 'rejected') return;
         if (data.status === 'approved') throw new Error("La rendición ya fue aprobada.");
-        tx.update(expRef, { status: "rejected", rejectionReason: reason });
+        tx.update(expRef, { status: "rejected", rejectionReason: reason, ...stampReview(reviewerRef.current) });
         if (expense.userId && !expense.isCompanyExpense) {
           tx.update(doc(db, "users", expense.userId), {
             balance: increment(-(Number(expense.amount) || 0)),
           });
         }
       });
+      logMovements(expense.id, [
+        { field: 'status', from: 'pending', to: 'rejected' },
+        { field: 'rejectionReason', from: null, to: reason },
+      ], reviewerRef.current);
       toast.success("Gasto rechazado y saldo devuelto.");
       setRejectionModalOpen(false);
       setSelectedExpenseToReject(null);
@@ -506,13 +530,14 @@ export default function AdminApprovals() {
           const data = snap.data();
           if (data.status === 'approved') return;
           if (data.status === 'rejected') throw new Error("Rendición ya rechazada.");
-          tx.update(expRef, { status: "approved" });
+          tx.update(expRef, { status: "approved", ...stampReview(reviewerRef.current) });
           if (exp.projectId) {
             tx.update(doc(db, "projects", exp.projectId), {
               expenses: increment(Number(exp.amount) || 0),
             });
           }
         });
+        logMovements(exp.id, [{ field: 'status', from: 'pending', to: 'approved' }], reviewerRef.current);
         return exp;
       }));
       results.forEach((r, i) => {
@@ -587,13 +612,17 @@ export default function AdminApprovals() {
           const data = snap.data();
           if (data.status === 'rejected') return;
           if (data.status === 'approved') throw new Error("Rendición ya aprobada.");
-          tx.update(expRef, { status: "rejected", rejectionReason: reason });
+          tx.update(expRef, { status: "rejected", rejectionReason: reason, ...stampReview(reviewerRef.current) });
           if (exp.userId && !exp.isCompanyExpense) {
             tx.update(doc(db, "users", exp.userId), {
               balance: increment(-(Number(exp.amount) || 0)),
             });
           }
         });
+        logMovements(exp.id, [
+          { field: 'status', from: 'pending', to: 'rejected' },
+          { field: 'rejectionReason', from: null, to: reason },
+        ], reviewerRef.current);
         return exp;
       }));
       results.forEach((r, i) => {

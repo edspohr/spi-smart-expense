@@ -1,3 +1,6 @@
+// Must be the first import: it captures `beforeinstallprompt`, which fires
+// before React mounts on fast connections.
+import './lib/install'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
@@ -5,22 +8,10 @@ import './index.css'
 import { AuthProvider } from './context/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import EnvError from './components/EnvError.jsx'
-import InstallPwaPrompt from './components/InstallPwaPrompt.jsx'
+import UpdateToast from './components/UpdateToast'
 import { Toaster } from 'sonner'
 import { validateEnv } from './lib/env'
 import { applyTenantTheme } from './lib/tenant'
-
-// Capture the beforeinstallprompt event as early as possible so React can
-// read it later. If we waited for mount, we'd miss it on fast connections.
-window.__deferredPwaPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  window.__deferredPwaPrompt = e;
-  window.dispatchEvent(new CustomEvent('spi:pwa-ready'));
-});
-window.addEventListener('appinstalled', () => {
-  window.__deferredPwaPrompt = null;
-});
 
 applyTenantTheme();
 
@@ -34,7 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <App />
           <Toaster position="top-right" richColors />
         </AuthProvider>
-        <InstallPwaPrompt />
+        <UpdateToast />
       </ErrorBoundary>
     ) : (
       <EnvError missing={env.missing} />

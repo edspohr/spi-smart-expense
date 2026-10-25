@@ -19,6 +19,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **CI**: GitHub Actions runs lint, typecheck, tests and builds for the `spi` and `demo` tenants.
 - **Docs**: `docs/implementation-plan.md` (Olas 0–9), `docs/adr/`, `docs/backlog.md`, `docs/technical-debt.md`.
 
+### Ola 1 — Installable PWA (2026-10-25)
+
+- **"Instalar app" always visible**: `src/lib/install.ts` captures `beforeinstallprompt` before React mounts; `InstallButton` lives in the header, the sidebar and the login page and only disappears once the app is installed. Android/desktop get the native prompt, iOS gets Safari's two steps.
+- **Service worker with controlled updates**: `vite-plugin-pwa` (`registerType: 'prompt'`) precaches the app shell; `UpdateToast` offers "Recargar" when a new build is waiting instead of swapping bundles silently.
+- **Per-tenant manifest and icons**: manifest generated from `tenants/<id>.json`; square 192/512/maskable/apple-touch icons in `public/icons/<id>/` (`npm run icons`, Python + Pillow).
+- **Offline reads**: Firestore `persistentLocalCache` keeps already-loaded data available without network.
+
 ---
 
 ## 🆕 Recent Features (v2.0)
@@ -220,6 +227,14 @@ flowchart TD
     npm run dev
     ```
     The application will typically start at `http://localhost:5173`.
+
+5.  **Test safely with the Emulator Suite** (recommended for any manual testing — it never touches a client's Firebase project):
+    ```bash
+    npm run emulators   # terminal 1
+    npm run seed:emu    # terminal 2 — creates test accounts and sample data
+    npm run dev:emu     # terminal 3
+    ```
+    See `docs/runbooks/emulators.md` for the test accounts and details.
 
 ---
 

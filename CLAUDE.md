@@ -18,12 +18,19 @@ npm run lint             # ESLint (JS/JSX + TS/TSX), zero warnings allowed
 npm run typecheck        # tsc --noEmit (allowJs; only .ts/.tsx are type-checked strictly)
 npm test -- --run        # Vitest unit tests (src/**/*.test.{js,ts})
 npm run functions:build  # Compile Cloud Functions (functions/ → functions/lib)
+npm run icons            # Regenerate public/icons/<tenant>/ from each tenant logo (needs python3 + Pillow)
+
+npm run emulators        # Firebase Emulator Suite (Auth, Firestore, Storage, UI on :4000); needs Java (Homebrew openjdk)
+npm run seed:emu         # Seed test accounts + sample data into the emulators (scripts/seed-emulator.mjs)
+npm run dev:emu          # Dev server pointed at the emulators — use this for manual testing, never a client's project
 
 firebase deploy                            # Hosting + rules + indexes + functions
 firebase deploy --only firestore:indexes   # Composite indexes from firestore.indexes.json
 ```
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and both tenant builds plus the functions build on every push/PR. It does not deploy.
+
+Manual testing happens against the Emulator Suite (`docs/runbooks/emulators.md`), never against SPI's production project: test accounts and their shared password live in `scripts/seed-emulator.mjs`.
 
 ## Environment Setup
 
@@ -36,6 +43,10 @@ React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storag
 ### Tenant config (`tenants/*.json`, `src/lib/tenant.ts`)
 
 `vite.config.js` reads `tenants/${VITE_TENANT}.json`, injects it as the `__TENANT__` global (typed `TenantConfig`) and replaces `%TENANT_*%` placeholders in `index.html`. The Tailwind `brand` palette reads `--brand-*` CSS variables, which `applyTenantTheme()` sets from `branding.palette` in `main.jsx`. Build-time defaults only; runtime-editable settings (PIN toggle, approval policy) move to Firestore in Ola 3.
+
+### PWA
+
+`vite-plugin-pwa` (in `vite.config.js`, `registerType: 'prompt'`) generates `sw.js` and the manifest from the tenant config at build time; icons come from `public/icons/<tenant>/`. `src/lib/install.ts` must stay the first import of `main.jsx` (it captures `beforeinstallprompt`); `InstallButton.tsx` reads its `useInstallMode()` and is never dismissed, only hidden when installed. `UpdateToast.tsx` (`virtual:pwa-register/react`) is the only place that applies a new service worker. Firestore uses `persistentLocalCache` for offline reads. In `npm run dev` there is no service worker, so the button always shows the manual-steps modal; test install flows with `npm run preview` or in production.
 
 ### Auth & Roles
 

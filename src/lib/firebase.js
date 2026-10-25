@@ -1,7 +1,22 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  connectStorageEmulator,
+} from "firebase/storage";
+
+// `npm run dev:emu` points the SDKs at the local Emulator Suite so test
+// accounts and data never touch a client's production project.
+const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,14 +37,21 @@ if (isConfigured) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
-    db = getFirestore(app);
+    // IndexedDB cache: already-loaded expenses and projects render offline
+    // (read-only) and the installed app opens instantly on flaky networks.
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
     storage = getStorage(app);
+    if (useEmulators) {
+      connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+      connectFirestoreEmulator(db, "127.0.0.1", 8080);
+      connectStorageEmulator(storage, "127.0.0.1", 9199);
+    }
   } catch (e) {
     console.error("Firebase init error:", e);
   }
 }
-
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export async function uploadReceiptImage(file, userId) {
   if (!storage) throw new Error("Firebase Storage not initialized");

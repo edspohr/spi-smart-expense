@@ -23,7 +23,7 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | Ola | Nombre | Impacto en SPI | Estado |
 |-----|--------|----------------|--------|
 | 0 | Fundaciones (tenant config, TS, tests, Functions scaffold, CI) | Transparente | Deployada 2026-10-25 (`3a7b8e2`) |
-| 1 | PWA instalable | Visible positivo | Pendiente |
+| 1 | PWA instalable | Visible positivo | En curso |
 | 2 | Backend seguro (Functions, App Check, claims, rules) | Fricción mitigada | Pendiente |
 | 3 | Superadmin + gestión de usuarios + settings | Transparente para admins | Pendiente |
 | 4 | PIN por acción | Transparente (apagado por defecto) | Pendiente |
@@ -202,8 +202,9 @@ visible (patrón Comandas), íconos correctos y actualizaciones controladas.
   descarta**; solo desaparece cuando la app ya está instalada. Reemplaza
   `InstallPwaPrompt.jsx` y `src/lib/pwa.js`.
 - Íconos por tenant: 192, 512, 512 maskable, apple-touch 180, generados
-  desde el logo del tenant en build. Manifest por tenant (nombre, colores,
-  `start_url`, `lang`).
+  desde el logo del tenant con `scripts/generate-icons.py` (Pillow, `npm run
+  icons`) y commiteados en `public/icons/<id>/`. Manifest por tenant (nombre,
+  colores, `start_url`, `lang`) generado en build por `vite-plugin-pwa`.
 - Firestore `persistentLocalCache` + `persistentMultipleTabManager`.
 
 **Dependencies:** Ola 0 (tenant config para manifest e íconos).

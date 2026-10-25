@@ -15,6 +15,7 @@ import { fetchRate, calculateCOPEquivalent } from '../lib/exchangeRate';
 const NEEDS_RATE = (currency) => currency === 'USD' || currency === 'EUR';
 import { CATEGORIES_COMMON, PAYMENT_METHODS, CARD_BRANDS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 import { toast } from 'sonner';
+import { logger } from '../lib/logger';
 
 /**
  * Checks a set of existing expenses for a potential duplicate of the given formData.
@@ -221,15 +222,22 @@ export default function ExpenseForm() {
               .filter(p => !p.name.toLowerCase().includes('test'));
           setProjects(sortProjects(data));
 
-          // Fetch Events (Unique) from Expenses
-          const qExp = query(collection(db, "expenses"));
-          const snapExp = await getDocs(qExp);
-          const events = new Set();
-          snapExp.docs.forEach(d => {
-              const evt = d.data().eventName;
-              if (evt) events.add(evt);
-          });
-          setExistingEvents(Array.from(events).sort());
+          // Event-name suggestions. Rules only let admins list the whole
+          // collection; everyone else can read their own expenses.
+          try {
+              const qExp = userRole === 'admin'
+                  ? query(collection(db, "expenses"))
+                  : query(collection(db, "expenses"), where("userId", "==", currentUser.uid));
+              const snapExp = await getDocs(qExp);
+              const events = new Set();
+              snapExp.docs.forEach(d => {
+                  const evt = d.data().eventName;
+                  if (evt) events.add(evt);
+              });
+              setExistingEvents(Array.from(events).sort());
+          } catch (err) {
+              logger.warn('[ExpenseForm] event suggestions unavailable', err);
+          }
 
           // Fetch Users (If Admin or Assistant)
           if (userRole === 'admin' || userRole === 'assistant') {
@@ -239,10 +247,10 @@ export default function ExpenseForm() {
               setUsers(uData);
           }
       }
-      if (userRole !== null) { 
+      if (userRole !== null && currentUser) {
           fetchData();
       }
-  }, [userRole]);
+  }, [userRole, currentUser]);
 
   // Fetch conversion rate automatically for USD or EUR when date is set and user is on review step
   useEffect(() => {
