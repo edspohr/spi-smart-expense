@@ -21,7 +21,7 @@ export const FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf']);
 const MAX_IMAGE_BASE64 = 6 * 1024 * 1024; // ~4.5 MB binary; client compresses to far less
 
-interface ImageInput {
+export interface ImageInput {
   data: string;
   mimeType: string;
 }
@@ -104,6 +104,20 @@ async function generateWithFallback(ai: GoogleGenAI, parts: Part[]) {
     logger.warn('primary Gemini model unavailable, falling back', { error: String(err) });
     return tryModel(FALLBACK_MODEL, 2);
   }
+}
+
+/**
+ * Gemini reading of receipt images, shared with the offline-read verifier
+ * (offline.ts). No auth or quota here: callers handle both.
+ */
+export async function readReceiptImagesWithGemini(images: ImageInput[], categories: string[]): Promise<Record<string, unknown>> {
+  const ai = vertexClient();
+  const parts: Part[] = [
+    { text: buildReceiptPrompt(categories, COUNTRY.value() === 'CL' ? 'CL' : 'CO') },
+    ...images.map((img) => ({ inlineData: { data: img.data, mimeType: img.mimeType } })),
+  ];
+  const { text, model } = await generateWithFallback(ai, parts);
+  return { ...postProcessExtraction(text, categories), _model: model };
 }
 
 // Receipt extraction behind auth and daily rate limits. `mode: 'health'` is

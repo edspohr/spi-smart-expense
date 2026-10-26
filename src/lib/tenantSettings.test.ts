@@ -18,7 +18,15 @@ describe('mergeSettings', () => {
     expect(merged.security.pinEnabled).toBe(true);
     expect(merged.modules.reports).toBe(false);
     expect(merged.modules.bulkUpload).toBe(true);
-    expect(merged.ai).toEqual({ dailyLimitUser: 20, dailyLimitTenant: null });
+    expect(merged.ai).toEqual({ dailyLimitUser: 20, dailyLimitTenant: null, localFirst: false });
     expect(merged.updatedByName).toBe('Edmundo');
+  });
+
+  it('keeps the offline reader off unless the tenant turns it on', () => {
+    expect(DEFAULT_SETTINGS.offline.localReader).toBe(false);
+    expect(DEFAULT_SETTINGS.ai.localFirst).toBe(false);
+    const merged = mergeSettings({ offline: { localReader: true }, ai: { localFirst: 'yes' } });
+    expect(merged.offline.localReader).toBe(true);
+    expect(merged.ai.localFirst).toBe(false);
   });
 });

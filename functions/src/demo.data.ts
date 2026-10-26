@@ -56,6 +56,9 @@ export const DEMO_SETTINGS = {
     staleDays: 5,
   },
   modules: { bulkUpload: true, reports: true, reconciliation: false, balances: true },
+  // Ola 8: the demo shows on-device reading and "Listo para terreno".
+  offline: { localReader: true },
+  ai: { localFirst: false },
 };
 
 type Extra = { description?: string; category?: string; rejectionReason?: string };

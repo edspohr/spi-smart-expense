@@ -218,6 +218,22 @@ describe('notifications and server-only collections', () => {
     await assertFails(getDocs(collection(superadmin(), 'pinLog')));
   });
 
+  it('offline reader (Ola 8): localRead is allowed, aiReview is server-only, ocrEval is superadmin-read', async () => {
+    const superadmin = () => ctx('super-1', { role: 'superadmin' });
+    const localRead = { engine: 'barcode', docType: '39', offline: true, durationMs: 120, values: { amount: 1000 }, confidence: { amount: 'high' } };
+    await assertSucceeds(setDoc(doc(pro(), 'expenses', 'lr-1'), expense({ localRead })));
+    await assertFails(setDoc(doc(pro(), 'expenses', 'lr-2'), expense({ localRead, aiReview: { status: 'match' } })));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'own-pending'), { aiReview: { status: 'match' } }));
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'ocrEval', 'e1'), { engine: 'ocr' });
+      await setDoc(doc(c.firestore(), 'cache', 'merchantDictionary'), { entries: {} });
+    });
+    await assertSucceeds(getDoc(doc(superadmin(), 'ocrEval', 'e1')));
+    await assertFails(getDoc(doc(admin(), 'ocrEval', 'e1')));
+    await assertFails(setDoc(doc(superadmin(), 'ocrEval', 'e2'), { engine: 'ocr' }));
+    await assertFails(getDoc(doc(superadmin(), 'cache', 'merchantDictionary')));
+  });
+
   it('users cannot grant themselves PIN state', async () => {
     await assertFails(updateDoc(doc(pro(), 'users', PRO), { hasPin: true }));
   });

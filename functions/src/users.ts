@@ -246,6 +246,14 @@ export const adminUpdateSettings = onCall(async (req) => {
       }
       update[`ai.${key}`] = value;
     }
+    if (input.ai?.localFirst !== undefined) {
+      if (typeof input.ai.localFirst !== 'boolean') throw new HttpsError('invalid-argument', 'Valor no válido para la lectura local.');
+      update['ai.localFirst'] = input.ai.localFirst;
+    }
+  }
+  if (input.offline !== undefined) {
+    if (typeof input.offline?.localReader !== 'boolean') throw new HttpsError('invalid-argument', 'Valor no válido para el modo offline.');
+    update['offline.localReader'] = input.offline.localReader;
   }
   if (input.approvalPolicy !== undefined) {
     const ap = input.approvalPolicy ?? {};

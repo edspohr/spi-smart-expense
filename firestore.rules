@@ -108,7 +108,7 @@ service cloud.firestore {
       allow create: if isActive()
         && validExpense(incoming())
         && incoming().get('status', 'pending') == 'pending'
-        && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid'])
+        && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid', 'aiReview'])
         && (incoming().userId == request.auth.uid || isAdmin() || isAssistant());
 
       allow update: if isActive()
@@ -117,6 +117,7 @@ service cloud.firestore {
         && unchanged('createdAt')
         && unchanged('approvalFlow')
         && unchanged('pendingApproverUids')
+        && unchanged('aiReview')
         && (canReviewCurrent()
             || (resource.data.userId == request.auth.uid
                 && resource.data.get('status', 'pending') == 'pending'
@@ -164,5 +165,8 @@ service cloud.firestore {
     match /pinLog/{doc} { allow read, write: if false; }
     match /mailQueue/{doc} { allow read, write: if false; }
     match /aggregateLedger/{doc} { allow read, write: if false; }
+    match /cache/{doc} { allow read, write: if false; }
+    // On-device reader accuracy (Ola 8): anonymous, written by Functions.
+    match /ocrEval/{doc} { allow read: if isSuperadmin(); allow write: if false; }
   }
 }

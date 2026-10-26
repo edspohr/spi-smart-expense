@@ -40,7 +40,9 @@ export interface TenantSettings {
   approvalPolicy: ApprovalPolicy;
   security: { pinEnabled: boolean; pinApprovalThreshold: number | null; pinActions: Record<PinAction, boolean> };
   modules: TenantConfig['modules'];
-  ai: { dailyLimitUser: number | null; dailyLimitTenant: number | null };
+  ai: { dailyLimitUser: number | null; dailyLimitTenant: number | null; localFirst: boolean };
+  /** Ola 8: on-device receipt reading and "Listo para terreno". Off by default. */
+  offline: { localReader: boolean };
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -62,7 +64,8 @@ export const DEFAULT_SETTINGS: TenantSettings = {
     pinActions: Object.fromEntries(ALL_ACTIONS.map((a) => [a, true])) as Record<PinAction, boolean>,
   },
   modules: { ...tenant.modules },
-  ai: { dailyLimitUser: null, dailyLimitTenant: null },
+  ai: { dailyLimitUser: null, dailyLimitTenant: null, localFirst: false },
+  offline: { localReader: false },
 };
 
 export function mergeSettings(doc: Record<string, unknown> | undefined | null): TenantSettings {
@@ -97,7 +100,8 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
       reconciliation: bool(modules.reconciliation, DEFAULT_SETTINGS.modules.reconciliation),
       balances: bool(modules.balances, DEFAULT_SETTINGS.modules.balances),
     },
-    ai: { dailyLimitUser: int(ai.dailyLimitUser), dailyLimitTenant: int(ai.dailyLimitTenant) },
+    ai: { dailyLimitUser: int(ai.dailyLimitUser), dailyLimitTenant: int(ai.dailyLimitTenant), localFirst: ai.localFirst === true },
+    offline: { localReader: (doc.offline as { localReader?: unknown } | undefined)?.localReader === true },
     updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : undefined,
     updatedByName: typeof doc.updatedByName === 'string' ? doc.updatedByName : undefined,
   };

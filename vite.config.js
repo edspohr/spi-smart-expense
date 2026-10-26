@@ -3,6 +3,49 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+
+const NODE_MODULES = fileURLToPath(new URL('./node_modules/', import.meta.url))
+const pkgVersion = (name) => JSON.parse(readFileSync(join(NODE_MODULES, name, 'package.json'), 'utf8')).version
+
+// On-device receipt reading (Ola 8) needs the OCR engine, its Spanish model
+// and the barcode reader's WebAssembly served from our own origin so they
+// work offline. They are served from node_modules in dev and emitted at
+// fixed, versioned paths in the build (never committed). The service worker
+// caches them on first use (too large for the install precache) and
+// "Listo para terreno" warms them ahead of time.
+const OCR_VERSION = `${pkgVersion('tesseract.js')}-${pkgVersion('zxing-wasm')}`
+const OCR_BASE = `/ocr/${OCR_VERSION}`
+const OCR_ASSETS = {
+  'worker.min.js': 'tesseract.js/dist/worker.min.js',
+  'tesseract-core-lstm.wasm.js': 'tesseract.js-core/tesseract-core-lstm.wasm.js',
+  'lang/spa.traineddata.gz': '@tesseract.js-data/spa/4.0.0_best_int/spa.traineddata.gz',
+  'zxing_reader.wasm': 'zxing-wasm/dist/reader/zxing_reader.wasm',
+}
+const OCR_TYPES = { js: 'text/javascript', gz: 'application/gzip', wasm: 'application/wasm' }
+
+const resolveModuleFile = (spec) => join(NODE_MODULES, spec)
+
+function ocrAssetsPlugin() {
+  return {
+    name: 'ocr-assets',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0]
+        if (!url.startsWith(OCR_BASE + '/')) return next()
+        const spec = OCR_ASSETS[url.slice(OCR_BASE.length + 1)]
+        if (!spec) return next()
+        res.setHeader('Content-Type', OCR_TYPES[url.split('.').pop()] || 'application/octet-stream')
+        res.end(readFileSync(resolveModuleFile(spec)))
+      })
+    },
+    generateBundle() {
+      for (const [file, spec] of Object.entries(OCR_ASSETS)) {
+        this.emitFile({ type: 'asset', fileName: `${OCR_BASE.slice(1)}/${file}`, source: readFileSync(resolveModuleFile(spec)) })
+      }
+    },
+  }
+}
 
 function loadTenant(id) {
   const path = fileURLToPath(new URL(`./tenants/${id}.json`, import.meta.url))
@@ -42,6 +85,15 @@ function pwaPlugin(tenant) {
       // App shell only. Firestore has its own offline cache; Storage images
       // and Gemini calls are fetched live.
       globPatterns: ['**/*.{js,css,html,ico,svg,webmanifest}'],
+      // OCR assets are large: cached on first use, not at install.
+      globIgnores: ['ocr/**'],
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith('/ocr/'),
+          handler: 'CacheFirst',
+          options: { cacheName: 'ocr-assets', expiration: { maxEntries: 12 }, cacheableResponse: { statuses: [0, 200] } },
+        },
+      ],
       navigateFallback: '/index.html',
       cleanupOutdatedCaches: true,
       // Share target + push handlers (public/sw-extras.js).
@@ -85,9 +137,10 @@ export default defineConfig(({ mode }) => {
   const tenant = loadTenant(tenantId)
 
   return {
-    plugins: [react(), tenantHtmlPlugin(tenant), pwaPlugin(tenant)],
+    plugins: [react(), tenantHtmlPlugin(tenant), ocrAssetsPlugin(), pwaPlugin(tenant)],
     define: {
       __TENANT__: JSON.stringify(tenant),
+      __OCR_BASE__: JSON.stringify(OCR_BASE),
     },
     build: {
       rollupOptions: {

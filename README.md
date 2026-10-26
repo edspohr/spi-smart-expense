@@ -40,9 +40,18 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 
+### Ola 8 — Automated offline mode (2026-10-26)
+
+- **On-device receipt reading** (`src/lib/localReader/`): Chilean electronic stamp (PDF417 TED) and Colombian DIAN QR decoded exactly with `zxing-wasm`; paper receipts read with `tesseract.js` (Spanish) plus pure TypeScript rules (total, date, RUT/NIT with check digit, invoice number, payment, merchant). Per-field confidence badges in the form; nothing is submitted without the person confirming.
+- **Tenant merchant dictionary** (`getMerchantDictionary` callable): tax id → merchant and category from approved expenses, cached on the phone.
+- **"Listo para terreno"** in Mi Espacio: downloads the engines (~7 MB, served from `/ocr/<version>/`), the dictionary and the data the form needs into the offline caches.
+- **AI verification on sync** (`verifyLocalRead` trigger): Gemini re-reads every receipt read on the device, flags differences in amount/date/tax id (`aiReview`) and logs anonymous accuracy (`ocrEval`) shown in Ajustes → Lectura sin conexión.
+- **"Simular sin señal"** for demos (demo tenant and superadmins).
+- Opt-in per tenant: `settings/tenant.offline.localReader` and `ai.localFirst` (both off; the demo has the reader on). Accuracy corpus test in CI (`localReader.corpus.test.ts`). Decision: ADR 0015.
+
 ### Roadmap (plan v4, 2026-10-26)
 
-Next wave: **Ola 8, automated offline mode** — on-device receipt reading (Chilean electronic stamp PDF417 and Colombian DIAN QR decoded exactly; local OCR + rules for the rest), "Listo para terreno" preloading, AI verification on sync with an accuracy metric, and a "simular sin señal" demo switch. Then, in suggested order without dates: fleet operations and security baseline, SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
+Next wave: **Ola 9, fleet operations, observability and security baseline**. Then, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
 
 ### Ola 7 — Country per tenant and the Expense Buddy demo (2026-10-25)
 

@@ -6,9 +6,9 @@ no se detiene por ellas; se revisan al cierre de cada ola.
 
 Marcar `[x]` con la fecha al cerrar.
 
-**Ola 8 (siguiente) incluye cerrar esta lista** junto con el offline
-automatizado (plan v4, ADR 0014). Las dos primeras tareas son nuevas y
-alimentan esa ola.
+**Ola 8 (offline automatizado) quedó implementada el 2026-10-26.** Esta
+lista sigue abierta: son tareas de consola o de teléfono que solo puedes
+hacer tú.
 
 ## Abiertos
 
@@ -20,7 +20,16 @@ alimentan esa ola.
   algunas facturas colombianas con QR DIAN. Para cada una, anotar RUT/NIT,
   fecha, total y folio correctos (una planilla basta). Tapar o recortar
   datos personales (nombres, tarjetas). Son los casos de prueba que miden
-  la precisión del lector en cada versión.
+  la precisión del lector en cada versión. Hoy el test corre con 8 boletas
+  sintéticas; las reales van a
+  `src/lib/localReader/__fixtures__/receipts/` (`real-*.jpg`) con su fila
+  en `expected.json`, o pásamelas con la planilla y las agrego yo.
+- [ ] **Probar la Ola 8 en tu teléfono** (10 min, demo): Mi Espacio →
+  "Preparar para terreno" con wifi → modo avión → rendir una boleta
+  electrónica con timbre (debe salir "Del timbre") y una de papel → quitar
+  el modo avión con la app abierta: se envían solas y, al rato, Ajustes →
+  Precisión del lector muestra las lecturas. Anotar el tiempo de lectura de
+  la boleta de papel en tu modelo de teléfono.
 - [ ] **Decidir el mensaje "Datos alojados en Chile"**: el benchmark lo
   descarta como diferenciador; hoy aparece en la landing del demo
   (destacados y pilar "Tu propio ambiente") y en el brochure (portada y

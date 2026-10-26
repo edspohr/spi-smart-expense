@@ -42,3 +42,4 @@ nombre en kebab-case en español.
 | [0012](0012-politica-de-aprobacion.md) | Política de aprobación por tenant (simple o por niveles) | Aceptada | 5 |
 | [0013](0013-paleta-growth-buddies-light.md) | Paleta Growth Buddies Light compartida por las apps "buddies" | Aceptada | 7 |
 | [0014](0014-roadmap-post-benchmark-offline-primero.md) | Roadmap post-benchmark: offline automatizado primero | Aceptada | 8+ |
+| [0015](0015-lector-local-en-el-dispositivo.md) | Lector de boletas en el dispositivo (zxing-wasm + tesseract.js, motores propios) | Aceptada | 8 |

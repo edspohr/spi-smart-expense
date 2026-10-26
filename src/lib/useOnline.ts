@@ -1,14 +1,7 @@
 import { useSyncExternalStore } from 'react';
+import { isOnline, subscribeConnectivity } from './connectivity';
 
-function subscribe(onChange: () => void) {
-  window.addEventListener('online', onChange);
-  window.addEventListener('offline', onChange);
-  return () => {
-    window.removeEventListener('online', onChange);
-    window.removeEventListener('offline', onChange);
-  };
-}
-
+/** Network status for components: the browser's signal or a simulated outage. */
 export function useOnline(): boolean {
-  return useSyncExternalStore(subscribe, () => navigator.onLine, () => true);
+  return useSyncExternalStore(subscribeConnectivity, isOnline, () => true);
 }

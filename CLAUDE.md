@@ -78,6 +78,10 @@ Server: `functions/src/pin.ts` (`requirePinFor(req, action, { amount })` at the 
 
 `ExpenseForm` builds the final expense docs with pre-generated ids, then either sends them (`flushNewSubmission`) or queues them (`enqueueSubmission`, IndexedDB) when offline or on a network error; `startOfflineSync()` (main.jsx) flushes the queue. Keep both paths writing identical payloads. `public/sw-extras.js` (imported by Workbox) handles the share target POST and push display; `functions/src/push.ts` sends push from `notifyUser()`.
 
+### On-device reader (Ola 8)
+
+`src/lib/localReader/` reads receipts with no network: `barcode.ts` + `barcodeScan.ts` (zxing-wasm, PDF417 TED / DIAN QR, small-rotation retries) first, then `ocr.ts` (tesseract.js, Spanish) + `rules.ts` (pure, tested) only when there is no tax barcode; `merge.ts` applies precedence barcode > dictionary > ocr > keyword. Engines are served from `/ocr/<version>/` by the `ocrAssets` plugin in `vite.config.js` (not precached; cache `ocr-assets`, filled by `fieldReady.ts`). `src/lib/connectivity.ts` is the only source of "online?" (includes "Simular sin señal"); use `isOnline()`, never `navigator.onLine`. Expenses read on the device carry `localRead`; `aiReview` and `ocrEval` are server-only (`functions/src/offline.ts`). Gated by `settings.offline.localReader` / `settings.ai.localFirst` (off by default). Accuracy corpus: `src/lib/localReader/__fixtures__/receipts/` + `expected.json` (regenerate synthetic ones with `python3 scripts/fixtures/make-receipt-fixtures.py`).
+
 ### Approval workflow (Ola 5)
 
 `settings/tenant.approvalPolicy` (ADR 0012). `onExpenseCreated` applies it (no-op in `single` mode); expenses under `levels` carry `approvalFlow` and `pendingApproverUids` (server-only fields — rules reject client writes). `reviewExpense` returns `partial: true` while more signatures are needed; UIs must keep the expense pending. Managers use `/dashboard/approvals` (`useMyPendingApprovals`). Notifications go through `notifyUser()` in `functions/src/notify.ts`, which also queues email when `EMAIL_PROVIDER=brevo`.
@@ -110,7 +114,7 @@ Server: `functions/src/pin.ts` (`requirePinFor(req, action, { amount })` at the 
 | `allocations`   | Per-user budget allocations/transfers per project    |
 | `notifications` | In-app bell items (`toUid`, `read`)                  |
 
-Server-only collections: `rateLimits` (Gemini quotas), `aggregateLedger` (trigger idempotency). Rules: `firestore.rules`, `storage.rules` (claims-based, field-level schema validation; tested in `tests/rules/firestore.rules.test.ts`, `npm run test:rules`). Composite indexes: `firestore.indexes.json` (deploy before adding a query that needs one).
+Server-only collections: `rateLimits` (Gemini quotas), `aggregateLedger` (trigger idempotency), `cache` (merchant dictionary), `ocrEval` (on-device reader accuracy, superadmin read-only). Rules: `firestore.rules`, `storage.rules` (claims-based, field-level schema validation; tested in `tests/rules/firestore.rules.test.ts`, `npm run test:rules`). Composite indexes: `firestore.indexes.json` (deploy before adding a query that needs one).
 
 ### Code layout
 
@@ -136,4 +140,4 @@ Every phase ("Ola") updates, as part of its acceptance criteria: `docs/implement
 
 ## Active implementation plan
 
-See `docs/implementation-plan.md` (plan v4). Olas 0-7 are deployed; the roadmap continues with Ola 8 (automated offline mode: local receipt reading, "Listo para terreno", AI verification on sync) and then Olas 9-16 in suggested order, without dates (ADR 0014; market research in `docs/research/benchmark-2026-10.md`). Execute olas in order; each is self-contained and independently deployable. Prompts for Olas 9-16 are written when each wave starts. Decisions behind the plan are recorded in `docs/adr/`.
+See `docs/implementation-plan.md` (plan v4). Olas 0-8 are deployed (Ola 8: automated offline mode, opt-in per tenant); the roadmap continues with Ola 9 (fleet operations, observability, security baseline) and then Olas 10-16 in suggested order, without dates (ADR 0014; market research in `docs/research/benchmark-2026-10.md`). Execute olas in order; each is self-contained and independently deployable. Prompts for Olas 9-16 are written when each wave starts. Decisions behind the plan are recorded in `docs/adr/`.

@@ -12,12 +12,29 @@ import PinSetupBanner from './PinSetupBanner';
 import ConnectionStatus from './ConnectionStatus';
 import { useLocation } from 'react-router-dom';
 import DemoBar from './DemoBar';
+import { useTenantSettings } from '../context/SettingsContext';
+import { getFieldReady, isFieldReadyStale, prepareForField } from '../lib/fieldReady';
+import { isOnline } from '../lib/connectivity';
+
+// "Listo para terreno" refreshes itself once per session when the person
+// already prepared the device and the kit is older than 12 h (Ola 8).
+let fieldRefreshStarted = false;
 
 export default function Layout({ children, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser } = useAuth();
   const [mustChangePass, setMustChangePass] = useState(false);
   const location = useLocation();
+  const { offline } = useTenantSettings();
+
+  useEffect(() => {
+    if (!offline.localReader || !currentUser || fieldRefreshStarted || !isOnline()) return undefined;
+    const status = getFieldReady();
+    if (!status.readyAt || !isFieldReadyStale(status)) return undefined;
+    fieldRefreshStarted = true;
+    const t = setTimeout(() => { void prepareForField(currentUser.uid).catch(() => { fieldRefreshStarted = false; }); }, 5000);
+    return () => clearTimeout(t);
+  }, [offline.localReader, currentUser]);
 
   useEffect(() => {
     async function checkUserStatus() {

@@ -35,8 +35,8 @@ sugerido, no fechas.**
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Deployada 2026-10-25 (`1f5d0af`) |
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
-| 8 | **Offline automatizado** (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | **Siguiente** |
-| 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
+| 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Implementada 2026-10-26, lista para deploy (demo con lector activo, SPI apagado) |
+| 9 | **Operación de flota, observabilidad y seguridad base** | Transparente | **Siguiente** |
 | 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |
 | 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Pendiente |
 | 12 | Fondos por rendir, viáticos, kilometraje, políticas y nómina de pago | Transparente (opt-in) | Pendiente |
@@ -847,6 +847,31 @@ boletas para el punto 8. Lista viva en `docs/pendientes.md`.
 preciso que la IA en boletas de papel térmico sin código de barras, arrugadas
 o mal fotografiadas; en teléfonos de gama media tarda algunos segundos.
 Con timbre electrónico o QR DIAN la lectura es exacta.
+
+### Resultado (2026-10-26)
+
+Implementada según el scope, con estas desviaciones (detalle en
+`docs/validation/ola-8.md`, decisión técnica en ADR 0015):
+
+- **Corpus:** `src/lib/localReader/__fixtures__/receipts/` (junto al
+  código, no `test/fixtures/`) con 8 boletas sintéticas generadas por
+  `scripts/fixtures/make-receipt-fixtures.py`; el test
+  `localReader.corpus.test.ts` corre en CI con umbrales (códigos 100 %,
+  monto y fecha por OCR ≥ 90 %). Las boletas reales del responsable siguen
+  pendientes.
+- **Rotación:** reintentos con giros pequeños para el PDF417 (lo exigió el
+  corpus); sin OSD para el OCR (TD-032).
+- **Marca de revisión:** campo `aiReview` (`match | mismatch | …`) en lugar
+  de `reviewFlags`.
+- **Panel de precisión:** por campo y por motor (código vs. texto); sin
+  tendencia temporal ni lista de casos fallidos (por privacidad, TD-031).
+  "Por tenant" es implícito: cada tenant tiene su proyecto.
+- **"Listo para terreno":** solo en Mi Espacio; sin aviso al instalar
+  (TD-030).
+- **Background Sync:** no implementado; documentado como límite (el SDK de
+  Firestore y la sesión de Auth viven en la página; no existe en iPhone).
+- **Cierre de pendientes del responsable:** siguen abiertos en
+  `docs/pendientes.md` (requieren consola o teléfono del responsable).
 
 **Dependencies:** Ola 6 (cola offline), Ola 7 (país, RUT/NIT).
 **Impacto en SPI:** Opt-in por tenant (`settings/tenant.offline.localReader`);

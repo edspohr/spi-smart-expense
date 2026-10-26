@@ -168,6 +168,23 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <p className="text-sm text-gray-700 italic">"{expense.description}"</p>
            </div>
            
+           {/* Offline read verified by AI with a difference (Ola 8) */}
+           {expense.aiReview?.status === 'mismatch' && (
+             <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex items-start gap-3">
+               <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" aria-hidden="true" />
+               <div>
+                 <p className="text-xs font-bold text-orange-800 uppercase mb-1">Revisar: la IA leyó otro valor</p>
+                 <ul className="text-sm text-orange-900 space-y-0.5">
+                   {(expense.aiReview.mismatches || []).map((m) => (
+                     <li key={m.field}>
+                       {({ amount: 'Monto', date: 'Fecha', taxId: 'RUT / NIT' })[m.field] || m.field}: enviado <strong>{String(m.submitted ?? '—')}</strong>, la IA leyó <strong>{String(m.ai ?? '—')}</strong>
+                     </li>
+                   ))}
+                 </ul>
+               </div>
+             </div>
+           )}
+
            {/* Rejection Reason */}
            {expense.status === 'rejected' && expense.rejectionReason && (
              <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3">

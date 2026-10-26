@@ -64,7 +64,8 @@ export function deleteUser(uid: string) {
 export interface SettingsPatch {
   security?: { pinEnabled?: boolean; pinApprovalThreshold?: number | null; pinActions?: Record<string, boolean> };
   modules?: Record<string, boolean>;
-  ai?: { dailyLimitUser?: number; dailyLimitTenant?: number };
+  ai?: { dailyLimitUser?: number; dailyLimitTenant?: number; localFirst?: boolean };
+  offline?: { localReader: boolean };
   approvalPolicy?: Partial<{
     mode: 'single' | 'levels';
     autoApproveBelow: number | null;

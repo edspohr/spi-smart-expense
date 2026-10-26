@@ -20,6 +20,9 @@ import { logger } from '../lib/logger';
 import { isAdminRole } from '../lib/roles';
 import { enqueueSubmission, isNetworkError } from '../lib/offlineQueue';
 import { flushNewSubmission } from '../lib/offlineSync';
+import { isOnline } from '../lib/connectivity';
+import { useTenantSettings } from '../context/SettingsContext';
+import ReadConfidence from '../components/ReadConfidence';
 
 /**
  * Checks a set of existing expenses for a potential duplicate of the given formData.
@@ -137,6 +140,10 @@ function DropzoneSlot({
 
 export default function ExpenseForm() {
   const { currentUser, userRole } = useAuth();
+  const { offline: offlineSettings, ai: aiSettings } = useTenantSettings();
+  // On-device read of the receipt (Ola 8): per-field confidence for the
+  // review badges and what was read, sent with the expense for verification.
+  const [localRead, setLocalRead] = useState(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [processingAi, setProcessingAi] = useState(false);
@@ -168,6 +175,7 @@ export default function ExpenseForm() {
   // Probe Gemini API on mount; warn the user if it's down so they can capture manually.
   useEffect(() => {
     let cancelled = false;
+    if (!isOnline()) return undefined; // no signal: the local reader (or manual entry) takes over
     checkGeminiHealth().then(res => {
       if (!cancelled && !res.ok) {
         toast.warning('El servicio de IA no responde. Puedes seguir e ingresar el gasto manualmente.');
@@ -329,6 +337,40 @@ export default function ExpenseForm() {
     }
   };
 
+  // Reads the receipt on the device (no network) and pre-fills the form.
+  const runLocalRead = async (offline) => {
+      const { readReceiptLocally, toFormPatch } = await import('../lib/localReader');
+      const result = await readReceiptLocally(files.receipt, { categories: CATEGORIES_COMMON });
+      const { patch, confidence } = toFormPatch(result);
+      setFormData(prev => {
+          const next = { ...prev };
+          for (const [key, value] of Object.entries(patch)) {
+              if (value && key in prev) next[key] = value;
+          }
+          return next;
+      });
+      setLocalRead({
+          confidence,
+          barcode: result.barcode ? { kind: result.barcode.kind, docLabel: result.barcode.docLabel } : null,
+          durationMs: result.durationMs,
+          complete: result.complete,
+          offline,
+          engine: result.barcode ? `barcode:${result.barcode.kind}` : 'ocr',
+          docType: result.barcode?.docType ?? null,
+          values: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.value])),
+      });
+      return result;
+  };
+
+  const localReadToast = (result, offline) => {
+      const secs = (result.durationMs / 1000).toLocaleString('es-CL', { maximumFractionDigits: 1 });
+      const how = result.barcode ? `del ${result.barcode.kind === 'dian' ? 'QR DIAN' : 'timbre electrónico'}` : 'en el teléfono';
+      if (result.complete) toast.success(`Boleta leída ${how}${offline ? ' sin conexión' : ''} en ${secs} s. Revisa los campos marcados.`);
+      else toast.warning(`Leímos parte de la boleta ${how}. Completa los campos que faltan.`);
+  };
+
+  const highConfidence = (r) => r.complete && r.fields.amount?.confidence === 'high' && r.fields.date?.confidence !== 'low';
+
   const handleAnalyze = async () => {
       if (!files.receipt) {
           toast.error("Debes subir al menos el Recibo/Factura.");
@@ -336,7 +378,26 @@ export default function ExpenseForm() {
       }
 
       setProcessingAi(true);
+      setLocalRead(null);
+      const online = isOnline();
       try {
+          // Without signal (or "local first" with a confident read) the
+          // device reads the receipt; otherwise Gemini does, as before.
+          if (offlineSettings.localReader && (!online || aiSettings.localFirst)) {
+              const result = await runLocalRead(!online);
+              if (!online || highConfidence(result)) {
+                  localReadToast(result, !online);
+                  setStep('review');
+                  return;
+              }
+              setLocalRead(null); // not confident enough: ask Gemini
+          }
+          if (!online) {
+              toast.info('Sin conexión: ingresa los datos y la rendición se enviará sola al recuperar señal.');
+              setStep('review');
+              return;
+          }
+
           const data = await parseExpenseDocuments(files.receipt, files.voucher, CATEGORIES_COMMON);
           
           if (data) {
@@ -362,6 +423,17 @@ export default function ExpenseForm() {
              setStep('review');
           }
       } catch (e) {
+          // The network dropped mid-request: fall back to the device.
+          if (offlineSettings.localReader && isNetworkError(e)) {
+              try {
+                  const result = await runLocalRead(true);
+                  localReadToast(result, true);
+                  setStep('review');
+                  return;
+              } catch (localErr) {
+                  console.error(localErr);
+              }
+          }
           console.error(e);
           toast.error("Error al analizar documentos: " + e.message);
       } finally {
@@ -379,6 +451,7 @@ export default function ExpenseForm() {
       setIsSplitMode(false);
       setSplitRows([{ projectId: '', amount: '' }]);
       setIsManual(false);
+      setLocalRead(null);
   };
 
   const handleAddSplitRow = () => {
@@ -429,7 +502,7 @@ export default function ExpenseForm() {
     }
 
     // Soft stop: check for duplicate invoices (skipped when user explicitly acknowledged)
-    if (!duplicateAcknowledged.current && navigator.onLine) {
+    if (!duplicateAcknowledged.current && isOnline()) {
       try {
         const expSnap = await getDocs(
           query(collection(db, 'expenses'), where('userId', '==', currentUser.uid))
@@ -506,6 +579,18 @@ export default function ExpenseForm() {
                 trm: NEEDS_RATE(formData.currency) ? (trmState.trm || null) : null,
                 ...baseEquivalentFields(formData.currency || BASE_CURRENCY, NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null),
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
+                // What the device read (Ola 8): compared server-side with the
+                // confirmed values (accuracy metric) and re-read by Gemini.
+                ...(localRead ? {
+                    localRead: {
+                        engine: localRead.engine,
+                        docType: localRead.docType,
+                        offline: localRead.offline,
+                        durationMs: localRead.durationMs,
+                        values: localRead.values,
+                        confidence: Object.fromEntries(Object.entries(localRead.confidence).map(([k, f]) => [k, f.confidence])),
+                    },
+                } : {}),
             },
         };
     });
@@ -525,7 +610,7 @@ export default function ExpenseForm() {
     };
 
     try {
-        if (!navigator.onLine) {
+        if (!isOnline()) {
             await saveOffline();
             return;
         }
@@ -644,6 +729,19 @@ export default function ExpenseForm() {
         )}
 
         {/* Step 2: Review */}
+        {step === 'review' && localRead && (
+            <div role="status" className={`mb-6 flex items-start gap-3 rounded-xl px-4 py-3 text-sm ring-1 ${localRead.complete ? 'bg-emerald-50 text-emerald-900 ring-emerald-200' : 'bg-amber-50 text-amber-900 ring-amber-200'}`}>
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                <p>
+                    <strong>{localRead.barcode ? `Leído del ${localRead.barcode.kind === 'dian' ? 'QR DIAN' : 'timbre electrónico'}` : 'Leído en el teléfono'}{localRead.offline ? ', sin conexión' : ''}.</strong>{' '}
+                    {localRead.barcode?.docLabel ? `${localRead.barcode.docLabel}. ` : ''}
+                    {localRead.complete
+                        ? 'Revisa los campos marcados antes de enviar.'
+                        : 'No pudimos leer todo: completa el monto y la fecha si faltan.'}
+                    {localRead.offline ? ' Al volver la señal, la IA verificará la lectura.' : ''}
+                </p>
+            </div>
+        )}
         {step === 'review' && (
             <form ref={reviewFormRef} onSubmit={handleSubmit} className="animate-fadeIn grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 
@@ -873,7 +971,7 @@ export default function ExpenseForm() {
                     {/* Supplier & Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div>
-                            <label htmlFor="ef-merchant" className="block text-sm font-medium text-gray-700 mb-1">Comercio / Proveedor</label>
+                            <label htmlFor="ef-merchant" className="block text-sm font-medium text-gray-700 mb-1">Comercio / Proveedor<ReadConfidence field="merchant" read={localRead} /></label>
                             <input
                                 id="ef-merchant"
                                 type="text"
@@ -884,7 +982,7 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="ef-taxId" className="block text-sm font-medium text-gray-700 mb-1">{country.taxIdLabel} / Identificación Fiscal</label>
+                            <label htmlFor="ef-taxId" className="block text-sm font-medium text-gray-700 mb-1">{country.taxIdLabel} / Identificación Fiscal<ReadConfidence field="taxId" read={localRead} /></label>
                             <input
                                 id="ef-taxId"
                                 type="text"
@@ -942,7 +1040,7 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="ef-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha Factura</label>
+                            <label htmlFor="ef-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha Factura<ReadConfidence field="date" read={localRead} /></label>
                             <input
                                 id="ef-date"
                                 type="date"
@@ -953,7 +1051,7 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="ef-time" className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                            <label htmlFor="ef-time" className="block text-sm font-medium text-gray-700 mb-1">Hora<ReadConfidence field="time" read={localRead} /></label>
                             <input
                                 id="ef-time"
                                 type="time"
@@ -965,7 +1063,7 @@ export default function ExpenseForm() {
                     </div>
 
                     <div>
-                        <label htmlFor="ef-invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1">No. Factura</label>
+                        <label htmlFor="ef-invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1">No. Factura<ReadConfidence field="invoiceNumber" read={localRead} /></label>
                         <input
                             id="ef-invoiceNumber"
                             type="text"
@@ -982,7 +1080,7 @@ export default function ExpenseForm() {
                         return (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                     <label htmlFor="ef-paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago</label>
+                                     <label htmlFor="ef-paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Forma de Pago<ReadConfidence field="paymentMethod" read={localRead} /></label>
                                      <select
                                          id="ef-paymentMethod"
                                          className="w-full border border-gray-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-brand-500"
@@ -1044,7 +1142,7 @@ export default function ExpenseForm() {
                              </select>
                         </div>
                         <div className="md:col-span-2">
-                             <label htmlFor="ef-amount" className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
+                             <label htmlFor="ef-amount" className="block text-sm font-medium text-gray-700 mb-1">Monto Total<ReadConfidence field="amount" read={localRead} /></label>
                              <input
                                  id="ef-amount"
                                  type="number"
@@ -1097,7 +1195,7 @@ export default function ExpenseForm() {
                     {/* AI Extracted Details */}
                     <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                             <label htmlFor="ef-category" className="block text-xs font-bold text-brand-800 uppercase mb-1">Categoría Sugerida</label>
+                             <label htmlFor="ef-category" className="block text-xs font-bold text-brand-800 uppercase mb-1">Categoría Sugerida<ReadConfidence field="category" read={localRead} /></label>
                              <select
                                  id="ef-category"
                                  required

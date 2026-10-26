@@ -11,11 +11,11 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 |------|----------------------|----------------------|
 | Multi-país dentro de un mismo tenant (reglas por país o centro de costo) | Ningún cliente lo necesita hoy; multiplica la complejidad de política de aprobación, FX y formatos (ADR 0007). | Ola 7, cuando Elecnor defina su alcance geográfico |
 | Storybook para componentes compartidos | Útil cuando haya varios tenants con branding distinto; hoy el costo de mantenerlo supera el beneficio. | Ola 9 |
-| Virtualización de tablas (`@tanstack/react-virtual`) — TD-017 | La paginación con cursores de la Ola 8 debería bastar; virtualizar solo si hay >200 filas en pantalla. | Ola 8 |
-| Reporte de variación presupuestaria (presupuesto vs. ejecutado por proyecto/usuario/mes) — TD-015 | Valor de negocio alto pero independiente del endurecimiento; mejor diseñarlo con feedback de SPI y Elecnor. | Ola 8 |
+| Virtualización de tablas (`@tanstack/react-virtual`) — TD-017 | La paginación con cursores (Ola 9) debería bastar; virtualizar solo si hay >200 filas en pantalla. | Ola 9 |
+| Reporte de variación presupuestaria (presupuesto vs. ejecutado por proyecto/usuario/mes) — TD-015 | Valor de negocio alto pero independiente del endurecimiento; mejor diseñarlo con feedback de SPI y Elecnor. | Ola 12 (políticas y fondos) |
 | Renombrar el repo a `expense-buddy` | Cosmético; romper URLs de GitHub, CI y Firebase Hosting sin beneficio hasta que exista el tenant demo. | Ola 7 |
 | UX de login sin Google por tenant (`auth.googleLogin: false`) | El flag existe desde Ola 0, pero la pantalla de login solo se ajusta visualmente (ocultar botón). Falta revisar onboarding solo-password y mensajes de error. | Ola 3 |
-| `minInstances: 1` en `extractReceipt` | Elimina el cold start (2-10 s en la primera lectura del día) pero cuesta ~USD 3-5/mes por tenant. Medir primero la latencia real con Sentry. | Ola 8 |
+| `minInstances: 1` en `extractReceipt` | Elimina el cold start (2-10 s en la primera lectura del día) pero cuesta ~USD 3-5/mes por tenant. Medir primero la latencia real con Sentry; `ai.localFirst` (Ola 8) ya evita la llamada cuando el timbre se lee en el teléfono. | Ola 9 |
 | Fecha de enforce de App Check | Desplegado en monitor en Ola 2. Requiere registrar la key reCAPTCHA Enterprise (manual), una semana de métricas limpias y luego `enforceAppCheck: true` en los `onCall`. Anotar aquí la fecha cuando se active. | Tras el deploy de Ola 2 + 1 semana |
 | Eliminar la key de Google AI Studio | Estuvo pública en el bundle hasta Ola 2 y ya nada la usa (Vertex AI con IAM). Borrarla en AI Studio / GCP Credenciales. | Inmediatamente después del deploy de Ola 2 |
 | Series históricas EUR→COP / EUR→CLP — TD-007 | Requiere API pagada; solo si contabilidad exige exactitud histórica en EUR. | Ola 7 |
@@ -37,3 +37,5 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Certificación ISO 27001 | El paquete de seguridad (Olas 9 y 14) es el paso previo; certificar es caro y lento. | Cuando un cliente la exija |
 | Emisión de tarjetas, reserva de viajes, movimiento de dinero propio | Excluido del roadmap (ADR 0014): modelo fintech fuera de foco; la tarjeta se cubre con conciliación de cartola (Ola 15). | No se reevalúa sin cambio de estrategia |
 | Niveles de aprobación genéricos | Hoy: responsable → finanzas con doble firma (ADR 0012). Un arreglo arbitrario de niveles por monto si un cliente lo pide. | A demanda |
+| Envío en segundo plano de la cola offline (Background Sync) | Investigado en la Ola 8: el SDK de Firestore y la sesión de Auth viven en la página y Background Sync no existe en iPhone. Reevaluar con una ruta de subida propia (callable con token) si en terreno se pide. | Feedback de terreno |
+| OCR en un Web Worker propio / modelos de IA en el navegador | tesseract.js ya corre en su worker; un modelo de visión local mejoraría papel térmico pero pesa decenas de MB. Medir antes con el corpus real. | Corpus real (≥ 50 boletas) |

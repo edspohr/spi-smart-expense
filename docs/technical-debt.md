@@ -522,3 +522,57 @@ deja la pantalla en blanco sin mensaje. Detectado al probar el demo.
 
 **Recommended fix:** `<Route path="*" element={<Navigate to="/" replace />} />`
 o una página 404 simple con enlace al inicio.
+
+---
+
+## TD-030 — "Listo para terreno" solo vive en Mi Espacio
+
+**Severity:** Low (UX)  
+**Impact:** Medium · **Effort:** Low  
+**Files:** `src/components/FieldReadyCard.tsx`, `src/pages/MiEspacio.jsx`, `src/pages/UserDashboard.jsx`
+
+**Problem:** La tarjeta está en `/dashboard/mi-espacio`, que el menú llama
+"Notificaciones". Quien rinde aterriza en Mi Resumen y puede no descubrirla.
+El plan pedía además un aviso al instalar la app (Ola 8, punto 5), que no se
+hizo.
+
+**Recommended fix:** Versión compacta en Mi Resumen ("Listo para terreno ·
+hace 2 h" o "Prepara tu teléfono") y un aviso tras `appinstalled` cuando el
+lector está activo.
+
+---
+
+## TD-031 — Panel de precisión sin tendencia ni casos fallidos
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `src/components/OfflineReaderCard.tsx`, `src/lib/ocrStats.ts`, `functions/src/offline.ts`
+
+**Problem:** El panel calcula en el navegador sobre los últimos 500
+`ocrEval`: no muestra la evolución en el tiempo ni por tipo de documento, y
+por diseño (ADR 0015) no hay valores para revisar casos fallidos.
+
+**Recommended fix:** Agregado diario en una Function (`ocrEvalDaily/{fecha}`)
+con aciertos por campo, motor y tipo de documento; gráfico de 30 días. Para
+casos fallidos, opt-in del tenant que guarde la foto en una carpeta de
+corpus con retención corta.
+
+---
+
+## TD-032 — Reglas OCR: comercio por primera línea y sin corrección de giro
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `src/lib/localReader/rules.ts`, `src/lib/localReader/ocr.ts`
+
+**Problem:** Sin diccionario, el comercio es la primera línea con letras
+("ESTACION DE SERVICIO" en vez de "COPEC S.A."). El OCR no corrige fotos
+giradas 90°/180° (sin OSD) y el preprocesado es solo grises + contraste.
+El corpus actual es sintético: la precisión real se conocerá con las
+boletas del responsable (`docs/pendientes.md`).
+
+**Recommended fix:** Con el corpus real: preferir la línea con forma
+societaria (S.A., SpA, Ltda) o junto al RUT; probar `tessedit_pageseg_mode`
+y umbral adaptativo; detectar orientación por la confianza de 4 giros si el
+resultado es pobre.
+

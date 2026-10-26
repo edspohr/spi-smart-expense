@@ -30,6 +30,9 @@ export { onExpenseCreated, setDelegation, staleApprovalReminders } from './appro
 export const sendQueuedEmail = process.env.EMAIL_PROVIDER === 'brevo' ? makeEmailSender() : undefined;
 export { onExpenseWritten } from './aggregates';
 export { onUserWritten } from './claims';
+// Ola 8: merchant dictionary for the on-device reader and verification of
+// offline reads (acts only on expenses that carry `localRead`).
+export { getMerchantDictionary, verifyLocalRead } from './offline';
 
 // Demo tenant only (DEMO_MODE=true in functions/.env.<projectId>): one-click
 // sign-in by role and the nightly data reset. Never deployed for clients.

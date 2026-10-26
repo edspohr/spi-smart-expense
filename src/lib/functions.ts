@@ -2,6 +2,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions';
 import { app, useEmulators } from './firebase';
 import { tenant } from './tenant';
+import { isSimulatingOffline } from './connectivity';
 
 const firebaseApp = app as FirebaseApp | undefined;
 
@@ -32,6 +33,7 @@ export class CallableError extends Error {
 
 export async function callFunction<TReq, TRes>(name: string, data: TReq): Promise<TRes> {
   if (!functions) throw new CallableError('functions/unavailable', TRANSPORT_MESSAGES['functions/unavailable'] as string);
+  if (isSimulatingOffline()) throw new CallableError('functions/unavailable', TRANSPORT_MESSAGES['functions/unavailable'] as string);
   try {
     const result = await httpsCallable<TReq, TRes>(functions, name)(data);
     return result.data;

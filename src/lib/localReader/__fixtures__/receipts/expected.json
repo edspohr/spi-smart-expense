@@ -1,0 +1,86 @@
+[
+  {
+    "file": "ted-boleta-combustible.png",
+    "country": "CL",
+    "kind": "ted",
+    "expect": {
+      "amount": 68400,
+      "date": "2026-10-20",
+      "taxId": "99520000-7",
+      "invoiceNumber": "4815162",
+      "merchant": "COMBUSTIBLES DEL NORTE SPA"
+    }
+  },
+  {
+    "file": "ted-factura-ferreteria.png",
+    "country": "CL",
+    "kind": "ted",
+    "expect": {
+      "amount": 312800,
+      "date": "2026-10-15",
+      "taxId": "96792430-K",
+      "invoiceNumber": "20931"
+    }
+  },
+  {
+    "file": "ted-boleta-restaurant.png",
+    "country": "CL",
+    "kind": "ted",
+    "expect": {
+      "amount": 31130,
+      "date": "2026-10-21",
+      "taxId": "76354771-K",
+      "invoiceNumber": "777123"
+    }
+  },
+  {
+    "file": "papel-estacionamiento.png",
+    "country": "CL",
+    "kind": "paper",
+    "expect": {
+      "amount": 3500,
+      "date": "2026-10-21",
+      "taxId": "76354771-K",
+      "invoiceNumber": "12345"
+    }
+  },
+  {
+    "file": "papel-peaje.png",
+    "country": "CL",
+    "kind": "paper",
+    "expect": {
+      "amount": 7400,
+      "date": "2026-10-19",
+      "taxId": "96977920-K"
+    }
+  },
+  {
+    "file": "papel-combustible.png",
+    "country": "CL",
+    "kind": "paper",
+    "expect": {
+      "amount": 68400,
+      "date": "2026-10-22",
+      "taxId": "99520000-7"
+    }
+  },
+  {
+    "file": "papel-restaurant-propina.png",
+    "country": "CL",
+    "kind": "paper",
+    "expect": {
+      "amount": 31130,
+      "date": "2026-10-20",
+      "taxId": "76354771-K"
+    }
+  },
+  {
+    "file": "papel-colombia-parqueadero.png",
+    "country": "CO",
+    "kind": "paper",
+    "expect": {
+      "amount": 45000,
+      "date": "2026-10-18"
+    }
+  }
+]

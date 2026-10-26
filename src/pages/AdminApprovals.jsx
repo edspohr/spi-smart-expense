@@ -1046,6 +1046,9 @@ export default function AdminApprovals() {
                       <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[130px] truncate">{e.eventName || '—'}</td>
                       <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[180px]">
                         <div className="truncate">{e.merchant || '—'}</div>
+                        {e.aiReview?.status === 'mismatch' && (
+                          <span title="La boleta se leyó en el teléfono y, al verificarla, la IA leyó otro valor. Revisa la foto antes de aprobar." className="mt-1 mr-1 inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800">Revisar: la IA leyó otro valor</span>
+                        )}
                         {flowBadge(e) && (
                           <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${flowBadge(e).className}`}>{flowBadge(e).label}</span>
                         )}

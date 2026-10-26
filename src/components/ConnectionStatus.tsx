@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { CloudOff, UploadCloud } from 'lucide-react';
 import { useOnline } from '../lib/useOnline';
 import { useOfflineQueue } from '../lib/offlineQueue';
+import { isSimulatingOffline } from '../lib/connectivity';
 
 // Header pill: offline state and/or expenses waiting to be sent.
 export default function ConnectionStatus() {
@@ -18,7 +19,7 @@ export default function ConnectionStatus() {
       title={queued > 0 ? 'Rendiciones guardadas en este dispositivo' : 'Sin conexión'}
     >
       {online ? <UploadCloud className="h-3.5 w-3.5" aria-hidden="true" /> : <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />}
-      {!online && 'Sin conexión'}
+      {!online && (isSimulatingOffline() ? 'Sin señal (simulado)' : 'Sin conexión')}
       {!online && queued > 0 && ' · '}
       {queued > 0 && `${queued} sin enviar`}
     </Link>

@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import EmptyState from '../components/EmptyState';
 import PinSecurityCard from '../components/PinSecurityCard';
 import OfflineQueueCard from '../components/OfflineQueueCard';
+import FieldReadyCard from '../components/FieldReadyCard';
 import ApprovalPrefsCard from '../components/ApprovalPrefsCard';
 import PushCard from '../components/PushCard';
 import { Bell, CheckCheck } from 'lucide-react';
@@ -74,6 +75,7 @@ export default function MiEspacio() {
   return (
     <Layout title="Mi Espacio">
       <div className="max-w-2xl mx-auto space-y-6">
+        <FieldReadyCard />
         <OfflineQueueCard />
         <PinSecurityCard />
         <PushCard />

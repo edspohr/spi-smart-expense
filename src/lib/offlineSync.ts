@@ -3,6 +3,7 @@ import { doc, writeBatch, type Firestore } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { auth, db, uploadReceiptImage } from './firebase';
 import { flushQueue, setQueueOwner, type FlushDeps } from './offlineQueue';
+import { isOnline } from './connectivity';
 
 const COMMIT_TIMEOUT_MS = 30_000;
 
@@ -28,7 +29,7 @@ export const firebaseFlushDeps: FlushDeps = {
 let currentUid: string | null = null;
 
 export async function syncNow(): Promise<void> {
-  if (!currentUid || !navigator.onLine) return;
+  if (!currentUid || !isOnline()) return;
   const { sent, failed } = await flushQueue(currentUid, firebaseFlushDeps);
   if (sent > 0) toast.success(sent === 1 ? 'Se envió 1 rendición guardada sin conexión.' : `Se enviaron ${sent} rendiciones guardadas sin conexión.`);
   if (failed > 0) toast.error(`${failed} rendición(es) sin conexión no se pudieron enviar. Revísalas en Mi Espacio.`);
