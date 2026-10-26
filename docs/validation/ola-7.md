@@ -170,3 +170,39 @@ scroll horizontal ✅; login completo sobre el pliegue en móvil ✅; regla
 `standalone` generada ✅; sin errores de consola ✅; bundle SPI sin el texto
 de la landing ✅. Pendiente: abrir la app instalada y confirmar que salta la
 landing ☐
+
+## Demo en un clic, captura de leads y calculadora (2026-10-25)
+
+**Qué cambió:**
+- **Demo en un clic:** bajo el login, "Entra al demo" con tres roles
+  (trabajador en terreno → Nueva rendición, jefatura → Mis aprobaciones,
+  finanzas → Aprobaciones). El callable `demoSignIn` (solo con
+  `DEMO_MODE=true`, nunca en clientes) emite un custom token para la cuenta
+  fija del rol; límite de 30 ingresos por IP por hora. La superadmin no se
+  ofrece.
+- **Reinicio nocturno:** `resetDemoData` (04:00 Santiago, en
+  `SCHEDULER_REGION`) borra gastos, notificaciones, PINs, tokens push y
+  fotos subidas por visitantes y vuelve a sembrar. Los datos viven en
+  `functions/src/demo.data.ts`, compartidos con `scripts/seed-demo.mjs`.
+- **Leads:** formulario en el recuadro de contacto que escribe en el CRM de
+  Growth Buddies (Firestore `leads` del proyecto `growth-buddies`, el mismo
+  de growthbuddies.cl): llega el correo "Nuevo lead" y entra al seguimiento
+  de días 1/3/7 con contenido de rendición de gastos (`interest`). Incluye
+  UTM, dispositivo y el cálculo de ahorro si el visitante lo adjunta.
+  Honeypot contra bots.
+- **Medición:** Google Analytics (Firebase, `VITE_FIREBASE_MEASUREMENT_ID`)
+  solo en la landing: `landing_view`, `demo_start`, `cta_click`,
+  `calculator_use`, `lead_submit`.
+- **Calculadora de ahorro:** supuestos editables (personas, rendiciones,
+  minutos hoy y con la app, costo hora) → horas y CLP al mes y al año;
+  lógica en `src/lib/savings.ts` con tests.
+
+**Estado (verificado en emuladores):** jefatura entra como Diego a "Mis
+aprobaciones" (4 pendientes) ✅; finanzas entra como Rodrigo a Aprobaciones
+con permisos de admin ✅; lead guardado con `interest`, `partial: false`,
+UTM y cálculo (con las reglas de Growth Buddies cargadas en el emulador) ✅;
+reinicio borra gasto, PIN y token de un visitante y deja saldos idénticos
+(Valentina $223.500, Matías $1.745.790) ✅; bundle SPI sin rastro del demo
+ni del CRM ✅. **Producción:** funciones y hosting desplegados; `demoSignIn`
+espera el permiso `serviceAccountTokenCreator` (pendiente del responsable) ☐;
+probar un lead real con un correo propio ☐; ver eventos en GA4 ☐.

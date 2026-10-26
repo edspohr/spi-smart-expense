@@ -126,7 +126,25 @@ node scripts/seed-demo.mjs --prod > scripts/demo-credentials.local   # genera la
 
 (`--key <sa.json>` sigue disponible si se prefiere una service account.)
 
-`--reset` lo devuelve al estado inicial antes de cada presentación.
+`--reset` lo devuelve al estado inicial antes de cada presentación (sin
+`--password` conserva las claves). Además, solo en el demo:
+
+- `DEMO_MODE=true` en `functions/.env.expense-buddy-demo` publica
+  `demoSignIn` (demo en un clic) y `resetDemoData` (reinicio 04:00).
+- Los custom tokens exigen que la cuenta de servicio de Functions firme por
+  sí misma (una vez):
+
+```bash
+gcloud services enable iamcredentials.googleapis.com --project expense-buddy-demo
+gcloud iam service-accounts add-iam-policy-binding 746906129123-compute@developer.gserviceaccount.com \
+  --member="serviceAccount:746906129123-compute@developer.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" --project expense-buddy-demo
+```
+
+- Los leads de la landing van al CRM de Growth Buddies (`leads` en el
+  proyecto `growth-buddies`); la config pública está en `tenants/demo.json`
+  → `leads`. Para probar en emuladores, cargar las reglas de Growth Buddies
+  en el emulador para ese proyecto (ver `docs/validation/ola-7.md`).
 
 ## Checklist de cierre
 

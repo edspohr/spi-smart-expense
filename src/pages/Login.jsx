@@ -10,6 +10,7 @@ import InstallButton from '../components/InstallButton';
 import { consumeAuthNotice } from '../context/authNotice';
 import { tenant } from '../lib/tenant';
 import LoginLanding from '../components/LoginLanding';
+import { takePostLoginPath } from '../lib/demoSignIn';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
@@ -27,7 +28,8 @@ export default function Login() {
   // Fix: Navigate only when currentUser is set to avoid race conditions
   useEffect(() => {
     if (currentUser) {
-       navigate('/dashboard');
+       // One-click demo sends each role straight to the screen that matters.
+       navigate(takePostLoginPath() ?? '/dashboard');
     }
   }, [currentUser, navigate]);
 

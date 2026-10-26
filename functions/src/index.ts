@@ -3,6 +3,7 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
 import { FUNCTIONS_REGION } from './common';
 import { makeEmailSender } from './notify';
+import * as demo from './demo';
 
 initializeApp();
 
@@ -29,4 +30,10 @@ export { onExpenseCreated, setDelegation, staleApprovalReminders } from './appro
 export const sendQueuedEmail = process.env.EMAIL_PROVIDER === 'brevo' ? makeEmailSender() : undefined;
 export { onExpenseWritten } from './aggregates';
 export { onUserWritten } from './claims';
+
+// Demo tenant only (DEMO_MODE=true in functions/.env.<projectId>): one-click
+// sign-in by role and the nightly data reset. Never deployed for clients.
+const DEMO = process.env.DEMO_MODE === 'true';
+export const demoSignIn = DEMO ? demo.demoSignIn : undefined;
+export const resetDemoData = DEMO ? demo.resetDemoData : undefined;
 export { adminListUsers, adminInviteUser, adminUpdateUser, adminDeleteUser, adminUpdateSettings } from './users';

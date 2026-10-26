@@ -26,8 +26,8 @@
     "migrate:003": "node scripts/migrations/003-users-active-tenant.mjs",
     "dev:demo": "vite --mode demo",
     "dev:demo:emu": "VITE_USE_EMULATORS=true vite --mode demo",
-    "seed:demo": "node scripts/seed-demo.mjs",
-    "reset:demo": "node scripts/seed-demo.mjs --reset",
+    "seed:demo": "npm run functions:build && node scripts/seed-demo.mjs",
+    "reset:demo": "npm run functions:build && node scripts/seed-demo.mjs --reset",
     "bootstrap-tenant": "node scripts/bootstrap-tenant.mjs"
   },
   "dependencies": {

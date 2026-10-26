@@ -123,11 +123,53 @@
         "label": "Escríbenos por WhatsApp",
         "url": "https://wa.me/56975991366?text=Hola%20Growth%20Buddies%21%20Vi%20Expense%20Buddy%20y%20quiero%20una%20demo%20para%20mi%20empresa."
       }
+    },
+    "demo": {
+      "title": "¿Solo quieres mirar? Entra al demo",
+      "text": "Sin registro: elige un rol y recorre la app con datos de ejemplo. Los cambios se borran cada noche.",
+      "roles": [
+        {
+          "role": "worker",
+          "label": "Trabajador en terreno",
+          "description": "Rinde un gasto con la foto de una boleta",
+          "path": "/dashboard/new-expense"
+        },
+        {
+          "role": "manager",
+          "label": "Jefatura",
+          "description": "Aprueba los gastos de tu equipo",
+          "path": "/dashboard/approvals"
+        },
+        {
+          "role": "finance",
+          "label": "Finanzas",
+          "description": "Aprobaciones, saldos y reportes",
+          "path": "/admin/approvals"
+        }
+      ]
+    },
+    "calculator": {
+      "people": 20,
+      "reportsPerPerson": 8,
+      "minutesToday": 15,
+      "minutesWithApp": 3,
+      "hourlyCost": 12000
     }
   },
   "poweredBy": {
     "name": "Growth Buddies",
     "logo": "/brands/growth-buddies/logo.webp",
     "url": "https://growthbuddies.cl/?utm_source=expense-buddy&utm_medium=app&utm_campaign=powered-by"
+  },
+  "leads": {
+    "firebase": {
+      "apiKey": "AIzaSyBDdOtg0-svyfoiVNoNBBGeQc1BP-SDNjk",
+      "authDomain": "growth-buddies.firebaseapp.com",
+      "projectId": "growth-buddies",
+      "appId": "1:1035797595823:web:6e6b9225a6f1ee2047365a"
+    },
+    "collection": "leads",
+    "interest": "Rendición de gastos — Expense Buddy",
+    "source": "expense-buddy-demo"
   }
 }

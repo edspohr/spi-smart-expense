@@ -31,4 +31,6 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Renombrar `isColombiaApprover` → `isBaseCurrencyApprover` | Semántica ya genérica (ADR 0007); el renombre exige migrar `users.permissions` y claims en cada tenant. | Ola 9 |
 | Paquete compartido `@growth-buddies/design` | La paleta Growth Buddies Light vive en `design/growth-buddies-light/` de este repo (ADR 0013). Publicarla como paquete cuando una segunda app buddies la use. | Segunda app buddies |
 | Avatar del sidebar con degradado `indigo` | Color fijo fuera de la paleta; cambiarlo a `brand` también altera el look de SPI. | Cuando SPI acepte retoques visuales |
+| Video de 20 s en la landing, caso SPI y logos, planes visibles, dominio propio | Siguientes palancas comerciales propuestas con la landing; requieren material o decisiones del responsable (video, permiso de SPI, precios, dominio). | Tras medir la landing |
+| Validar facturas electrónicas (DTE) ante el SII y exportar a Defontana / Nubox / Softland | Diferenciador fuerte para finanzas en Chile; requiere certificado digital y alcance con un cliente. | Con Elecnor u otro cliente chileno |
 | Niveles de aprobación genéricos | Hoy: responsable → finanzas con doble firma (ADR 0012). Un arreglo arbitrario de niveles por monto si un cliente lo pide. | A demanda |

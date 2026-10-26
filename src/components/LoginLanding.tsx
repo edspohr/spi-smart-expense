@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ArrowUpRight,
   CalendarCheck,
@@ -13,6 +13,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { tenant, type TenantLanding, type TenantPoweredBy } from '../lib/tenant';
+import { track } from '../lib/analytics';
+import type { SavingsInput } from '../lib/savings';
+import DemoRoles from './landing/DemoRoles';
+import SavingsCalculator from './landing/SavingsCalculator';
+import LeadForm from './landing/LeadForm';
+
+const CALC_FALLBACK: SavingsInput = { people: 20, reportsPerPerson: 8, minutesToday: 15, minutesWithApp: 3, hourlyCost: 12_000 };
 
 const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
@@ -36,6 +43,9 @@ interface Props {
 // have to scroll; on desktop the pitch sits left and the card right. As an
 // installed PWA (display-mode: standalone) only the card shows.
 export default function LoginLanding({ landing, poweredBy, children }: Props) {
+  const [calc, setCalc] = useState<SavingsInput>(landing.calculator ?? CALC_FALLBACK);
+  useEffect(() => track('landing_view'), []);
+
   return (
     <div className="min-h-screen bg-white text-zinc-900 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,1fr)]">
       {/* Hero */}
@@ -63,9 +73,16 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
       {/* Login */}
       <section
         aria-label="Iniciar sesión"
-        className="flex items-start justify-center bg-zinc-50 px-4 py-6 sm:px-10 sm:py-8 standalone:min-h-screen standalone:items-center lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-screen lg:items-center lg:self-start lg:border-l lg:border-zinc-200"
+        className="flex items-start justify-center bg-zinc-50 px-4 py-6 sm:px-10 sm:py-8 standalone:min-h-screen standalone:items-center lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-screen lg:items-center lg:self-start lg:overflow-y-auto lg:border-l lg:border-zinc-200"
       >
-        <div className="w-full max-w-md">{children}</div>
+        <div className="w-full max-w-md lg:py-8">
+          {children}
+          {landing.demo ? (
+            <div className="standalone:hidden">
+              <DemoRoles demo={landing.demo} />
+            </div>
+          ) : null}
+        </div>
       </section>
 
       {/* Features, CTA, powered by */}
@@ -87,6 +104,8 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
           })}
         </ul>
 
+        {landing.calculator ? <SavingsCalculator value={calc} onChange={setCalc} /> : null}
+
         {landing.cta ? (
           <div className="mt-12 max-w-3xl rounded-2xl bg-zinc-950 p-6 text-white sm:p-8">
             <h2 className="text-xl font-semibold tracking-tight">{landing.cta.title}</h2>
@@ -94,6 +113,7 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
             <div className="mt-5 flex flex-wrap gap-3">
               <a
                 href={landing.cta.primary.url}
+                onClick={() => track('cta_click', { type: 'calendar' })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-white focus-ring"
@@ -103,6 +123,7 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
               {landing.cta.secondary ? (
                 <a
                   href={landing.cta.secondary.url}
+                  onClick={() => track('cta_click', { type: 'whatsapp' })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-zinc-400 focus-ring"
@@ -111,12 +132,14 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
                 </a>
               ) : null}
             </div>
+            {tenant.leads ? <LeadForm calculator={calc} /> : null}
           </div>
         ) : null}
 
         {poweredBy ? (
           <a
             href={poweredBy.url}
+            onClick={() => track('cta_click', { type: 'powered_by' })}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-10 inline-flex items-center gap-3 rounded-full border border-zinc-200 py-1.5 pl-1.5 pr-4 text-sm text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900 focus-ring"
