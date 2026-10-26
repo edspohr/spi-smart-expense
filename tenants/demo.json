@@ -114,6 +114,60 @@
         "text": "PIN para acciones sensibles, historial de cada cambio y un ambiente exclusivo para tu empresa, alojado en Chile."
       }
     ],
+    "model": {
+      "eyebrow": "Implementada a tu medida",
+      "title": "No es otro software por suscripción. Es tu herramienta.",
+      "intro": "Las plataformas de autoservicio te piden adaptar tu proceso a su forma de trabajar. Expense Buddy hace lo contrario: la implementamos en tu organización, con tu flujo, tus reglas y tu marca, y la dejamos funcionando con tu equipo.",
+      "pillars": [
+        {
+          "icon": "process",
+          "title": "Tu proceso, no el nuestro",
+          "text": "Configuramos niveles de aprobación, responsables, montos de doble firma, centros de costo, categorías y monedas tal como trabaja tu empresa."
+        },
+        {
+          "icon": "environment",
+          "title": "Tu propio ambiente",
+          "text": "Cada organización tiene su instancia y su base de datos, separadas de las demás y alojadas en Chile. Puede vivir en la cuenta de Google Cloud de tu empresa o administrada por nosotros."
+        },
+        {
+          "icon": "brand",
+          "title": "Con tu marca",
+          "text": "Tu logo, tus colores y tu nombre. Para tu equipo es la herramienta de la empresa, no la de un proveedor."
+        },
+        {
+          "icon": "partner",
+          "title": "Implementación y acompañamiento",
+          "text": "Growth Buddies la pone en marcha contigo: usuarios, centros de costo, capacitación y soporte directo. Si necesitas un ajuste o una integración, se construye sobre tu instancia."
+        }
+      ],
+      "comparison": {
+        "caption": "Diferencias entre un software por suscripción y Expense Buddy",
+        "left": "Software por suscripción",
+        "right": "Expense Buddy",
+        "rows": [
+          [
+            "Tu equipo se adapta a la plataforma",
+            "La herramienta se adapta a tu proceso"
+          ],
+          [
+            "Base compartida con miles de empresas",
+            "Ambiente y datos exclusivos de tu organización"
+          ],
+          [
+            "La marca del proveedor",
+            "Tu marca"
+          ],
+          [
+            "Autoservicio y mesa de ayuda",
+            "Implementación y acompañamiento directo"
+          ],
+          [
+            "Mejoras según la hoja de ruta del proveedor",
+            "Ajustes según las prioridades de tu empresa"
+          ]
+        ]
+      }
+    },
     "offline": {
       "eyebrow": "Modo sin conexión",
       "title": "Así funciona cuando no hay señal",

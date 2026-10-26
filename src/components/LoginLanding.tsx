@@ -16,6 +16,7 @@ import { tenant, type TenantLanding, type TenantPoweredBy } from '../lib/tenant'
 import { track } from '../lib/analytics';
 import DemoRoles from './landing/DemoRoles';
 import OfflineExplainer from './landing/OfflineExplainer';
+import ModelSection from './landing/ModelSection';
 
 const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
@@ -98,6 +99,8 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
             );
           })}
         </ul>
+
+        {landing.model ? <ModelSection model={landing.model} /> : null}
 
         {landing.offline ? <OfflineExplainer offline={landing.offline} /> : null}
 

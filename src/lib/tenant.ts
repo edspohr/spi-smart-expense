@@ -20,6 +20,15 @@ export interface TenantLanding {
     primary: { label: string; url: string };
     secondary?: { label: string; url: string };
   };
+  /** Implementation model ("not another subscription SaaS"). */
+  model?: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    /** icon: process | environment | brand | partner */
+    pillars: { icon: string; title: string; text: string }[];
+    comparison?: { caption: string; left: string; right: string; rows: [string, string][] };
+  };
   /** "How it works without signal" section, told from the user's side. */
   offline?: {
     eyebrow: string;

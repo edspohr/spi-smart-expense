@@ -235,3 +235,19 @@ envíos salen con la app abierta.
 
 **Estado (verificado en navegador):** escritorio y móvil sin scroll
 horizontal ✅; 96 tests ✅.
+
+## Landing: "No es otro software por suscripción" (2026-10-25)
+
+**Qué cambió:** sección del modelo de implementación
+(`src/components/landing/ModelSection.tsx`, texto en `tenants/demo.json` →
+`landing.model`), tras las funcionalidades: cuatro pilares (tu proceso, tu
+propio ambiente, tu marca, implementación y acompañamiento de Growth
+Buddies) y una tabla "Software por suscripción vs Expense Buddy" sin nombrar
+competidores. Motivo: frente a plataformas de autoservicio con precio por
+usuario no se compite en precio; el diferenciador es la implementación a la
+medida de cada organización. Todo lo afirmado existe en la arquitectura
+(un proyecto por cliente, ADR 0001; marca por tenant; política de
+aprobación configurable, ADR 0012).
+
+**Estado (verificado en navegador):** escritorio y móvil sin scroll
+horizontal ✅; tests ✅.
