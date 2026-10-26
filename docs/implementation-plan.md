@@ -35,7 +35,7 @@ sugerido, no fechas.**
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Deployada 2026-10-25 (`1f5d0af`) |
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
-| 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Implementada 2026-10-26, lista para deploy (demo con lector activo, SPI apagado) |
+| 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Deployada 2026-10-26 (`89a4592`): demo con lector activo, SPI apagado |
 | 9 | **Operación de flota, observabilidad y seguridad base** | Transparente | **Siguiente** |
 | 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |
 | 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Pendiente |
