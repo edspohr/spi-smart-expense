@@ -15,11 +15,12 @@ No contienen código ejecutable. No se importan desde `src/`.
 |-------------------|--------------|---------------------|
 | `implementation-plan.md` | Plan v4 por olas: 0-7 deployadas (historia) y roadmap 8-16 en orden sugerido, sin fechas (ADR 0014). Objetivo, scope, dependencias e impacto en SPI; prompt ejecutable de la próxima ola. Tabla de estado al inicio. | Al cerrar cada ola |
 | `research/` | Investigación de mercado que respalda decisiones de producto. Hoy: `benchmark-2026-10.md` (resumen del benchmark Chile/Colombia/Perú/México). | Cuando hay un estudio nuevo |
-| `adr/` | Architecture Decision Records (0001-0015) con plantilla e índice en `adr/README.md`. | Cuando se toma o reemplaza una decisión de arquitectura |
+| `adr/` | Architecture Decision Records (0001-0016) con plantilla e índice en `adr/README.md`. | Cuando se toma o reemplaza una decisión de arquitectura |
 | `technical-debt.md` | Deuda técnica conocida (TD-NNN) con severidad, impacto y fix recomendado. | Al cerrar o descubrir deuda en cada ola |
 | `backlog.md` | Fuera de alcance deliberado, con razón y ola tras la cual reevaluar. | Al cerrar cada ola (podar lo que entró) |
 | `validation/ola-N.md` | Doc de validación por ola: qué cambió / cómo probarlo / estado esperado. | Al cerrar cada ola |
 | `runbooks/` | Procedimientos operativos. Hoy: `emulators.md` (entorno de pruebas local con cuentas seed), `deploy-ola-2.md` (primera salida de Functions, claims y rules, con orden de cutover y rollback) `deploy-ola-3.md` (usuarios, ajustes y primer superadmin) y `bootstrap-tenant.md` (alta de un cliente nuevo y del demo). Ola 8 añade handover a cliente, secretos, restore. | Cuando cambia la operación |
+| `legal/` | Borradores contractuales y de privacidad para revisión legal. Hoy: `lector-datos-derivados.md` (cláusula de datos derivados, anexo técnico, avisos y consentimientos del lector que aprende, ADR 0016). | Cuando cambia lo que se comparte o un abogado lo revisa |
 | `pendientes.md` | Tareas que solo puede hacer el responsable (consola, pruebas en producción). Se revisan al cierre de cada ola. | Cada vez que surge o se cierra una |
 | `testing-backlog-deploy.md` | Checklist de pruebas pre-deploy heredado del plan v2. | Según uso |
 | `archive/` | Documentos obsoletos con banner de fecha (plan v2, fases 1-6). | Nunca se editan |

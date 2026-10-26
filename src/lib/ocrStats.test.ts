@@ -1,19 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { computeOcrStats } from './ocrStats';
+import { computeReaderStats, weekOf } from './ocrStats';
 
-describe('computeOcrStats', () => {
-  it('computes per-field accuracy overall and per engine, ignoring missing sides', () => {
-    const s = computeOcrStats([
-      { createdAt: '1', engine: 'barcode:ted', durationMs: 40, localVsSubmitted: { amount: true, date: true, merchant: null }, aiStatus: 'match' },
-      { createdAt: '2', engine: 'ocr', durationMs: 2400, localVsSubmitted: { amount: false, date: true }, aiStatus: 'mismatch' },
-      { createdAt: '3', engine: 'ocr', durationMs: 1800, localVsSubmitted: { amount: true, date: null } },
+describe('computeReaderStats', () => {
+  it('adds daily counters per field, engine and mode, plus AI accuracy and weekly trend', () => {
+    const s = computeReaderStats([
+      {
+        date: '2026-10-19',
+        reads: 3,
+        byMode: { shadow: 2, offline: 1 },
+        fields: {
+          shadow: { ocr: { amount: { ok: 1, total: 2 } }, barcode: { amount: { ok: 1, total: 1 } } },
+          offline: { barcode: { date: { ok: 1, total: 1 } } },
+        },
+        ai: { amount: { ok: 2, total: 2 } },
+        time: { ocr: { sum: 2000, n: 2 }, barcode: { sum: 100, n: 1 } },
+        aiMismatch: 1,
+      },
+      { date: '2026-10-26', reads: 1, byMode: { shadow: 1 }, fields: { shadow: { ocr: { amount: { ok: 1, total: 1 } } } } },
     ]);
-    expect(s.reads).toBe(3);
-    expect(s.byEngine).toEqual({ barcode: 1, ocr: 2 });
-    expect(s.fields.amount).toEqual({ correct: 2, total: 3, rate: 2 / 3 });
-    expect(s.fields.merchant!.rate).toBeNull();
-    expect(s.fieldsByEngine.ocr!.amount).toEqual({ correct: 1, total: 2, rate: 0.5 });
-    expect(s.medianMs).toBe(1800);
+    expect(s.reads).toBe(4);
+    expect(s.byMode).toEqual({ shadow: 3, offline: 1, 'local-first': 0 });
+    expect(s.device.amount.all).toEqual({ correct: 3, total: 4, rate: 0.75 });
+    expect(s.device.amount.ocr.rate).toBeCloseTo(2 / 3);
+    expect(s.device.date.barcode.rate).toBe(1);
+    expect(s.device.merchant.all.rate).toBeNull();
+    expect(s.ai.amount.rate).toBe(1);
+    expect(s.avgMs).toEqual({ barcode: 100, ocr: 1000 });
     expect(s.aiMismatches).toBe(1);
+    expect(s.amountByWeek.map((w) => [w.week, w.stat.rate])).toEqual([
+      ['2026-10-19', 2 / 3],
+      ['2026-10-26', 1],
+    ]);
+  });
+
+  it('groups dates by their Monday', () => {
+    expect(weekOf('2026-10-25')).toBe('2026-10-19'); // Sunday
+    expect(weekOf('2026-10-26')).toBe('2026-10-26'); // Monday
   });
 });

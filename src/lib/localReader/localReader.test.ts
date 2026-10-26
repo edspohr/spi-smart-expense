@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeRut, parseDianQr, parseTaxBarcode, parseTed } from './barcodeParsers';
-import { extractFromText, parseAmount } from './rules';
+import { amountCandidates, amountLabel, extractFromText, parseAmount, textLines } from './rules';
 import { guessCategory } from './categories';
 import { dictionaryKey, mergeLocalRead, toFormPatch } from './merge';
 
@@ -182,5 +182,22 @@ describe('merge', () => {
     const r = mergeLocalRead({ barcode: null, ocrFields: extractFromText(PARKING, CL), ocrText: PARKING, dictionary: {}, categories: CL_CATEGORIES, baseCurrency: 'CLP', durationMs: 5 });
     expect(r.fields.category).toMatchObject({ value: 'ESTACIONAMIENTOS', source: 'keyword' });
     expect(r.sources).toEqual(expect.arrayContaining(['ocr', 'keyword']));
+  });
+});
+
+describe('learning hooks (Ola 8b)', () => {
+  const RECEIPT = 'MINIMARKET DON LUCHO\nRUT 76.354.771-K\nFECHA 20/10/2026\nSUMA 12.400\nTOTAL ARTICULOS 3\nPAGO EFECTIVO 15.000';
+
+  it('lists labelled amounts with short labels', () => {
+    expect(amountLabel('TOTAL A PAGAR $ 31.130')).toBe('TOTAL A PAGAR');
+    const c = amountCandidates(textLines(RECEIPT), true);
+    expect(c).toEqual(expect.arrayContaining([{ label: 'SUMA', value: 12400 }, { label: 'PAGO EFECTIVO', value: 15000 }]));
+    expect(c.find((x) => x.value === 20)).toBeUndefined(); // the date line is skipped
+  });
+
+  it('prefers the label learned for the issuer', () => {
+    expect(extractFromText(RECEIPT, CL).amount?.value).not.toBe(12400);
+    const learned = extractFromText(RECEIPT, { ...CL, amountLabels: { '76354771-K': 'SUMA' } });
+    expect(learned.amount).toMatchObject({ value: 12400, confidence: 'high' });
   });
 });

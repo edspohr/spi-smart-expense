@@ -36,7 +36,10 @@ sugerido, no fechas.**
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Deployada 2026-10-25 (`1f5d0af`) |
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
 | 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Deployada 2026-10-26 (`89a4592`): demo con lector activo, SPI apagado |
-| 9 | **Operación de flota, observabilidad y seguridad base** | Transparente | **Siguiente** |
+| 8b | **Lector que aprende I:** modo sombra en todas las rendiciones, aprendizaje por cliente, métricas en el tiempo; contrato y textos de consentimiento | Transparente (opt-in por tenant) | **Implementada 2026-10-26, lista para deploy** |
+| 8c | Lector que aprende II: capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | Pendiente (requiere cláusula firmada) |
+| 8d | Lector que aprende III: corpus de imágenes con consentimiento separado y modelo propio | Transparente (opt-in) | Condicional (volumen + clientes que acepten) |
+| 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
 | 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |
 | 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Pendiente |
 | 12 | Fondos por rendir, viáticos, kilometraje, políticas y nómina de pago | Transparente (opt-in) | Pendiente |
@@ -45,7 +48,7 @@ sugerido, no fechas.**
 | 15 | Colombia DIAN + conciliación de cartola de tarjeta | Visible positivo para SPI si lo activa | Pendiente |
 | 16 | Calidad y escala (refactor monolitos, e2e, modo oscuro completo) | Transparente | Pendiente |
 
-El orden 9-16 es sugerido y puede cambiar con lo que pidan los clientes
+Las olas 8b-8d profundizan el lector offline antes de seguir (decisión del responsable, ADR 0016). El orden 9-16 es sugerido y puede cambiar con lo que pidan los clientes
 fundadores. Los prompts de las olas 9-16 se escriben al iniciar cada una
 (así no quedan obsoletos); cada sección deja el alcance acordado.
 
@@ -932,6 +935,73 @@ ACCEPTANCE CRITERIA
   flagged; ocrEval records appear in the accuracy panel.
 - Fixture accuracy test runs in CI. SPI build and behaviour unchanged.
 ```
+
+
+---
+
+## Ola 8b — Lector que aprende I (modo sombra y capa del cliente)
+
+**Goal:** Que cada rendición, con o sin señal, mida y mejore el lector
+offline, sin tocar la experiencia de quien rinde y sin que los datos salgan
+del ambiente del cliente. Dejar listo lo documental (cláusula, avisos,
+consentimiento) para la capa general. Decisión: ADR 0016.
+
+**Scope**
+
+1. **Modo sombra** (`settings/tenant.offline.shadowRead`, apagado por
+   defecto; el demo lo trae activo): con señal, tras la lectura de Gemini, el
+   lector local corre en segundo plano sobre la misma foto. No precarga ni se
+   muestra. El gasto guarda `localRead` (`mode: 'shadow'`) y `aiRead` (lo que
+   Gemini leyó, para comparar). Se salta con ahorro de datos o red 2G y si no
+   termina antes de enviar.
+2. **Comparación de tres puntas sin re-llamar a Gemini:** el trigger compara
+   teléfono vs. confirmado, teléfono vs. Gemini y Gemini vs. confirmado (cuánto
+   corrigen las personas a la IA). En modo sombra no hay `aiReview` (la persona
+   ya confirmó sobre la lectura de Gemini).
+3. **Formato por emisor:** el OCR guarda los montos candidatos con su
+   etiqueta; el servidor vota qué etiqueta dio el monto confirmado por RUT
+   emisor (`readerProfiles`, solo servidor) y el diccionario la entrega al
+   teléfono, que la prefiere en la siguiente boleta de ese emisor (mínimo 2
+   votos).
+4. **Métricas diarias** (`ocrStats/{fecha}`, contadores por modo, motor y
+   campo) y panel con tendencia de 30 días, desglose sombra/sin señal y "la
+   IA corregida por las personas".
+5. **Documental:** ADR 0016; borrador de cláusula de datos derivados, anexo
+   técnico, aviso para usuarios y textos de consentimiento
+   (`docs/legal/lector-datos-derivados.md`) para revisión legal; argumento
+   comercial.
+6. **Aviso a usuarios** en la tarjeta "Listo para terreno" (qué se mide, qué
+   no, sin imágenes ni datos personales).
+
+**Dependencies:** Ola 8. **Impacto en SPI:** ninguno mientras no active el
+modo sombra.
+
+## Ola 8c — Lector que aprende II (capa general)
+
+**Goal:** Que lo aprendido sobre documentos (no sobre clientes) mejore el
+lector de todos los tenants.
+
+**Scope (se detalla al iniciar):** proyecto central de Growth Buddies con
+una colección de solo escritura por tenant; Function que exporta atributos
+anonimizados (columna "general" del ADR 0016) solo si
+`learning.shareDerived` está activo (con quién/cuándo/versión del texto);
+consentimiento en Ajustes con el texto aprobado por el abogado; agregación
+central (etiquetas del total por emisor, razones sociales, errores típicos);
+**paquete de lectura versionado** (`src/lib/localReader/pack/`) que entra en
+cada build; métrica de mejora por versión del paquete en el corpus.
+
+**Requisitos previos (responsable):** cláusula revisada por abogado e
+incorporada al contrato; crear el proyecto central.
+
+## Ola 8d — Lector que aprende III (corpus de imágenes y modelo propio)
+
+**Goal:** Pasar de reglas a un modelo de lectura propio para papel térmico.
+
+**Scope (condicional):** consentimiento separado `learning.shareImages`,
+recorte de datos personales en el teléfono, retención acotada y retiro;
+corpus curado; evaluar un modelo pequeño de extracción que corra en el
+teléfono contra el corpus. Se aborda con volumen suficiente y clientes que
+lo acepten.
 
 ---
 

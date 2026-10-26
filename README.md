@@ -49,9 +49,16 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **"Simular sin señal"** for demos (demo tenant and superadmins).
 - Opt-in per tenant: `settings/tenant.offline.localReader` and `ai.localFirst` (both off; the demo has the reader on). Accuracy corpus test in CI (`localReader.corpus.test.ts`). Decision: ADR 0015.
 
+### Ola 8b — The reader that learns (2026-10-26)
+
+- **Shadow mode** (`settings/tenant.offline.shadowRead`, off by default): online, the device also reads every receipt in the background, invisibly, while Gemini fills the form; the trigger compares device vs. Gemini vs. confirmed without a second Gemini call.
+- **Per-client learning:** per issuer, the label that carries the confirmed total (`readerProfiles`) is served back through the merchant dictionary and preferred by the reader.
+- **Daily accuracy counters** (`ocrStats`) with a 30-day panel (device, by engine, AI accuracy, weekly trend) and a notice for the people who submit.
+- **Data governance:** ADR 0016 (what is learned per client vs. across clients) and a draft contract clause, technical annex, user notice and consent texts in `docs/legal/lector-datos-derivados.md`, pending legal review. Next: Ola 8c (cross-client layer with consent), 8d (image corpus with separate consent).
+
 ### Roadmap (plan v4, 2026-10-26)
 
-Next wave: **Ola 9, fleet operations, observability and security baseline**. Then, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
+Next: **Ola 8c**, the cross-client reader layer (after legal review of the clause), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
 
 ### Ola 7 — Country per tenant and the Expense Buddy demo (2026-10-25)
 

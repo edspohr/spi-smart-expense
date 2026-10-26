@@ -118,6 +118,9 @@ service cloud.firestore {
         && unchanged('approvalFlow')
         && unchanged('pendingApproverUids')
         && unchanged('aiReview')
+        // Device and AI reads are measurements of the original photo (Ola 8b).
+        && unchanged('localRead')
+        && unchanged('aiRead')
         && (canReviewCurrent()
             || (resource.data.userId == request.auth.uid
                 && resource.data.get('status', 'pending') == 'pending'
@@ -168,5 +171,8 @@ service cloud.firestore {
     match /cache/{doc} { allow read, write: if false; }
     // On-device reader accuracy (Ola 8): anonymous, written by Functions.
     match /ocrEval/{doc} { allow read: if isSuperadmin(); allow write: if false; }
+    // Ola 8b: daily reader accuracy counters and per-issuer learning.
+    match /ocrStats/{day} { allow read: if isSuperadmin(); allow write: if false; }
+    match /readerProfiles/{issuer} { allow read, write: if false; }
   }
 }

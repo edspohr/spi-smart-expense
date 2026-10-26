@@ -48,7 +48,53 @@ function amountsIn(line: string, wholeUnits: boolean): number[] {
     .filter((n): n is number => n !== null);
 }
 
-export function extractAmount(lines: string[], wholeUnits: boolean): LocalField<number> | undefined {
+const SKIP_FOR_CANDIDATES = /RUT|NIT|FOLIO|TEL|FONO|FECHA|HORA|N[°O] ?\d|\*{2,}/;
+
+/** The words before an amount on a line, as a short label ("TOTAL A PAGAR"). */
+export function amountLabel(line: string): string {
+  return line
+    .replace(AMOUNT_RE, ' ')
+    .replace(/[^A-Z ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, 3)
+    .join(' ')
+    .slice(0, 24);
+}
+
+export interface AmountCandidate {
+  label: string;
+  value: number;
+}
+
+/**
+ * Every labelled amount on the receipt. Sent with shadow/offline reads so the
+ * server can learn, per issuer, which label carries the confirmed total.
+ */
+export function amountCandidates(lines: string[], wholeUnits: boolean, max = 30): AmountCandidate[] {
+  const out: AmountCandidate[] = [];
+  for (const line of lines) {
+    if (SKIP_FOR_CANDIDATES.test(line)) continue;
+    const label = amountLabel(line);
+    if (label.length < 3) continue;
+    for (const value of amountsIn(line.replace(TOTAL_LABEL, ' '), wholeUnits)) {
+      if (value >= (wholeUnits ? 10 : 0.5)) out.push({ label, value });
+    }
+    if (out.length >= max) break;
+  }
+  return out.slice(0, max);
+}
+
+/**
+ * Total amount. `preferredLabel` is what this tenant learned for the issuer
+ * (readerProfiles): when a line carries it, that amount wins.
+ */
+export function extractAmount(lines: string[], wholeUnits: boolean, preferredLabel?: string): LocalField<number> | undefined {
+  if (preferredLabel) {
+    const hit = amountCandidates(lines, wholeUnits, 60).find((c) => c.label === preferredLabel);
+    if (hit) return field(hit.value, 'high');
+  }
   let best: { value: number; score: number } | undefined;
   lines.forEach((line, i) => {
     const label = line.match(TOTAL_LABEL)?.[1];
@@ -192,18 +238,33 @@ export function extractMerchant(lines: string[]): LocalField | undefined {
   return undefined;
 }
 
-/** All text-derived fields. `wholeUnits`: currencies without decimals (CLP). */
-export function extractFromText(rawText: string, opts: { country: CountryCode; baseCurrency: string; today?: Date }): LocalFields {
+/** Normalised, non-empty lines of OCR text. */
+export function textLines(rawText: string): string[] {
+  return normalizeText(rawText).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
+
+/** True for currencies read without decimals. */
+export const isWholeUnits = (currency: string) => currency === 'CLP';
+
+/**
+ * All text-derived fields. `amountLabels`: learned total label per issuer tax
+ * id (dictionary keys), applied once the tax id is read.
+ */
+export function extractFromText(
+  rawText: string,
+  opts: { country: CountryCode; baseCurrency: string; today?: Date; amountLabels?: Record<string, string> },
+): LocalFields {
   const text = normalizeText(rawText);
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = textLines(rawText);
   const currency = extractCurrency(text, opts.baseCurrency);
-  const wholeUnits = currency.value === 'CLP';
+  const wholeUnits = isWholeUnits(currency.value);
+  const taxId = extractTaxId(lines, opts.country);
   const fields: LocalFields = {
-    taxId: extractTaxId(lines, opts.country),
+    taxId,
     merchant: extractMerchant(lines),
     date: extractDate(lines, opts.today),
     time: extractTime(lines),
-    amount: extractAmount(lines, wholeUnits),
+    amount: extractAmount(lines, wholeUnits, taxId ? opts.amountLabels?.[taxId.value.toUpperCase()] : undefined),
     currency,
     invoiceNumber: extractInvoiceNumber(lines),
     ...extractPayment(text),

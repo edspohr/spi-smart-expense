@@ -57,7 +57,7 @@ export const DEMO_SETTINGS = {
   },
   modules: { bulkUpload: true, reports: true, reconciliation: false, balances: true },
   // Ola 8: the demo shows on-device reading and "Listo para terreno".
-  offline: { localReader: true },
+  offline: { localReader: true, shadowRead: true },
   ai: { localFirst: false },
 };
 

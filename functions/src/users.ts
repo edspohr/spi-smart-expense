@@ -252,8 +252,15 @@ export const adminUpdateSettings = onCall(async (req) => {
     }
   }
   if (input.offline !== undefined) {
-    if (typeof input.offline?.localReader !== 'boolean') throw new HttpsError('invalid-argument', 'Valor no válido para el modo offline.');
-    update['offline.localReader'] = input.offline.localReader;
+    const keys = Object.keys(input.offline ?? {});
+    if (!keys.length) throw new HttpsError('invalid-argument', 'Valor no válido para el modo offline.');
+    for (const key of keys) {
+      const value = (input.offline as Record<string, unknown>)[key];
+      if (!['localReader', 'shadowRead'].includes(key) || typeof value !== 'boolean') {
+        throw new HttpsError('invalid-argument', 'Valor no válido para el modo offline.');
+      }
+      update[`offline.${key}`] = value;
+    }
   }
   if (input.approvalPolicy !== undefined) {
     const ap = input.approvalPolicy ?? {};

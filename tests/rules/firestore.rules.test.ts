@@ -224,6 +224,10 @@ describe('notifications and server-only collections', () => {
     await assertSucceeds(setDoc(doc(pro(), 'expenses', 'lr-1'), expense({ localRead })));
     await assertFails(setDoc(doc(pro(), 'expenses', 'lr-2'), expense({ localRead, aiReview: { status: 'match' } })));
     await assertFails(updateDoc(doc(pro(), 'expenses', 'own-pending'), { aiReview: { status: 'match' } }));
+    await assertSucceeds(setDoc(doc(pro(), 'expenses', 'lr-3'), expense({ localRead: { ...localRead, mode: 'shadow' }, aiRead: { model: 'm', values: { amount: 1000 } } })));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'lr-3'), { 'localRead.values.amount': 5 }));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'lr-3'), { aiRead: { values: { amount: 5 } } }));
+    await assertSucceeds(updateDoc(doc(pro(), 'expenses', 'lr-3'), { merchant: 'Otra' }));
     await env.withSecurityRulesDisabled(async (c) => {
       await setDoc(doc(c.firestore(), 'ocrEval', 'e1'), { engine: 'ocr' });
       await setDoc(doc(c.firestore(), 'cache', 'merchantDictionary'), { entries: {} });
@@ -232,6 +236,14 @@ describe('notifications and server-only collections', () => {
     await assertFails(getDoc(doc(admin(), 'ocrEval', 'e1')));
     await assertFails(setDoc(doc(superadmin(), 'ocrEval', 'e2'), { engine: 'ocr' }));
     await assertFails(getDoc(doc(superadmin(), 'cache', 'merchantDictionary')));
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'ocrStats', '2026-10-26'), { reads: 1 });
+      await setDoc(doc(c.firestore(), 'readerProfiles', '76354771-K'), { labels: { TOTAL: 2 } });
+    });
+    await assertSucceeds(getDoc(doc(superadmin(), 'ocrStats', '2026-10-26')));
+    await assertFails(getDoc(doc(admin(), 'ocrStats', '2026-10-26')));
+    await assertFails(setDoc(doc(superadmin(), 'ocrStats', 'x'), { reads: 9 }));
+    await assertFails(getDoc(doc(superadmin(), 'readerProfiles', '76354771-K')));
   });
 
   it('users cannot grant themselves PIN state', async () => {

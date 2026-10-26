@@ -8,7 +8,7 @@ interface FieldRead {
 export interface LocalReadState {
   confidence: Record<string, FieldRead | undefined>;
   barcode: { kind: 'ted' | 'dian'; docLabel?: string } | null;
-  durationMs: number;
+  durationMs?: number;
   complete: boolean;
   offline: boolean;
 }

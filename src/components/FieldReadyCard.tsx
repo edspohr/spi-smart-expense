@@ -7,6 +7,7 @@ import { useOnline } from '../lib/useOnline';
 import { enginesCached, getFieldReady, prepareForField, type FieldReadyStatus } from '../lib/fieldReady';
 import { isSimulatingOffline, setSimulateOffline } from '../lib/connectivity';
 import { isSuperadmin } from '../lib/roles';
+import ReaderNotice from './ReaderNotice';
 import { tenant } from '../lib/tenant';
 
 function ago(iso: string | null): string {
@@ -33,7 +34,16 @@ export default function FieldReadyCard() {
     void enginesCached().then(setCached);
   }, [status.readyAt]);
 
-  if (!offline.localReader || !currentUser) return null;
+  if ((!offline.localReader && !offline.shadowRead) || !currentUser) return null;
+
+  // Measuring only (shadow mode without the offline reader): just the notice.
+  if (!offline.localReader) {
+    return (
+      <section aria-label="Lectura de boletas" className="rounded-2xl border border-gray-100 bg-white px-5 py-3 shadow-sm">
+        <ReaderNotice />
+      </section>
+    );
+  }
 
   const ready = Boolean(status.readyAt && status.engines && (cached ?? true));
   const canSimulate = Boolean(tenant.landing?.demo) || isSuperadmin(userRole);
@@ -107,6 +117,7 @@ export default function FieldReadyCard() {
         )}
       </div>
       {!online && !simulated && <p className="mt-2 text-xs text-gray-500">Sin conexión: podrás actualizar cuando vuelva la señal.</p>}
+      <ReaderNotice />
     </section>
   );
 }

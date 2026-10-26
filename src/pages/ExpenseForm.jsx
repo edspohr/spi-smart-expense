@@ -144,6 +144,10 @@ export default function ExpenseForm() {
   // On-device read of the receipt (Ola 8): per-field confidence for the
   // review badges and what was read, sent with the expense for verification.
   const [localRead, setLocalRead] = useState(null);
+  // Shadow read (Ola 8b): the device reads the same photo in the background
+  // while Gemini fills the form; never shown, only measured server-side.
+  const shadowRef = useRef(null);
+  const shadowSeq = useRef(0);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [processingAi, setProcessingAi] = useState(false);
@@ -337,9 +341,48 @@ export default function ExpenseForm() {
     }
   };
 
+  // What is stored on the expense about a device read (compared server-side).
+  const readPayload = (result, mode, version) => ({
+      mode,
+      engine: result.barcode ? `barcode:${result.barcode.kind}` : 'ocr',
+      docType: result.barcode?.docType ?? null,
+      offline: mode === 'offline',
+      durationMs: result.durationMs,
+      readerVersion: version,
+      values: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.value])),
+      confidence: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.confidence])),
+      ...(result.amountCandidates ? { amountCandidates: result.amountCandidates } : {}),
+  });
+
+  // Skip the shadow read where it would cost the person data or battery.
+  const shadowAllowed = () => {
+      const c = navigator.connection;
+      return isOnline() && !c?.saveData && !['slow-2g', '2g'].includes(c?.effectiveType);
+  };
+
+  const aiReadOf = (data) => ({
+      model: data._model ?? null,
+      values: Object.fromEntries(['amount', 'date', 'taxId', 'invoiceNumber', 'merchant', 'category', 'currency']
+          .filter((k) => data[k] !== undefined && data[k] !== null && data[k] !== '')
+          .map((k) => [k, data[k]])),
+  });
+
+  const startShadowRead = (file, aiRead) => {
+      const seq = ++shadowSeq.current;
+      void (async () => {
+          try {
+              const { readReceiptLocally, READER_VERSION } = await import('../lib/localReader');
+              const result = await readReceiptLocally(file, { categories: CATEGORIES_COMMON });
+              if (seq === shadowSeq.current) shadowRef.current = { localRead: readPayload(result, 'shadow', READER_VERSION), aiRead };
+          } catch (err) {
+              console.warn('[shadowRead]', err);
+          }
+      })();
+  };
+
   // Reads the receipt on the device (no network) and pre-fills the form.
   const runLocalRead = async (offline) => {
-      const { readReceiptLocally, toFormPatch } = await import('../lib/localReader');
+      const { readReceiptLocally, toFormPatch, READER_VERSION } = await import('../lib/localReader');
       const result = await readReceiptLocally(files.receipt, { categories: CATEGORIES_COMMON });
       const { patch, confidence } = toFormPatch(result);
       setFormData(prev => {
@@ -352,12 +395,9 @@ export default function ExpenseForm() {
       setLocalRead({
           confidence,
           barcode: result.barcode ? { kind: result.barcode.kind, docLabel: result.barcode.docLabel } : null,
-          durationMs: result.durationMs,
           complete: result.complete,
           offline,
-          engine: result.barcode ? `barcode:${result.barcode.kind}` : 'ocr',
-          docType: result.barcode?.docType ?? null,
-          values: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.value])),
+          payload: readPayload(result, offline ? 'offline' : 'local-first', READER_VERSION),
       });
       return result;
   };
@@ -379,6 +419,9 @@ export default function ExpenseForm() {
 
       setProcessingAi(true);
       setLocalRead(null);
+      shadowRef.current = null;
+      shadowSeq.current += 1;
+      let unconfident = null;
       const online = isOnline();
       try {
           // Without signal (or "local first" with a confident read) the
@@ -390,7 +433,11 @@ export default function ExpenseForm() {
                   setStep('review');
                   return;
               }
-              setLocalRead(null); // not confident enough: ask Gemini
+              // Not confident enough: Gemini fills the form and this read is
+              // kept as a shadow measurement.
+              unconfident = (await import('../lib/localReader')).READER_VERSION;
+              shadowRef.current = { localRead: readPayload(result, 'shadow', unconfident) };
+              setLocalRead(null);
           }
           if (!online) {
               toast.info('Sin conexión: ingresa los datos y la rendición se enviará sola al recuperar señal.');
@@ -419,6 +466,8 @@ export default function ExpenseForm() {
                  cardLast4: data.cardLast4 || prev.cardLast4,
                  cardBrand: data.cardBrand || prev.cardBrand
              }));
+             if (unconfident && shadowRef.current) shadowRef.current.aiRead = aiReadOf(data);
+             else if (offlineSettings.shadowRead && shadowAllowed()) startShadowRead(files.receipt, aiReadOf(data));
              toast.success("Información extraída con éxito.");
              setStep('review');
           }
@@ -452,6 +501,8 @@ export default function ExpenseForm() {
       setSplitRows([{ projectId: '', amount: '' }]);
       setIsManual(false);
       setLocalRead(null);
+      shadowRef.current = null;
+      shadowSeq.current += 1;
   };
 
   const handleAddSplitRow = () => {
@@ -544,6 +595,13 @@ export default function ExpenseForm() {
     // Final documents with pre-generated ids: the same payload is written now
     // or later from the offline queue, so a retry never duplicates anything.
     const createdAt = new Date().toISOString();
+    // Device read for the server-side comparison (Ola 8/8b). Only for a single
+    // expense: split parts carry partial amounts and would read as errors.
+    const shadow = shadowRef.current?.aiRead ? shadowRef.current : null;
+    const readFields = isSplitMode ? {}
+        : localRead ? { localRead: localRead.payload }
+        : shadow ? { localRead: shadow.localRead, aiRead: shadow.aiRead }
+        : {};
     const docs = itemsToSave.map(item => {
         const projectObj = projects.find(p => p.id === item.projectId);
         return {
@@ -579,18 +637,7 @@ export default function ExpenseForm() {
                 trm: NEEDS_RATE(formData.currency) ? (trmState.trm || null) : null,
                 ...baseEquivalentFields(formData.currency || BASE_CURRENCY, NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null),
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
-                // What the device read (Ola 8): compared server-side with the
-                // confirmed values (accuracy metric) and re-read by Gemini.
-                ...(localRead ? {
-                    localRead: {
-                        engine: localRead.engine,
-                        docType: localRead.docType,
-                        offline: localRead.offline,
-                        durationMs: localRead.durationMs,
-                        values: localRead.values,
-                        confidence: Object.fromEntries(Object.entries(localRead.confidence).map(([k, f]) => [k, f.confidence])),
-                    },
-                } : {}),
+                ...readFields,
             },
         };
     });

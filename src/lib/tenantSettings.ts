@@ -42,7 +42,8 @@ export interface TenantSettings {
   modules: TenantConfig['modules'];
   ai: { dailyLimitUser: number | null; dailyLimitTenant: number | null; localFirst: boolean };
   /** Ola 8: on-device receipt reading and "Listo para terreno". Off by default. */
-  offline: { localReader: boolean };
+  /** Ola 8: on-device reader; shadowRead measures it on every online expense (8b). */
+  offline: { localReader: boolean; shadowRead: boolean };
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -65,7 +66,7 @@ export const DEFAULT_SETTINGS: TenantSettings = {
   },
   modules: { ...tenant.modules },
   ai: { dailyLimitUser: null, dailyLimitTenant: null, localFirst: false },
-  offline: { localReader: false },
+  offline: { localReader: false, shadowRead: false },
 };
 
 export function mergeSettings(doc: Record<string, unknown> | undefined | null): TenantSettings {
@@ -101,7 +102,10 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
       balances: bool(modules.balances, DEFAULT_SETTINGS.modules.balances),
     },
     ai: { dailyLimitUser: int(ai.dailyLimitUser), dailyLimitTenant: int(ai.dailyLimitTenant), localFirst: ai.localFirst === true },
-    offline: { localReader: (doc.offline as { localReader?: unknown } | undefined)?.localReader === true },
+    offline: {
+      localReader: (doc.offline as { localReader?: unknown } | undefined)?.localReader === true,
+      shadowRead: (doc.offline as { shadowRead?: unknown } | undefined)?.shadowRead === true,
+    },
     updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : undefined,
     updatedByName: typeof doc.updatedByName === 'string' ? doc.updatedByName : undefined,
   };

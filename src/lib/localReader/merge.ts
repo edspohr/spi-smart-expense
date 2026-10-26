@@ -6,8 +6,10 @@ import type { BarcodeData, FieldSource, LocalFields, LocalReadResult } from './t
 // rules > keyword guesses.
 
 export interface MerchantEntry {
-  merchant: string;
+  merchant?: string;
   category?: string;
+  /** Learned label of the true total on this issuer's receipts (Ola 8b). */
+  amountLabel?: string;
 }
 export type MerchantDictionary = Record<string, MerchantEntry>;
 
@@ -47,7 +49,7 @@ export function mergeLocalRead(input: {
   // Tenant dictionary: what this company already approved for this issuer.
   const entry = fields.taxId ? input.dictionary[dictionaryKey(fields.taxId.value)] : undefined;
   if (entry) {
-    if (!fields.merchant || fields.merchant.source !== 'barcode') fields.merchant = { value: entry.merchant, confidence: 'high', source: 'dictionary' };
+    if (entry.merchant && (!fields.merchant || fields.merchant.source !== 'barcode')) fields.merchant = { value: entry.merchant, confidence: 'high', source: 'dictionary' };
     if (entry.category && input.categories.includes(entry.category)) {
       fields.category = { value: entry.category, confidence: 'high', source: 'dictionary' };
     }

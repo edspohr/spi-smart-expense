@@ -50,4 +50,6 @@ export interface LocalReadResult {
   sources: FieldSource[];
   ocrConfidence?: number;
   durationMs: number;
+  /** Labelled amounts the OCR saw (learning per issuer, Ola 8b). */
+  amountCandidates?: { label: string; value: number }[];
 }

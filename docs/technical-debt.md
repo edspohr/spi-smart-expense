@@ -542,7 +542,13 @@ lector está activo.
 
 ---
 
-## TD-031 — Panel de precisión sin tendencia ni casos fallidos
+## TD-031 — Panel de precisión sin casos fallidos
+
+**Status:** Parcial en Ola 8b (2026-10-26): contadores diarios `ocrStats`,
+tendencia semanal del monto y desglose por modo. Falta la lista de casos
+fallidos (por diseño no hay valores; requiere el opt-in de imágenes de la
+Ola 8d) y el desglose por tipo de documento y versión del lector (están en
+`ocrEval`, no en los contadores).
 
 **Severity:** Low  
 **Impact:** Medium · **Effort:** Medium  
@@ -576,3 +582,34 @@ societaria (S.A., SpA, Ltda) o junto al RUT; probar `tessedit_pageseg_mode`
 y umbral adaptativo; detectar orientación por la confianza de 4 giros si el
 resultado es pobre.
 
+
+---
+
+## TD-033 — Candidatos de monto con ruido (cantidades y porcentajes)
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low  
+**Files:** `src/lib/localReader/rules.ts`
+
+**Problem:** `amountCandidates` incluye cantidades ("2 MENU EJECUTIVO") y
+porcentajes ("PROPINA 10%") como montos. No afecta el voto (solo cuenta la
+etiqueta cuyo valor coincide exactamente con el confirmado, y si dos
+etiquetas coinciden no se vota), pero infla el payload.
+
+**Recommended fix:** Descartar números seguidos de `%`, enteros < 10 al
+inicio de la línea y valores menores al 1 % del mayor monto.
+
+---
+
+## TD-034 — El aprendizaje por emisor solo cubre la etiqueta del total
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `functions/src/offline.ts`, `src/lib/localReader/rules.ts`
+
+**Problem:** `readerProfiles` aprende qué etiqueta marca el total. La fecha,
+el folio y el comercio por emisor aún no se aprenden (el comercio sí, vía
+diccionario de aprobados). Con el corpus real se verá qué campo falla más.
+
+**Recommended fix:** Mismo patrón de votos para el formato de fecha y la
+etiqueta del folio por emisor; llevarlo a la capa general en la Ola 8c.

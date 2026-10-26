@@ -12,6 +12,18 @@ hacer tú.
 
 ## Abiertos
 
+- [ ] **Revisión legal del lector que aprende (Ola 8b/8c)**: pasar
+  `docs/legal/lector-datos-derivados.md` a un abogado (cláusula de datos
+  derivados, anexo técnico, aviso a usuarios, consentimiento, cláusula de
+  imágenes; la sección 7 lista las preguntas). Rellenar los `[ ]`
+  (razón social de Growth Buddies, retenciones, región). Es requisito para
+  la Ola 8c.
+- [ ] **Decidir si SPI activa el modo sombra**: no cambia nada para quien
+  rinde (solo mide y aparece el aviso en Mi Espacio). Recomendado: activarlo
+  en Ajustes para empezar a medir con boletas reales de Colombia.
+- [ ] **Crear el proyecto central de Growth Buddies** para la capa general
+  (Ola 8c), cuando la cláusula esté lista.
+
 - [ ] **Corpus de boletas para el lector offline (Ola 8)**: reunir 50-100
   fotos reales de comprobantes, sacadas con el teléfono como lo haría un
   rendidor (incluye algunas arrugadas o con mala luz): boletas y facturas

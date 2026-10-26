@@ -43,3 +43,4 @@ nombre en kebab-case en español.
 | [0013](0013-paleta-growth-buddies-light.md) | Paleta Growth Buddies Light compartida por las apps "buddies" | Aceptada | 7 |
 | [0014](0014-roadmap-post-benchmark-offline-primero.md) | Roadmap post-benchmark: offline automatizado primero | Aceptada | 8+ |
 | [0015](0015-lector-local-en-el-dispositivo.md) | Lector de boletas en el dispositivo (zxing-wasm + tesseract.js, motores propios) | Aceptada | 8 |
+| [0016](0016-lector-que-aprende-general-y-por-cliente.md) | Lector que aprende: modo sombra, capa del cliente y capa general | Aceptada | 8b-8d |

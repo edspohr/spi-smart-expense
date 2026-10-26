@@ -170,3 +170,72 @@ de prueba es chilena; es lo esperado.) ✅ (2026-10-26)
 - `npm run build` y `npm run build:demo`: ✅ (`dist/ocr/7.0.0-3.1.6/` y
   `sw.js` con la caché `ocr-assets`)
 - `npm run functions:build`: ✅
+
+---
+
+# Ola 8b — Lector que aprende I (modo sombra y capa del cliente)
+
+**Fecha:** 2026-10-26
+**Impacto en SPI:** ninguno mientras no active "Medir el lector en todas las
+rendiciones". El demo lo trae activo. Decisión: ADR 0016; textos legales:
+`docs/legal/lector-datos-derivados.md` (borrador para abogado).
+
+## 9. Modo sombra (`offline.shadowRead`)
+
+**Qué cambió:** con señal y Gemini leyendo como siempre, el teléfono lee la
+misma foto en segundo plano (sin precargar ni mostrar nada). Se salta con
+ahorro de datos o red 2G y si no termina antes de enviar. El gasto guarda
+`localRead` (`mode: 'shadow'`, versión del lector, montos candidatos con su
+etiqueta) y `aiRead` (lo que leyó Gemini). Con "Leer en el teléfono también
+con señal", una lectura local poco confiable también queda como medición
+sombra. Es independiente del lector offline: se puede medir antes de
+activarlo. Las rendiciones distribuidas en varios centros de costo ya no
+llevan la lectura (antes contaban cada parte como error de monto).
+
+**Cómo probarlo (emulador):** Ajustes → activar solo "Medir el lector en
+todas las rendiciones" → Rendir un Gasto con
+`__fixtures__/receipts/papel-restaurant-propina.png` → Analizar (lo llena
+Gemini; sin distintivos) → completar Evento → Confirmar.
+
+**Estado esperado:** `localRead.mode = "shadow"` (~1 s de lectura), `aiRead`
+con el modelo, sin `aiReview`; un `ocrEval` con `localVsSubmitted`,
+`aiVsSubmitted` y `localVsAi`. ✅ (2026-10-26, emulador con Vertex real)
+
+## 10. Aprendizaje por emisor (`readerProfiles`)
+
+**Qué cambió:** si exactamente una etiqueta del OCR traía el monto
+confirmado, suma un voto para ese RUT/NIT emisor. Con 2 votos o más y
+mayoría clara (≥ 60 %), el diccionario del teléfono entrega
+`amountLabel` y el lector prefiere esa línea para el total en la próxima
+boleta del emisor. Todo queda en el proyecto del cliente (solo servidor).
+
+**Estado esperado:** tras la prueba 9, `readerProfiles/76354771-K` con
+`labels["TOTAL A PAGAR"] = 1`. Pruebas unitarias del voto, el umbral y la
+preferencia en `offline.test.ts` y `localReader.test.ts`. ✅
+
+## 11. Métricas diarias y panel
+
+**Qué cambió:** `ocrStats/{fecha}` con contadores por modo, motor y campo,
+acierto de la IA vs. lo confirmado, tiempo medio por motor y diferencias
+según la IA. El panel de Ajustes lee los últimos 30 días: columnas
+Teléfono / Con código / Por texto / IA, desglose sombra vs. sin señal y
+monto por semana.
+
+**Estado esperado:** "1 día con lecturas · 1 lectura (1 en modo sombra, 0
+sin señal) · texto 1 s" y 100 % en monto, fecha, comercio y categoría. ✅
+
+## 12. Aviso a las personas que rinden
+
+**Qué cambió:** la tarjeta de terreno de Mi Espacio muestra el aviso corto
+y un "Más información" desplegable (texto de §4 del documento legal), con
+la etiqueta fiscal del país (NIT/RUT). Si el tenant solo mide (sin lector
+offline) aparece únicamente el aviso.
+
+**Estado esperado:** visible en SPI con "NIT". ✅
+
+## 13. Checks de calidad (8b)
+
+- lint, typecheck: ✅ · `npm test -- --run`: ✅ 129 · `test:rules`: ✅ 21
+  (nuevos casos: `localRead`/`aiRead` inmutables tras crear, `ocrStats`
+  solo lectura de superadmin, `readerProfiles` invisible) · ambos builds y
+  functions: ✅

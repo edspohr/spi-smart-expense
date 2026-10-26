@@ -122,3 +122,87 @@ export function buildDictionary(votes: MerchantVote[], max = 3000): Record<strin
       }),
   );
 }
+
+// ---------- Ola 8b: learning per issuer and daily stats
+
+export type ReadMode = 'offline' | 'local-first' | 'shadow';
+
+export function readModeOf(localRead: { mode?: unknown; offline?: unknown }): ReadMode {
+  if (localRead.mode === 'shadow' || localRead.mode === 'offline' || localRead.mode === 'local-first') return localRead.mode;
+  return localRead.offline === true ? 'offline' : 'local-first';
+}
+
+/** Issuer key shared with the device dictionary ("76354771-K"). */
+export function issuerKey(taxId: unknown): string | null {
+  if (typeof taxId !== 'string') return null;
+  const key = taxId.replace(/[.\s]/g, '').toUpperCase();
+  return /^[0-9]{5,12}-?[0-9K]?$/.test(key) ? key : null;
+}
+
+/** The label of the OCR candidate that matches the confirmed amount, if exactly one label does. */
+export function confirmedAmountLabel(candidates: unknown, amount: unknown): string | null {
+  const total = Number(amount);
+  if (!Array.isArray(candidates) || !Number.isFinite(total) || total <= 0) return null;
+  const labels = new Set<string>();
+  for (const c of candidates as { label?: unknown; value?: unknown }[]) {
+    if (typeof c?.label !== 'string' || !/^[A-Z ]{3,24}$/.test(c.label)) continue;
+    if (Math.abs(Number(c.value) - total) < 0.01) labels.add(c.label);
+  }
+  return labels.size === 1 ? [...labels][0]! : null;
+}
+
+/** Learned label for an issuer: at least `minVotes` and a clear majority. */
+export function learnedAmountLabel(votes: Record<string, number> | undefined, minVotes = 2, minShare = 0.6): string | null {
+  const entries = Object.entries(votes ?? {}).filter(([, n]) => typeof n === 'number' && n > 0);
+  const total = entries.reduce((a, [, n]) => a + n, 0);
+  const [label, n] = entries.sort((a, b) => b[1] - a[1])[0] ?? [];
+  return label && n! >= minVotes && n! / total >= minShare ? label : null;
+}
+
+/**
+ * Counter increments for ocrStats/{day}, as dotted paths:
+ * reads, byMode.<mode>, fields.<mode>.<engine>.<field>.{ok,total} for the
+ * device vs. confirmed, and ai.<field>.{ok,total} for Gemini vs. confirmed
+ * (how often people correct the AI), time.<engine>.{sum,n} and aiMismatch.
+ */
+export function statIncrements(
+  mode: ReadMode,
+  engine: string,
+  localVsSubmitted: Partial<Record<FieldKey, boolean | null>>,
+  aiVsSubmitted: Partial<Record<FieldKey, boolean | null>> | null,
+  extra: { durationMs?: number | null; aiMismatch?: boolean } = {},
+): Record<string, number> {
+  const group = engine.startsWith('barcode') ? 'barcode' : 'ocr';
+  const inc: Record<string, number> = { reads: 1, [`byMode.${mode}`]: 1 };
+  if (typeof extra.durationMs === 'number' && extra.durationMs >= 0) {
+    inc[`time.${group}.sum`] = Math.round(extra.durationMs);
+    inc[`time.${group}.n`] = 1;
+  }
+  if (extra.aiMismatch) inc.aiMismatch = 1;
+  for (const [f, ok] of Object.entries(localVsSubmitted)) {
+    if (ok === null || ok === undefined) continue;
+    inc[`fields.${mode}.${group}.${f}.total`] = 1;
+    if (ok) inc[`fields.${mode}.${group}.${f}.ok`] = 1;
+  }
+  for (const [f, ok] of Object.entries(aiVsSubmitted ?? {})) {
+    if (ok === null || ok === undefined) continue;
+    inc[`ai.${f}.total`] = 1;
+    if (ok) inc[`ai.${f}.ok`] = 1;
+  }
+  return inc;
+}
+
+/** Dotted paths → nested object, mapping each leaf (for set({merge:true}) with increments). */
+export function nestDotted<T>(flat: Record<string, number>, leaf: (n: number) => T): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [path, n] of Object.entries(flat)) {
+    const parts = path.split('.');
+    let node = out;
+    parts.slice(0, -1).forEach((p) => {
+      node[p] ??= {};
+      node = node[p] as Record<string, unknown>;
+    });
+    node[parts[parts.length - 1]!] = leaf(n);
+  }
+  return out;
+}
