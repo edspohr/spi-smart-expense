@@ -25,6 +25,7 @@ import { AuthContext } from "./AuthContextDefinition";
 import { resolvePermissions } from "../lib/permissions";
 import { tenant } from "../lib/tenant";
 import { AUTH_NOTICE_KEY } from "./authNotice";
+import { endDemoSession } from '../lib/demoSignIn';
 
 // Security rules read role/permissions from custom claims that a Cloud
 // Function mirrors from users/{uid}. When the cached ID token lags behind the
@@ -252,6 +253,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    endDemoSession(); // a one-click demo session ends with any sign-out
     return signOut(auth);
   }
 

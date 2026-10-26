@@ -6,7 +6,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { FUNCTIONS_REGION, SCHEDULER_REGION, nowIso } from './common';
-import { DEMO_ROLES, PEOPLE, seedDemoData, wipeDemoData } from './demo.data';
+import { DEMO_ROLES, PEOPLE, RETIRED_UIDS, seedDemoData, wipeDemoData } from './demo.data';
 
 // Demo-only functions. index.ts exports them only when DEMO_MODE=true in
 // functions/.env.<projectId>, so client tenants (SPI, Elecnor...) never
@@ -65,6 +65,7 @@ export const resetDemoData = onSchedule(
     await wipeUploads();
     // Re-enable accounts in case anything disabled them; passwords stay as set.
     for (const p of PEOPLE) await getAuth().updateUser(p.uid, { disabled: false }).catch(() => undefined);
+    for (const uid of RETIRED_UIDS) await getAuth().deleteUser(uid).catch(() => undefined);
     const counts = await seedDemoData(db);
     logger.info('demo reset done', counts);
   },

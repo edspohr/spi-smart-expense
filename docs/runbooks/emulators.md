@@ -62,7 +62,7 @@ npm run dev:demo:emu     # terminal 3 — build demo (.env.demo) apuntando a los
 
 Cuentas `@andesenergia.demo` con clave `Demo2026!`: `camila.rojas`
 (superadmin), `rodrigo.pizarro` (admin), `diego.munoz` y `paula.herrera`
-(jefaturas que aprueban a su equipo), `valentina.soto`, `matias.fuentes`,
+(jefaturas que aprueban a su equipo), `nicolas.soto`, `matias.fuentes`,
 `javiera.contreras` (profesionales) e `ignacio.vera` (asistente). El script
 imprime la lista al terminar.
 

@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
 const require = createRequire(import.meta.url);
-const { PEOPLE, seedDemoData, wipeDemoData } = require('../functions/lib/demo.data.js');
+const { PEOPLE, RETIRED_UIDS, seedDemoData, wipeDemoData } = require('../functions/lib/demo.data.js');
 
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
@@ -75,6 +75,10 @@ async function upsertAccount(p) {
 if (reset) {
   console.log('  wiping visitor data (waits ~25 s for triggers to settle)…');
   await wipeDemoData(db);
+}
+for (const uid of RETIRED_UIDS) {
+  await auth.deleteUser(uid).catch((e) => { if (e.code !== 'auth/user-not-found') throw e; });
+  await db.doc(`users/${uid}`).delete();
 }
 for (const p of PEOPLE) await upsertAccount(p);
 const counts = await seedDemoData(db);

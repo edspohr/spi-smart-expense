@@ -251,3 +251,27 @@ aprobación configurable, ADR 0012).
 
 **Estado (verificado en navegador):** escritorio y móvil sin scroll
 horizontal ✅; tests ✅.
+
+## Demo: volver a la landing y trabajador "Nicolás" (2026-10-25)
+
+**Qué cambió:**
+- **Barra "Modo demo"** (`src/components/DemoBar.tsx`) arriba de toda la
+  app durante una sesión de demo en un clic: "estás viendo la app como
+  Jefatura (Diego Muñoz)" y el botón "Volver al inicio y elegir otro perfil"
+  (en teléfono: "Cambiar perfil"), que cierra la sesión y vuelve a la
+  landing. La sesión de demo se marca en `localStorage` al entrar y se limpia
+  con cualquier cierre de sesión.
+- **Botón Atrás del navegador:** antes, Atrás llevaba a `/login`, que veía
+  la sesión y devolvía a la app (y un segundo Atrás salía del sitio). Ahora,
+  si es una sesión de demo, volver a la landing cierra el demo y se queda en
+  la landing. Los usuarios reales no cambian.
+- **Trabajador del demo:** Valentina Soto pasa a ser **Nicolás Soto**,
+  Supervisor de Terreno (`demo-nicolas`). `RETIRED_UIDS` en
+  `functions/src/demo.data.ts` borra la cuenta antigua en cada siembra y
+  reinicio.
+
+**Estado (verificado):** emuladores: trabajador entra como Nicolás Soto,
+"Cambiar perfil" y Atrás vuelven a la landing con el demo cerrado, sin
+errores ✅. Producción: Valentina eliminada (Auth y perfil), Nicolás con sus
+permisos y 5 gastos, el botón trabajador emite token para `demo-nicolas`,
+contraseña compartida sin cambios ✅.

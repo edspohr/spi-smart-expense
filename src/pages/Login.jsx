@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, UserPlus } from 'lucide-react';
@@ -10,10 +10,10 @@ import InstallButton from '../components/InstallButton';
 import { consumeAuthNotice } from '../context/authNotice';
 import { tenant } from '../lib/tenant';
 import LoginLanding from '../components/LoginLanding';
-import { takePostLoginPath } from '../lib/demoSignIn';
+import { takePostLoginPath, getDemoRole } from '../lib/demoSignIn';
 
 export default function Login() {
-  const { login, resetPassword, currentUser } = useAuth();
+  const { login, resetPassword, currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState(() => consumeAuthNotice() ?? '');
   
@@ -25,13 +25,26 @@ export default function Login() {
   const [displayName, setDisplayName] = useState(''); // New for conversion
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Fix: Navigate only when currentUser is set to avoid race conditions
+  // Navigate only once currentUser is set (avoids races). Runs once per
+  // sign-in (the ref survives StrictMode's double effect run).
+  const handledUser = useRef(null);
   useEffect(() => {
-    if (currentUser) {
-       // One-click demo sends each role straight to the screen that matters.
-       navigate(takePostLoginPath() ?? '/dashboard');
+    if (!currentUser) {
+      handledUser.current = null;
+      return;
     }
-  }, [currentUser, navigate]);
+    if (handledUser.current === currentUser.uid) return;
+    handledUser.current = currentUser.uid;
+    // One-click demo sends each role straight to the screen that matters.
+    const next = takePostLoginPath();
+    if (!next && getDemoRole()) {
+      // A demo visitor came back here (browser Back): end the demo and stay
+      // on the landing to pick another profile.
+      logout();
+      return;
+    }
+    navigate(next ?? '/dashboard');
+  }, [currentUser, navigate, logout]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

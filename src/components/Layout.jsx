@@ -11,6 +11,7 @@ import InstallButton from './InstallButton';
 import PinSetupBanner from './PinSetupBanner';
 import ConnectionStatus from './ConnectionStatus';
 import { useLocation } from 'react-router-dom';
+import DemoBar from './DemoBar';
 
 export default function Layout({ children, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function Layout({ children, title }) {
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <div className="flex-1 flex flex-col overflow-hidden relative">
+        <DemoBar />
         <header className="flex justify-between items-center px-8 py-5 glass-header z-20 bg-white/60 backdrop-blur-md sticky top-0 border-b border-zinc-200/50">
             <div className="flex items-center">
                 <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-4 text-chrome-muted hover:text-chrome-fg transition">

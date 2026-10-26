@@ -21,15 +21,18 @@ export const PEOPLE: DemoPerson[] = [
   { uid: 'demo-rodrigo', name: 'Rodrigo Pizarro', email: `rodrigo.pizarro@${DEMO_DOMAIN}`, role: 'admin', title: 'Contador', permissions: { isColombiaApprover: true } },
   { uid: 'demo-diego', name: 'Diego Muñoz', email: `diego.munoz@${DEMO_DOMAIN}`, role: 'professional', title: 'Jefe de Obra — Parque Solar Atacama' },
   { uid: 'demo-paula', name: 'Paula Herrera', email: `paula.herrera@${DEMO_DOMAIN}`, role: 'professional', title: 'Jefa de Proyecto — Subestaciones' },
-  { uid: 'demo-valentina', name: 'Valentina Soto', email: `valentina.soto@${DEMO_DOMAIN}`, role: 'professional', title: 'Supervisora de Terreno', manager: 'demo-diego' },
+  { uid: 'demo-nicolas', name: 'Nicolás Soto', email: `nicolas.soto@${DEMO_DOMAIN}`, role: 'professional', title: 'Supervisor de Terreno', manager: 'demo-diego' },
   { uid: 'demo-matias', name: 'Matías Fuentes', email: `matias.fuentes@${DEMO_DOMAIN}`, role: 'professional', title: 'Técnico Eléctrico', manager: 'demo-diego' },
   { uid: 'demo-javiera', name: 'Javiera Contreras', email: `javiera.contreras@${DEMO_DOMAIN}`, role: 'professional', title: 'Ingeniera de Protecciones', manager: 'demo-paula' },
   { uid: 'demo-ignacio', name: 'Ignacio Vera', email: `ignacio.vera@${DEMO_DOMAIN}`, role: 'assistant', title: 'Asistente de Administración' },
 ];
 
+/** Accounts removed from the demo; seed and reset delete their profile and Auth user. */
+export const RETIRED_UIDS = ['demo-valentina'];
+
 /** One-click demo roles → account. The superadmin is deliberately not offered. */
 export const DEMO_ROLES: Record<string, string> = {
-  worker: 'demo-valentina',
+  worker: 'demo-nicolas',
   manager: 'demo-diego',
   finance: 'demo-rodrigo',
 };
@@ -59,8 +62,8 @@ type Extra = { description?: string; category?: string; rejectionReason?: string
 // [uid, projectId, daysAgo, category, merchant, taxId, city, amount, status, extra]
 type Row = [string, string, number, string, string, string, string, number, 'pending' | 'approved' | 'rejected', Extra?];
 const EXPENSES: Row[] = [
-  ['demo-valentina', 'demo-psa', 1, 'COMBUSTIBLE', 'Copec Ruta 5 Norte', '99.520.000-7', 'Copiapó', 68_400, 'pending'],
-  ['demo-valentina', 'demo-psa', 1, 'ALIMENTACIÓN', 'Restaurante El Minero', '76.354.771-K', 'Diego de Almagro', 32_900, 'pending'],
+  ['demo-nicolas', 'demo-psa', 1, 'COMBUSTIBLE', 'Copec Ruta 5 Norte', '99.520.000-7', 'Copiapó', 68_400, 'pending'],
+  ['demo-nicolas', 'demo-psa', 1, 'ALIMENTACIÓN', 'Restaurante El Minero', '76.354.771-K', 'Diego de Almagro', 32_900, 'pending'],
   ['demo-matias', 'demo-psa', 2, 'MATERIALES Y HERRAMIENTAS', 'Sodimac Antofagasta', '96.792.430-K', 'Antofagasta', 186_490, 'pending'],
   ['demo-matias', 'demo-psa', 3, 'ALOJAMIENTO', 'Hotel Desierto Florido', '76.112.983-4', 'Copiapó', 1_240_000, 'pending', { description: '4 noches cuadrilla montaje' }],
   ['demo-javiera', 'demo-sela', 2, 'TRANSPORTE TERRESTRE', 'Cabify', '76.341.213-3', 'Santiago', 18_700, 'pending'],
@@ -69,15 +72,15 @@ const EXPENSES: Row[] = [
   ['demo-diego', 'demo-psa', 5, 'PASAJES AÉREOS', 'LATAM Airlines', '89.862.200-2', 'Santiago', 214_600, 'pending', { description: 'SCL–CPO ida y vuelta, visita de obra' }],
   ['demo-paula', 'demo-sela', 7, 'GASTOS DE REPRESENTACIÓN', 'Restaurante Lo de Arriba', '76.205.884-1', 'Los Ángeles', 156_000, 'pending'],
   ['demo-ignacio', 'demo-adm', 3, 'TELEFONÍA E INTERNET', 'Entel PCS', '96.806.980-2', 'Santiago', 29_990, 'pending'],
-  ['demo-valentina', 'demo-psa', 9, 'COMBUSTIBLE', 'Shell Caldera', '96.687.020-7', 'Caldera', 74_200, 'approved'],
-  ['demo-valentina', 'demo-psa', 11, 'ALIMENTACIÓN', 'Colaciones Don Pepe', '77.001.552-0', 'Copiapó', 48_000, 'approved'],
+  ['demo-nicolas', 'demo-psa', 9, 'COMBUSTIBLE', 'Shell Caldera', '96.687.020-7', 'Caldera', 74_200, 'approved'],
+  ['demo-nicolas', 'demo-psa', 11, 'ALIMENTACIÓN', 'Colaciones Don Pepe', '77.001.552-0', 'Copiapó', 48_000, 'approved'],
   ['demo-matias', 'demo-psa', 12, 'ESTACIONAMIENTOS', 'Estacionamientos Saba', '96.854.430-6', 'Antofagasta', 6_500, 'approved'],
   ['demo-matias', 'demo-ml220', 15, 'MATERIALES Y HERRAMIENTAS', 'Ferretería Industrial Norte', '76.488.120-3', 'Calama', 312_800, 'approved'],
   ['demo-javiera', 'demo-sela', 13, 'ALOJAMIENTO', 'Hotel Mundo Nuevo', '76.903.114-8', 'Los Ángeles', 389_000, 'approved'],
   ['demo-diego', 'demo-psa', 16, 'ARRIENDO', 'Arriendo Camionetas del Norte', '76.611.270-9', 'Copiapó', 1_650_000, 'approved', { category: 'TRANSPORTE TERRESTRE', description: 'Arriendo 4x4 por 15 días' }],
   ['demo-paula', 'demo-sela', 18, 'PASAJES AÉREOS', 'Sky Airline', '88.417.000-1', 'Santiago', 98_300, 'approved'],
   ['demo-ignacio', 'demo-adm', 20, 'VARIOS', 'Correos de Chile', '60.503.000-9', 'Santiago', 12_600, 'approved'],
-  ['demo-valentina', 'demo-psa', 22, 'ALIMENTACIÓN', 'Supermercado Unimarc', '76.012.676-4', 'Diego de Almagro', 87_350, 'rejected', { rejectionReason: 'Compra de supermercado sin detalle de colaciones; adjunta la boleta desglosada.' }],
+  ['demo-nicolas', 'demo-psa', 22, 'ALIMENTACIÓN', 'Supermercado Unimarc', '76.012.676-4', 'Diego de Almagro', 87_350, 'rejected', { rejectionReason: 'Compra de supermercado sin detalle de colaciones; adjunta la boleta desglosada.' }],
   ['demo-matias', 'demo-ml220', 25, 'COMBUSTIBLE', 'Aramco Calama', '79.588.870-5', 'Calama', 91_000, 'rejected', { rejectionReason: 'La boleta no es legible. Sube una foto más nítida.' }],
   ['demo-javiera', 'demo-sela', 27, 'PEAJES Y TAG', 'Ruta del Bosque', '96.965.880-1', 'Los Ángeles', 5_800, 'approved'],
   ['demo-diego', 'demo-psa', 29, 'GASTOS DE REPRESENTACIÓN', 'Café Altiplano', '76.430.091-5', 'Copiapó', 23_400, 'approved'],
@@ -99,6 +102,7 @@ export async function wipeDemoData(db: Firestore, settleMs = 25_000): Promise<vo
   await db.recursiveDelete(db.collection('expenses'));
   await sleep(settleMs);
   for (const col of WIPED) await db.recursiveDelete(db.collection(col));
+  for (const uid of RETIRED_UIDS) await db.doc(`users/${uid}`).delete();
   for (const p of PEOPLE) {
     await db.doc(`users/${p.uid}`).set({ balance: 0, delegation: null, fcmTokens: [], hasPin: false, pinDisabled: false, notificationPrefs: null }, { merge: true });
   }
