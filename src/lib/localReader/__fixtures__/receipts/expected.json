@@ -75,6 +75,49 @@
     }
   },
   {
+    "file": "co-factura-dian-qr.png",
+    "country": "CO",
+    "kind": "dian",
+    "expect": {
+      "amount": 452200,
+      "date": "2026-10-17",
+      "taxId": "900123456",
+      "invoiceNumber": "SETT48211"
+    }
+  },
+  {
+    "file": "us-hotel-chicago.png",
+    "country": "CO",
+    "kind": "paper",
+    "expect": {
+      "amount": 339.29,
+      "date": "2026-10-03",
+      "currency": "USD"
+    }
+  },
+  {
+    "file": "us-restaurant-tip.png",
+    "country": "CO",
+    "kind": "paper",
+    "expect": {
+      "amount": 205.62,
+      "date": "2026-10-14",
+      "time": "19:42",
+      "currency": "USD"
+    }
+  },
+  {
+    "file": "us-taxi.png",
+    "country": "CO",
+    "kind": "paper",
+    "expect": {
+      "amount": 50.5,
+      "date": "2026-10-12",
+      "time": "06:15",
+      "currency": "USD"
+    }
+  },
+  {
     "file": "papel-colombia-parqueadero.png",
     "country": "CO",
     "kind": "paper",

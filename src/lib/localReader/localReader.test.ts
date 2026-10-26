@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeRut, parseDianQr, parseTaxBarcode, parseTed } from './barcodeParsers';
-import { amountCandidates, amountLabel, extractFromText, parseAmount, textLines } from './rules';
+import { amountCandidates, amountLabel, extractFromText, parseAmount, receiptLocale, textLines } from './rules';
 import { guessCategory } from './categories';
 import { dictionaryKey, learnedLabels, mergeLocalRead, toFormPatch } from './merge';
 
@@ -208,5 +208,44 @@ describe('reader pack (Ola 8c)', () => {
     const dictionary = { '76354771-K': { merchant: 'El Minero', amountLabel: 'TOTAL A PAGAR' } };
     expect(learnedLabels(dictionary, pack)).toEqual({ '99520000-7': 'TOTAL', '76354771-K': 'TOTAL A PAGAR' });
     expect(learnedLabels({}, { version: '0', issuers: {} })).toEqual({});
+  });
+});
+
+describe('receipts abroad (SPI at trade fairs)', () => {
+  it('detects US receipts and reads month/day dates, AM/PM times and USD', () => {
+    const f = extractFromText('HYATT REGENCY\nCHICAGO, IL 60616\nDATE 10/03/2026 7:05 PM\nROOM CHARGE 289.00\nTAX 50.29\nTOTAL DUE $339.29\nTHANK YOU', CO);
+    expect(f.date).toMatchObject({ value: '2026-10-03', confidence: 'high' });
+    expect(f.time?.value).toBe('19:05');
+    expect(f.amount?.value).toBe(339.29);
+    expect(f.currency).toMatchObject({ value: 'USD', confidence: 'high' });
+  });
+
+  it('keeps day/month on Latin American receipts', () => {
+    expect(receiptLocale('PARQUEADERO LA 93\nNIT 900.123.456-7\nTOTAL 45.000')).toBe('latam');
+    expect(extractFromText('PARQUEADERO LA 93\nFECHA 03/10/2026\nTOTAL 45.000', CO).date?.value).toBe('2026-10-03');
+    expect(extractFromText('TIENDA\nFECHA 05/10/2026\nTOTAL 45.000', CO).date?.value).toBe('2026-10-05');
+  });
+
+  it('flags an ambiguous date when the receipt locale is unsure', () => {
+    const f = extractFromText('SHOP\nTHANK YOU\n05/10/2026\nTOTAL 45.00', CO);
+    expect(receiptLocale('SHOP\nTHANK YOU')).toBe('unsure');
+    expect(f.date?.confidence).toBe('low');
+  });
+
+  it('reads English month names and English totals, skipping tax and tip', () => {
+    const f = extractFromText('YELLOW CAB\nRECEIPT\nOCT 12, 2026 06:15 AM\nFARE 42.50\nTIP 8.00\nTOTAL $50.50\nCREDIT VISA', CO);
+    expect(f.date?.value).toBe('2026-10-12');
+    expect(f.amount?.value).toBe(50.5);
+    expect(f.paymentMethod?.value).toBe('Credit Card');
+  });
+
+  it("maps fair and travel receipts onto SPI's categories", () => {
+    const spi = ['RESTAURANTE - ALIMENTACION', 'HOTEL', 'TRANSPORTE TERRESTRE', 'TRANSPORTE AEREO', 'TICKET FERIA', 'TECNOLOGÍA', 'VARIOS'];
+    expect(guessCategory('IMTS 2026 EXHIBITOR REGISTRATION BADGE', spi)?.value).toBe('TICKET FERIA');
+    expect(guessCategory('MARRIOTT MARQUIS ROOM CHARGE', spi)?.value).toBe('HOTEL');
+    expect(guessCategory('LYFT RIDE TO OHARE', spi)?.value).toBe('TRANSPORTE TERRESTRE');
+    expect(guessCategory('COPA AIRLINES BAGGAGE FEE', spi)?.value).toBe('TRANSPORTE AEREO');
+    expect(guessCategory('BEST BUY USB-C ADAPTER', spi)?.value).toBe('TECNOLOGÍA');
+    expect(guessCategory('STARBUCKS COFFEE', spi)?.value).toBe('RESTAURANTE - ALIMENTACION');
   });
 });

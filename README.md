@@ -56,6 +56,12 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Daily accuracy counters** (`ocrStats`) with a 30-day panel (device, by engine, AI accuracy, weekly trend) and a notice for the people who submit.
 - **Data governance:** ADR 0016 (what is learned per client vs. across clients) and a draft contract clause, technical annex, user notice and consent texts in `docs/legal/lector-datos-derivados.md`, pending legal review. Next: Ola 8c (cross-client layer with consent), 8d (image corpus with separate consent).
 
+### SPI travellers (2026-10-26)
+
+- Reader 1.3.0 reads receipts abroad: English receipts switch to month/day dates, AM/PM, English totals and payment words, and USD; trade-fair and US travel categories map onto SPI's own.
+- Expenses in a foreign currency saved without signal get the official rate of the receipt date when they are sent (`src/lib/fxFill.ts`).
+- Tenant wording for the offline kit (`offline.context`): SPI shows "Listo para viajar", plus a status line on Mi Resumen.
+
 ### Ola 8c — Cross-client reader layer (2026-10-26)
 
 - **Consent** in Ajustes (`settings/tenant.learning`, only through `adminUpdateSettings`, versioned text, `consentLog` audit trail). Texts are provisional (`derived-v0`, `docs/legal/textos-vigentes-lector.md`) until legal review.

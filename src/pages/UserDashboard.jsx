@@ -1,5 +1,6 @@
 import { Fragment, useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import FieldReadyStatus from '../components/FieldReadyStatus';
 import { useAuth } from '../context/useAuth';
 import { db } from '../lib/firebase';
 import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -82,6 +83,7 @@ export default function UserDashboard() {
 
   return (
     <Layout title={`Hola, ${currentUser?.displayName?.split(' ')[0] || 'Usuario'}`}>
+         <FieldReadyStatus />
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-gradient-to-br from-brand-600 to-brand-800 p-6 rounded-2xl shadow-lg border border-brand-500 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">

@@ -880,6 +880,15 @@ Implementada según el scope, con estas desviaciones (detalle en
 **Impacto en SPI:** Opt-in por tenant (`settings/tenant.offline.localReader`);
 "Listo para terreno" visible solo si se activa. Comportamiento actual intacto.
 
+### Ajustes para SPI (2026-10-26)
+
+Lector 1.3.0 para boletas del extranjero (fechas mes/día, inglés, USD,
+categorías de ferias y viajes), tasa de cambio calculada al enviar para
+rendiciones hechas sin señal, texto "Listo para viajar" por tenant
+(`offline.context: travel`) y estado en Mi Resumen. Modo sombra activo en
+SPI desde el 2026-10-26; el lector sin conexión se activa tras revisar la
+precisión. Detalle: `docs/validation/ola-8.md` §18-21.
+
 ### Prompt 8 (paste into Claude Code)
 
 ```

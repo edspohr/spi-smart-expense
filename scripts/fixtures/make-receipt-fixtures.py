@@ -31,6 +31,26 @@ def ted_xml(re_, rs, td, folio, fe, mnt, it1):
             f'<TSTED>{fe}T10:31:00</TSTED></DD><FRMT algoritmo="SHA1withRSA">Zm9vYmFyYmF6</FRMT></TED>')
 
 
+DIAN_CUFE = 'a7c3f0e1b2d4c6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8'
+
+
+def dian_qr_text(num, fec, hor, nit, adq, val, iva, total):
+    return (f'NumFac: {num}\nFecFac: {fec}\nHorFac: {hor}-05:00\nNitFac: {nit}\nDocAdq: {adq}\n'
+            f'ValFac: {val:.2f}\nValIva: {iva:.2f}\nValOtroIm: 0.00\nValTolFac: {total:.2f}\nCUFE: {DIAN_CUFE}\n'
+            f'QRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey={DIAN_CUFE}')
+
+
+def qr_png(text):
+    tmp = pathlib.Path(tempfile.mkstemp(suffix='.png')[1])
+    code = (
+        "const b=require('bwip-js');const fs=require('fs');"
+        "b.toBuffer({bcid:'qrcode',text:process.argv[1],scale:3,eclevel:'M',paddingwidth:16,paddingheight:16,backgroundcolor:'FFFFFF'})"
+        ".then(p=>fs.writeFileSync(process.argv[2],p));"
+    )
+    subprocess.run(['node', '-e', code, text, str(tmp)], check=True, cwd=ROOT)
+    return Image.open(tmp).convert('L')
+
+
 def pdf417_png(text):
     tmp = pathlib.Path(tempfile.mkstemp(suffix='.png')[1])
     code = (
@@ -88,6 +108,21 @@ CASES = [
     dict(file='papel-restaurant-propina.png', country='CL', kind='paper', contrast=0.8, blur=0.7,
          lines=['RESTAURANTE EL MINERO SPA', 'RUT 76354771-K', 'MESA 4  FECHA 20/10/26', '2 MENU EJECUTIVO   25.800', '1 BEBIDA            2.500', 'SUBTOTAL           28.300', 'PROPINA 10%         2.830', 'TOTAL A PAGAR      31.130', 'EFECTIVO'],
          expect=dict(amount=31130, date='2026-10-20', taxId='76354771-K')),
+    # --- Colombia: electronic invoice with the DIAN QR (barcode path)
+    dict(file='co-factura-dian-qr.png', country='CO', kind='dian',
+         dian=('SETT48211', '2026-10-17', '13:05:44', '900123456', '800199436', 380000.0, 72200.0, 452200.0),
+         lines=['HOTEL CASA DANN CARLTON S.A.S.', 'NIT 900.123.456-7', 'FACTURA ELECTRONICA DE VENTA', 'No. SETT48211', 'Fecha: 2026-10-17', 'ALOJAMIENTO 1 NOCHE  380.000', 'IVA 19%              72.200', 'TOTAL               452.200', '', 'CUFE: a7c3f0e1b2d4...'],
+         expect=dict(amount=452200, date='2026-10-17', taxId='900123456', invoiceNumber='SETT48211')),
+    # --- Receipts abroad (SPI at trade fairs): month/day dates, English, USD
+    dict(file='us-hotel-chicago.png', country='CO', kind='paper',
+         lines=['HYATT REGENCY MCCORMICK PLACE', '2233 S MARTIN L KING DR', 'CHICAGO, IL 60616', 'GUEST FOLIO', 'ROOM 1418   GUESTS 1', 'DATE 10/03/2026', 'ROOM CHARGE        289.00', 'STATE TAX           50.29', 'TOTAL DUE        $339.29', 'VISA ****4421', 'THANK YOU FOR STAYING WITH US'],
+         expect=dict(amount=339.29, date='2026-10-03', currency='USD')),
+    dict(file='us-restaurant-tip.png', country='CO', kind='paper', angle=1.0, blur=0.7,
+         lines=['GIBSONS BAR & STEAKHOUSE', '1028 N RUSH ST', 'CHICAGO, IL 60611', 'SERVER: MIKE   TABLE 12', 'GUESTS: 3', '10/14/26  7:42 PM', 'SUBTOTAL          186.50', 'TAX                19.12', 'TOTAL            205.62', 'TIP ____________', 'THANK YOU!'],
+         expect=dict(amount=205.62, date='2026-10-14', time='19:42', currency='USD')),
+    dict(file='us-taxi.png', country='CO', kind='paper',
+         lines=['YELLOW CAB CHICAGO', 'RECEIPT', 'OCT 12, 2026  06:15 AM', 'FARE             42.50', 'TOLLS             0.00', 'TIP               8.00', 'TOTAL           $50.50', 'CREDIT  VISA', 'THANK YOU'],
+         expect=dict(amount=50.50, date='2026-10-12', time='06:15', currency='USD')),
     dict(file='papel-colombia-parqueadero.png', country='CO', kind='paper',
          lines=['PARQUEADERO LA 93 S.A.S.', 'NIT: 900.123.456-7', 'Factura de venta No. FE-20931', 'Fecha: 2026-10-18 Hora: 09:05', 'Valor total $ 45.000', 'Pago en efectivo'],
          expect=dict(amount=45000, date='2026-10-18')),
@@ -98,7 +133,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     expected = []
     for c in CASES:
-        barcode = pdf417_png(ted_xml(*c['ted'])) if c.get('ted') else None
+        barcode = pdf417_png(ted_xml(*c['ted'])) if c.get('ted') else qr_png(dian_qr_text(*c['dian'])) if c.get('dian') else None
         img = render(c['lines'], barcode, blur=c.get('blur', 0.5), angle=c.get('angle', 0.0), contrast=c.get('contrast', 1.0))
         img.save(OUT / c['file'], optimize=True)
         expected.append(dict(file=c['file'], country=c['country'], kind=c['kind'], expect=c['expect']))

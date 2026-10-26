@@ -13,7 +13,7 @@ export { toFormPatch } from './merge';
  * Version of the reading rules, stored with each read so accuracy can be
  * compared across versions. Bump it whenever rules.ts or merge.ts change.
  */
-export const READER_VERSION = '1.2.0';
+export const READER_VERSION = '1.3.0';
 
 /** Version of the cross-client reader pack built in (Ola 8c). */
 export const READER_PACK_VERSION: string = readerPack.version;

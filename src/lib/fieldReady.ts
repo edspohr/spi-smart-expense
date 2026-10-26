@@ -50,7 +50,7 @@ export async function enginesCached(): Promise<boolean> {
  * (e.g. the dictionary callable) does not stop the others.
  */
 export async function prepareForField(uid: string, onStep?: (label: string) => void): Promise<FieldReadyStatus> {
-  if (!isOnline()) throw Object.assign(new Error('Necesitas conexión para preparar el modo terreno.'), { code: 'unavailable' });
+  if (!isOnline()) throw Object.assign(new Error('Necesitas conexión para preparar la app.'), { code: 'unavailable' });
   const status: FieldReadyStatus = { ...getFieldReady(), engines: false };
 
   onStep?.('Descargando el lector de boletas…');

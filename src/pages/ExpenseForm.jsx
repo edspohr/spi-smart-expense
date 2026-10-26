@@ -270,7 +270,8 @@ export default function ExpenseForm() {
 
   // Fetch conversion rate automatically for USD or EUR when date is set and user is on review step
   useEffect(() => {
-    if (!NEEDS_RATE(formData.currency) || !formData.date || step !== 'review') {
+    // Without signal the rate is filled in when the queue sends the expense.
+    if (!NEEDS_RATE(formData.currency) || !formData.date || step !== 'review' || !isOnline()) {
       setTrmState({ trm: null, source: null, fetchedAt: null, loading: false });
       return;
     }
@@ -1206,7 +1207,7 @@ export default function ExpenseForm() {
 
                     {/* TRM Info Box (USD and EUR expenses) */}
                     {NEEDS_RATE(formData.currency) && (
-                      <div className={`p-4 rounded-xl border text-sm ${trmState.trm ? 'bg-brand-50 border-brand-100' : trmState.loading ? 'bg-brand-50 border-brand-100' : 'bg-yellow-50 border-yellow-200'}`}>
+                      <div className={`p-4 rounded-xl border text-sm ${trmState.trm || trmState.loading || !isOnline() ? 'bg-brand-50 border-brand-100' : 'bg-yellow-50 border-yellow-200'}`}>
                         {trmState.loading ? (
                           <div className="flex items-center gap-2 text-brand-700">
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1236,7 +1237,9 @@ export default function ExpenseForm() {
                             </button>
                           </div>
                         ) : (
-                          <p className="text-yellow-800">⚠️ No se pudo obtener la tasa de cambio. El gasto se guardará sin conversión.</p>
+                          isOnline()
+                            ? <p className="text-yellow-800">⚠️ No se pudo obtener la tasa de cambio. Al enviar se volverá a intentar con la tasa del día de la boleta.</p>
+                            : <p className="text-brand-800">Sin señal: la tasa de cambio se calculará sola al enviar, con la del día de la boleta.</p>
                         )}
                       </div>
                     )}

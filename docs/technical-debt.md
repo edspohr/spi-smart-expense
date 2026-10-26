@@ -527,6 +527,8 @@ o una página 404 simple con enlace al inicio.
 
 ## TD-030 — "Listo para terreno" solo vive en Mi Espacio
 
+**Status:** Parcial (2026-10-26): Mi Resumen muestra el estado y enlaza a Mi Espacio (`FieldReadyStatus`). Falta el aviso tras instalar la app.
+
 **Severity:** Low (UX)  
 **Impact:** Medium · **Effort:** Low  
 **Files:** `src/components/FieldReadyCard.tsx`, `src/pages/MiEspacio.jsx`, `src/pages/UserDashboard.jsx`
@@ -648,3 +650,19 @@ el corpus con el paquete nuevo antes de escribirlo.
 **Recommended fix:** Que `pack:build` corra el test de corpus con el paquete
 candidato y se niegue a escribirlo si baja la precisión; panel de
 precisión por `packVersion` desde `ocrEval`.
+
+---
+
+## TD-037 — El estado "Listo para viajar" es del teléfono, no de la persona
+
+**Severity:** Low  
+**Impact:** Low · **Effort:** Low  
+**Files:** `src/lib/fieldReady.ts`
+
+**Problem:** `eb.fieldReady.v1` vive en el `localStorage` del navegador. Si
+dos personas usan el mismo teléfono o navegador, la segunda ve "Listo"
+aunque sus centros de costo y rendiciones no se hayan precargado. Los
+motores y el diccionario sí sirven para cualquiera.
+
+**Recommended fix:** Guardar el estado con el `uid` y considerar "listo"
+solo si coincide con la persona conectada.

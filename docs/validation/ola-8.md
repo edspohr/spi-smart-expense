@@ -300,3 +300,60 @@ central. ☐
   (consentLog y learningOutbox solo lectura de superadmin; `learning` no
   editable desde el navegador) · ambos builds y functions: ✅ ·
   `ingestContribution` ausente sin `HUB_MODE`: ✅
+
+---
+
+# Ajustes para SPI: viajeros y boletas del extranjero
+
+**Fecha:** 2026-10-26
+**Por qué:** SPI no va a faenas, pero viaja mucho a ferias. Rendir en el
+avión o sin datos es su caso, y sus boletas vienen a menudo de EE. UU.
+
+## 18. Boletas del extranjero (lector 1.3.0)
+
+**Qué cambió:** el lector reconoce boletas en inglés (marcadores como
+THANK YOU, TAX, TIP, SERVER o el código postal "IL 60616") y entonces lee
+las fechas mes/día, "OCT 12, 2026", horas AM/PM, totales en inglés (TOTAL
+DUE, AMOUNT DUE, GRAND TOTAL; descarta TAX, TIP y CHANGE), pagos en
+inglés (CREDIT, DEBIT, CASH) y "$" como USD. Si no está seguro del idioma
+y la fecha puede leerse de las dos formas (05/10), la marca "Verifica". La
+categoría reconoce ferias (EXHIBITOR, REGISTRATION, BADGE → TICKET FERIA),
+hoteles y aerolíneas de EE. UU., Lyft/Uber/taxi, tecnología y comidas.
+
+**Estado esperado:** corpus al 100 % con 4 casos nuevos (folio de hotel en
+Chicago con 10/03 = 3 de octubre, restaurante con propina y 7:42 PM, taxi
+con "OCT 12, 2026", factura colombiana con QR DIAN real decodificado desde
+la imagen). ✅
+
+## 19. Tasa de cambio al aterrizar
+
+**Qué cambió:** sin señal, el formulario ya no intenta pedir la tasa y
+avisa "la tasa de cambio se calculará sola al enviar, con la del día de la
+boleta". Al enviar (cola offline o envío normal sin tasa), `fillMissingRates`
+busca la tasa oficial de la fecha de la boleta y completa `trm`,
+`trmSource` y el equivalente en COP. Antes, esas rendiciones quedaban sin
+conversión.
+
+**Cómo se probó (emulador, SPI, perfil Profesional):** sin señal simulada →
+folio del Hyatt de Chicago → leído en el teléfono: USD 339,29, 3 oct, Visa
+4421, HOTEL → Confirmar (queda en cola) → volver a tener señal.
+
+**Estado esperado:** la rendición llega con TRM 3.273,49 (Banco de la
+República, 3 oct), COP 1.110.662 y la IA confirma la lectura (`match`). ✅
+
+## 20. "Listo para viajar"
+
+**Qué cambió:** el texto del kit sin señal depende del tenant
+(`tenants/<id>.json → offline.context`): SPI usa `travel` ("Listo para
+viajar", ícono de avión, "rendir en el avión o sin datos"); el demo sigue
+con "terreno". Mi Resumen muestra una línea con el estado ("Listo para
+viajar · actualizado hace 4 h" o "¿Viajas pronto? Prepara la app…") que
+lleva a Mi Espacio. Solo aparece con el lector activo.
+
+**Estado esperado:** visible en SPI con el lector activo en el emulador. ✅
+
+## 21. Activación en SPI
+
+El modo sombra quedó **activo en SPI** (2026-10-26) para medir con boletas
+reales; el lector sin conexión sigue apagado hasta revisar el panel de
+precisión (2-4 semanas).

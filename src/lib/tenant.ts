@@ -99,6 +99,8 @@ export interface TenantConfig {
   defaultProjects?: { code: string; name: string; client: string }[];
   // Expense categories; omitted = the historical SPI list.
   categories?: string[];
+  /** Ola 8: wording of "Listo para terreno" — 'field' (default) or 'travel' (trade fairs, flights). */
+  offline?: { context?: 'field' | 'travel' };
   modules: {
     bulkUpload: boolean;
     reports: boolean;

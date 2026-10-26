@@ -20,9 +20,11 @@ hacer tú.
   textos **provisionales** `derived-v0` (`docs/legal/textos-vigentes-lector.md`);
   con la revisión, pasarlos a `derived-v1` (me avisas y cambio texto y
   versión). No activar el aporte con clientes reales antes de eso.
-- [ ] **Decidir si SPI activa el modo sombra**: no cambia nada para quien
-  rinde (solo mide y aparece el aviso en Mi Espacio). Recomendado: activarlo
-  en Ajustes para empezar a medir con boletas reales de Colombia.
+- [ ] **Revisar el panel de precisión de SPI hacia el 2026-11-16** (modo
+  sombra activo desde el 2026-10-26): Ajustes → Lectura sin conexión →
+  Precisión del lector. Si monto y fecha están sobre ~85 %, activar
+  "Lectura sin conexión" para SPI (verán "Listo para viajar") y avisarles
+  antes de su próxima feria.
 - [ ] **Crear el proyecto central de Growth Buddies** (capa general, Ola
   8c; el código ya está): crear un proyecto Firebase (Blaze, Firestore en
   `southamerica-west1`, p. ej. `growth-buddies-learning`) y avisarme el

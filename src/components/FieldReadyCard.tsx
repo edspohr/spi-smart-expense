@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CloudOff, Loader2, Mountain, RefreshCw } from 'lucide-react';
+import { CloudOff, Loader2, Mountain, Plane, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/useAuth';
 import { useTenantSettings } from '../context/SettingsContext';
@@ -9,15 +9,7 @@ import { isSimulatingOffline, setSimulateOffline } from '../lib/connectivity';
 import { isSuperadmin } from '../lib/roles';
 import ReaderNotice from './ReaderNotice';
 import { tenant } from '../lib/tenant';
-
-function ago(iso: string | null): string {
-  if (!iso) return '';
-  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (min < 1) return 'recién';
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.round(min / 60);
-  return h < 24 ? `hace ${h} h` : `hace ${Math.round(h / 24)} d`;
-}
+import { ago, fieldReadyCopy as copy } from '../lib/fieldReadyCopy';
 
 // "Listo para terreno" (Ola 8): status of the offline kit and the button to
 // prepare it; plus "Simular sin señal" for demos (demo tenant, superadmins).
@@ -52,9 +44,9 @@ export default function FieldReadyCard() {
     try {
       const next = await prepareForField(currentUser.uid, setStep);
       setStatus(next);
-      toast.success(next.engines ? 'Listo para terreno: puedes rendir sin señal.' : 'Se guardaron tus datos, pero el lector no se pudo descargar. Intenta de nuevo con buena señal.');
+      toast.success(next.engines ? copy.readyToast : 'Se guardaron tus datos, pero el lector no se pudo descargar. Intenta de nuevo con buena señal.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo preparar el modo terreno.');
+      toast.error(err instanceof Error ? err.message : 'No se pudo preparar la app para rendir sin señal.');
     } finally {
       setStep(null);
     }
@@ -68,19 +60,19 @@ export default function FieldReadyCard() {
   };
 
   return (
-    <section aria-labelledby="field-ready-title" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section id="listo-sin-senal" aria-labelledby="field-ready-title" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${ready ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-          <Mountain className="h-5 w-5" aria-hidden="true" />
+          {copy.icon === 'plane' ? <Plane className="h-5 w-5" aria-hidden="true" /> : <Mountain className="h-5 w-5" aria-hidden="true" />}
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="field-ready-title" className="font-semibold text-gray-900">
-            {ready ? 'Listo para terreno' : 'Prepara la app para terreno'}
+            {ready ? copy.readyTitle : copy.prepareTitle}
           </h2>
           <p className="mt-0.5 text-sm text-gray-600">
             {ready
-              ? `Puedes rendir sin señal: la app lee la boleta en el teléfono. Actualizado ${ago(status.readyAt)}.`
-              : 'Descarga ahora, con buena señal, lo necesario para rendir y leer boletas sin conexión (unos 7 MB, una sola vez).'}
+              ? `${copy.readyBody} Actualizado ${ago(status.readyAt)}.`
+              : copy.prepareBody}
           </p>
           {ready && (
             <p className="mt-1 text-xs text-gray-500">
@@ -102,7 +94,7 @@ export default function FieldReadyCard() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50 focus-ring"
         >
           <RefreshCw className="h-4 w-4" aria-hidden="true" />
-          {ready ? 'Actualizar' : 'Preparar para terreno'}
+          {ready ? 'Actualizar' : copy.prepareButton}
         </button>
         {canSimulate && (
           <button

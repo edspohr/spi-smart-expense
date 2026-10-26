@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { auth, db, uploadReceiptImage } from './firebase';
 import { flushQueue, setQueueOwner, type FlushDeps } from './offlineQueue';
 import { isOnline } from './connectivity';
+import { fillMissingRates } from './fxFill';
 
 const COMMIT_TIMEOUT_MS = 30_000;
 
@@ -20,8 +21,11 @@ function withTimeout<T>(p: Promise<T>): Promise<T> {
 export const firebaseFlushDeps: FlushDeps = {
   upload: (file, uid) => uploadReceiptImage(file, uid),
   commit: async (docs) => {
+    // Foreign-currency expenses saved without signal get the rate of their
+    // receipt date now that there is a connection.
+    const ready = await fillMissingRates(docs);
     const batch = writeBatch(db as Firestore);
-    for (const d of docs) batch.set(doc(db as Firestore, 'expenses', d.id), d.data);
+    for (const d of ready) batch.set(doc(db as Firestore, 'expenses', d.id), d.data);
     await withTimeout(batch.commit());
   },
 };
