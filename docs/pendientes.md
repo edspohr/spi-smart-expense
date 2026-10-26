@@ -8,10 +8,6 @@ Marcar `[x]` con la fecha al cerrar.
 
 ## Abiertos
 
-- [ ] **Activar el demo en un clic** (1 min): correr los dos comandos
-  `gcloud` de `docs/runbooks/bootstrap-tenant.md` (sección Tenant demo:
-  `iamcredentials` + `serviceAccountTokenCreator`). Sin eso los botones
-  "Entra al demo" muestran error.
 - [ ] Revisar en Google Analytics (propiedad del proyecto
   `expense-buddy-demo`) que lleguen `landing_view`, `demo_start` y
   `cta_click`.
@@ -68,6 +64,10 @@ Marcar `[x]` con la fecha al cerrar.
   (`expense-buddy-demo.web.app`) y clave Web Push si se quiere mostrar push.
 
 ## Cerrados
+
+- [x] 2026-10-25 — Activar el demo en un clic (`iamcredentials` +
+  `serviceAccountTokenCreator` en `expense-buddy-demo`); verificado en
+  producción: "Jefatura" entra a Mis aprobaciones.
 
 - [x] 2026-10-25 — Crear el proyecto Firebase del demo `expense-buddy-demo`
   (Blaze, app Web, Authentication con correo/contraseña).

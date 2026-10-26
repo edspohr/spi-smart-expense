@@ -204,7 +204,7 @@ UTM y cálculo (con las reglas de Growth Buddies cargadas en el emulador) ✅;
 reinicio borra gasto, PIN y token de un visitante y deja saldos idénticos
 (Valentina $223.500, Matías $1.745.790) ✅; bundle SPI sin rastro del demo
 ni del CRM ✅. **Producción:** funciones y hosting desplegados; `demoSignIn`
-espera el permiso `serviceAccountTokenCreator` (pendiente del responsable) ☐;
+activo tras el permiso `serviceAccountTokenCreator` (2026-10-25): "Jefatura" entra a Mis aprobaciones en producción ✅;
 probar un lead real con un correo propio ☐; ver eventos en GA4 ☐.
 
 ## Identidad "Tinta" del demo (2026-10-25)
