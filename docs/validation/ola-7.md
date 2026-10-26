@@ -206,3 +206,16 @@ reinicio borra gasto, PIN y token de un visitante y deja saldos idénticos
 ni del CRM ✅. **Producción:** funciones y hosting desplegados; `demoSignIn`
 espera el permiso `serviceAccountTokenCreator` (pendiente del responsable) ☐;
 probar un lead real con un correo propio ☐; ver eventos en GA4 ☐.
+
+## Identidad "Tinta" del demo (2026-10-25)
+
+**Qué cambió:** marco oscuro (sidebar, encabezado, landing) vía tokens
+`chrome-*` y `data-chrome="ink"`; pantallas de trabajo claras; CTA ámbar
+`#F5A524` con texto tinta ("Rendir un Gasto", "Iniciar Sesión", "Agenda una
+demo"); ícono B-recibo turquesa sobre tinta; `themeColor #0B0B0F`.
+
+**Estado (verificado en navegador):** landing oscura sin recorte de la
+columna de login ✅; Aprobaciones con sidebar y encabezado tinta y tabla
+clara ✅; dashboard móvil con encabezado tinta y CTA ámbar ✅; SPI sin
+`data-chrome`, botón de login azul `rgb(37, 99, 235)`, CTA verde y tokens
+iguales a los grises originales ✅; 99 tests ✅.

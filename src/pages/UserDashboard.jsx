@@ -103,7 +103,7 @@ export default function UserDashboard() {
             </div>
             
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                 <Link to="/dashboard/new-expense" className="w-full bg-cta-600 text-white px-4 py-4 rounded-xl hover:bg-cta-700 text-lg flex items-center justify-center font-bold transition shadow-md hover:shadow-lg transform active:scale-95">
+                 <Link to="/dashboard/new-expense" className="w-full bg-cta-600 text-cta-fg px-4 py-4 rounded-xl hover:bg-cta-700 text-lg flex items-center justify-center font-bold transition shadow-md hover:shadow-lg transform active:scale-95">
                     <PlusCircle className="mr-2 w-6 h-6" />
                     Rendir un Gasto
                 </Link>

@@ -13,6 +13,61 @@
   --brand-900: 30 58 138;
   --cta-600: 22 163 74;   /* green-600 */
   --cta-700: 21 128 61;   /* green-700 */
+  --cta-fg: 255 255 255;
+
+  /* "Chrome" = app frame (sidebar, header, login landing). Light defaults
+     reproduce the original zinc/white look exactly. */
+  --chrome-bg: 255 255 255;      /* white */
+  --chrome-card: 250 250 250;    /* zinc-50 */
+  --chrome-hover: 244 244 245;   /* zinc-100 */
+  --chrome-line: 228 228 231;    /* zinc-200 */
+  --chrome-subtle: 161 161 170;  /* zinc-400 */
+  --chrome-muted: 113 113 122;   /* zinc-500 */
+  --chrome-fg: 39 39 42;         /* zinc-800 */
+  --chrome-strong: 24 24 27;     /* zinc-900 */
+  --chrome-active: 255 255 255;  /* active nav pill */
+  --chrome-accent: var(--brand-600);
+}
+
+/* Growth Buddies "Tinta" frame (tenants/<id>.json branding.chrome = "ink"). */
+:root[data-chrome="ink"] {
+  --chrome-bg: 11 11 15;         /* ink-950 #0B0B0F */
+  --chrome-card: 20 20 26;       /* ink-900 #14141A */
+  --chrome-hover: 26 26 34;
+  --chrome-line: 35 35 48;       /* ink-800 #232330 */
+  --chrome-subtle: 135 135 147;  /* 4.9:1 on ink */
+  --chrome-muted: 167 167 178;   /* ink-400 #A7A7B2 */
+  --chrome-fg: 236 236 239;      /* ink-100 #ECECEF */
+  --chrome-strong: 255 255 255;
+  --chrome-active: 35 35 48;
+  --chrome-accent: 0 181 214;    /* teal-400 #00B5D6 */
+  color-scheme: light;           /* only the frame is dark; content stays light */
+}
+
+/* Ink frame: opaque backgrounds and hover tones that suit a dark sidebar and
+   header. Scoped overrides, so light tenants keep their classes untouched. */
+:root[data-chrome="ink"] .app-sidebar {
+  background-color: rgb(var(--chrome-bg));
+  border-color: rgb(var(--chrome-line));
+}
+:root[data-chrome="ink"] .glass-header {
+  background-color: rgb(var(--chrome-bg) / 0.96);
+  border-color: rgb(var(--chrome-line));
+}
+:root[data-chrome="ink"] .app-sidebar .hover\:bg-brand-50:hover,
+:root[data-chrome="ink"] .app-sidebar .hover\:bg-red-50:hover,
+:root[data-chrome="ink"] .glass-header .hover\:bg-zinc-100:hover,
+:root[data-chrome="ink"] .glass-header .hover\:bg-brand-100:hover {
+  background-color: rgb(var(--chrome-hover));
+}
+:root[data-chrome="ink"] .app-sidebar .hover\:text-brand-700:hover { color: rgb(var(--chrome-accent)); }
+:root[data-chrome="ink"] .app-sidebar .hover\:text-red-600:hover { color: #f87171; }
+:root[data-chrome="ink"] .glass-header .text-zinc-500 { color: rgb(var(--chrome-muted)); }
+:root[data-chrome="ink"] .glass-header .hover\:text-zinc-800:hover { color: rgb(var(--chrome-strong)); }
+:root[data-chrome="ink"] .glass-header .bg-brand-50 {
+  background-color: rgb(var(--chrome-card));
+  border-color: rgb(var(--chrome-line));
+  color: rgb(var(--chrome-accent));
 }
 
 @layer utilities {

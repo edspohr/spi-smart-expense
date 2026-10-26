@@ -43,7 +43,7 @@ export default function InstallButton({ variant = 'pill', className = '' }: Inst
         <button
           type="button"
           onClick={handleClick}
-          className={`w-full flex items-center py-2.5 px-4 rounded-full text-zinc-500 hover:bg-brand-50 hover:text-brand-700 transition duration-200 font-medium text-sm focus-ring ${className}`}
+          className={`w-full flex items-center py-2.5 px-4 rounded-full text-chrome-muted hover:bg-brand-50 hover:text-brand-700 transition duration-200 font-medium text-sm focus-ring ${className}`}
         >
           <Download className="w-4 h-4 mr-3" aria-hidden="true" />
           {label}

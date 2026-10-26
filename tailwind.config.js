@@ -16,7 +16,16 @@ export default {
         cta: {
           600: "rgb(var(--cta-600) / <alpha-value>)",
           700: "rgb(var(--cta-700) / <alpha-value>)",
+          fg: "rgb(var(--cta-fg) / <alpha-value>)",
         },
+        // App frame (sidebar, header, landing): light by default, ink when the
+        // tenant sets branding.chrome = "ink" (see index.css).
+        chrome: Object.fromEntries(
+          ["bg", "card", "hover", "line", "subtle", "muted", "fg", "strong", "active", "accent"].map((k) => [
+            k,
+            `rgb(var(--chrome-${k}) / <alpha-value>)`,
+          ]),
+        ),
         brand: {
           50: "rgb(var(--brand-50) / <alpha-value>)",
           100: "rgb(var(--brand-100) / <alpha-value>)",

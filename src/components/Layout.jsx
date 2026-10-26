@@ -43,10 +43,10 @@ export default function Layout({ children, title }) {
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="flex justify-between items-center px-8 py-5 glass-header z-20 bg-white/60 backdrop-blur-md sticky top-0 border-b border-zinc-200/50">
             <div className="flex items-center">
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-4 text-zinc-500 hover:text-zinc-800 transition">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-4 text-chrome-muted hover:text-chrome-fg transition">
                     <Menu className="w-6 h-6" />
                 </button>
-                <h1 className="text-xl md:text-2xl font-bold text-zinc-800 tracking-tight">{title}</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-chrome-fg tracking-tight">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
                 <ConnectionStatus />

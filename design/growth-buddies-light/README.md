@@ -50,6 +50,23 @@ Estados: éxito `#15803D` (5.02), alerta `#B45309` (5.02), error `#DC2626`
 4. Foco: anillo `teal-400`.
 5. Tipografía: Inter (texto), Geist (títulos), como la web.
 
+## Marco "Tinta" y acento por app (v1.1)
+
+Para diferenciarse de la competencia de tema claro + azul (p. ej.
+Rindegastos: blanco, azul `#066BF1` y lima), las apps buddies usan un
+**marco tinta**: sidebar, encabezado, landing del login e ícono sobre
+`#0B0B0F`, con el turquesa claro `#00B5D6` como acento de navegación. Las
+pantallas de trabajo (formularios, tablas, aprobaciones) **siguen claras**
+por legibilidad en terreno. Tokens en `tokens.json` → `chrome`.
+
+Cada app suma **un acento propio** para su llamado a la acción principal,
+siempre con texto tinta. Expense Buddy: ámbar `#F5A524` (hover `#E08E0B`,
+texto tinta 9.63:1). Tokens en `tokens.json` → `appAccents`.
+
+En Expense Buddy se activa con `branding.chrome: "ink"` y
+`branding.ctaPalette` en `tenants/<id>.json`; los tenants sin esos campos
+(SPI) conservan el marco claro sin ningún cambio.
+
 ## Apps con `branding.palette` (Expense Buddy)
 
 Su escala Tailwind `brand` usa `600` para botones, así que el mapeo

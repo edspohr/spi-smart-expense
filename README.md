@@ -46,6 +46,7 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Country-aware Gemini prompt**: Chilean receipts (RUT, boleta/factura, IVA 19 %, CLP without decimals, Copec/Shell/Aramco as fuel); the Colombian prompt stays verbatim.
 - **Demo tenant "Expense Buddy"** for a fictitious Chilean company (Andes Energía SpA): green branding, own logo/icon, Chilean categories, invitation-only login (`auth.selfSignup: false`). `npm run seed:demo` / `npm run reset:demo` load people with managers, cost centres, a two-level approval policy and 25 expenses.
 - **Commercial login landing** (per tenant, `landing` + `poweredBy` in `tenants/<id>.json`): features, call to action (Calendly / WhatsApp) and a "Powered by Growth Buddies" badge around the login card; hidden when running as the installed app. SPI keeps its plain login.
+- **"Tinta" identity** (demo): ink frame (sidebar, header, landing, icon) with light working screens, turquoise navigation accent and an amber call to action; per-tenant via `branding.chrome` and `branding.ctaPalette`, SPI unchanged.
 - **Demo growth kit** (demo tenant only): one-click sign-in by role (`demoSignIn`, `DEMO_MODE=true`) with a nightly data reset (`resetDemoData`), a savings calculator, a lead form that feeds the Growth Buddies CRM, and Google Analytics events on the landing.
 - **`npm run bootstrap-tenant`** scaffolds a new client (tenant JSON, functions env, web env example, Firebase alias) — see `docs/runbooks/bootstrap-tenant.md`.
 

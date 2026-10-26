@@ -192,7 +192,9 @@ export default function Login() {
             
             <button
                 type="submit"
-                className="w-full bg-brand-600 text-white font-bold py-2 px-4 rounded hover:bg-brand-700 transition duration-200 flex items-center justify-center"
+                className={`w-full font-bold py-2 px-4 rounded transition duration-200 flex items-center justify-center ${
+                    tenant.branding.ctaPalette ? 'bg-cta-600 text-cta-fg hover:bg-cta-700' : 'bg-brand-600 text-white hover:bg-brand-700'
+                }`}
             >
                 {isRegistering ? (
                     <><UserPlus className="w-4 h-4 mr-2" /> Registrarse</>

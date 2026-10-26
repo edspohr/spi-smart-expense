@@ -54,3 +54,16 @@ genérico y un logo provisorio.
 - Quedan colores fijos fuera de la paleta (p. ej. el degradado `indigo` del
   avatar en el sidebar, compartido con SPI); se migran cuando se decida
   tocar el look de SPI.
+
+## Actualización 2026-10-25 — marco "Tinta"
+
+El demo en claro + turquesa se veía parecido a Rindegastos (blanco, azules
+claros, azul `#066BF1` y lima `#C1FF7F`, según el CSS de su sitio). Se
+decide una identidad **híbrida**: marco tinta `#0B0B0F` (sidebar,
+encabezado, landing, ícono) con acento turquesa `#00B5D6`, pantallas de
+trabajo claras, y un acento ámbar `#F5A524` propio de Expense Buddy para el
+CTA principal. Implementado con tokens `chrome-*` (variables CSS cuyos
+valores por defecto reproducen exactamente el gris/blanco original) y
+`data-chrome="ink"` en `<html>`; SPI no cambia (verificado en navegador).
+Un modo oscuro completo queda para Ola 9: hay ~1.200 colores fijos en 62
+archivos que deben migrar a tokens semánticos primero.

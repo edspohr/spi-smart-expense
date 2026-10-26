@@ -40,4 +40,14 @@ describe('applyTenantTheme', () => {
     expect(el.style.getPropertyValue('--cta-600')).toBe('0 124 147');
     expect(el.style.getPropertyValue('--cta-700')).toBe('0 94 112');
   });
+
+  it('marks the root with data-chrome="ink" only for ink tenants', () => {
+    const el = document.createElement('div');
+    applyTenantTheme(tenant, el);
+    expect(el.hasAttribute('data-chrome')).toBe(false);
+    applyTenantTheme({ ...tenant, branding: { ...tenant.branding, chrome: 'ink' } }, el);
+    expect(el.getAttribute('data-chrome')).toBe('ink');
+    applyTenantTheme(tenant, el);
+    expect(el.hasAttribute('data-chrome')).toBe(false);
+  });
 });

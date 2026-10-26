@@ -6,7 +6,7 @@ Usage (needs Pillow + resvg-py):
     python3 scripts/brand/expense-buddy-icon.py
 
 Design (ADR 0013): a solid B — for Buddy — whose base is a receipt's torn
-zigzag edge, in white on a Growth Buddies turquoise tile (#0097B2). One
+zigzag edge, in turquoise (#00B5D6) on the Growth Buddies ink tile (#0B0B0F). One
 symbol says "buddy" and "expense", and as a single silhouette it holds up at
 40 px. Everything is drawn as vectors on a 1024 grid; the PNGs are rendered
 from the same SVG with resvg, so every asset matches:
@@ -26,8 +26,8 @@ from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GRID = 1024
-TILE = '#0097B2'   # teal-600, Growth Buddies brand
-MARK = '#FFFFFF'
+TILE = '#0B0B0F'   # ink-950, Growth Buddies "Tinta" frame
+MARK = '#00B5D6'   # teal-400, the accent on dark
 
 # ── The mark (grid units). Strokes ≈100; counters concentric with the bowls.
 def zigzag(x_right, x_left, y_base, depth, teeth):

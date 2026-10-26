@@ -65,7 +65,9 @@ export interface TenantConfig {
     /** Shared design tokens this tenant follows, e.g. design/growth-buddies-light. */
     designSystem?: string;
     /** Primary call-to-action colour (600/700); green when absent. */
-    ctaPalette?: Partial<Record<'600' | '700', string>>;
+    ctaPalette?: Partial<Record<'600' | '700' | 'fg', string>>;
+    /** App frame (sidebar, header, landing): 'light' (default) or Growth Buddies 'ink'. */
+    chrome?: 'light' | 'ink';
     /** Script that owns this tenant's PWA icons (generate-icons.py skips it). */
     iconsBy?: string;
     // Short product name shown in the login card and the sidebar.
@@ -131,4 +133,6 @@ export function applyTenantTheme(config: TenantConfig = tenant, root: HTMLElemen
   for (const [step, hex] of Object.entries(config.branding.ctaPalette ?? {})) {
     root.style.setProperty(`--cta-${step}`, hexToRgbTriplet(hex));
   }
+  if (config.branding.chrome === 'ink') root.setAttribute('data-chrome', 'ink');
+  else root.removeAttribute('data-chrome');
 }

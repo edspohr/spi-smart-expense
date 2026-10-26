@@ -6,7 +6,7 @@
   "functionsRegion": "southamerica-west1",
   "branding": {
     "logo": "/brands/demo/icon.svg",
-    "themeColor": "#0097B2",
+    "themeColor": "#0B0B0F",
     "palette": {
       "50": "#E8F7FA",
       "100": "#CCEEF4",
@@ -23,9 +23,11 @@
     "designSystem": "growth-buddies-light",
     "iconsBy": "scripts/brand/expense-buddy-icon.py",
     "ctaPalette": {
-      "600": "#007C93",
-      "700": "#005E70"
-    }
+      "600": "#F5A524",
+      "700": "#E08E0B",
+      "fg": "#0B0B0F"
+    },
+    "chrome": "ink"
   },
   "locale": {
     "country": "CL",
