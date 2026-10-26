@@ -35,6 +35,10 @@ repo: npm run pack:build -- --project <hub> ◄─ aggregate envIssuers
    HUB_ALLOWED_SENDERS=
    ```
 
+   `LEARNING_HUB_URL`, `HUB_AUDIENCE` and `HUB_ALLOWED_SENDERS` are plain
+   environment variables, not Functions params, so tenants without a hub
+   deploy without being asked for them.
+
 3. Firestore rules for the hub: deny everything to clients (only the
    function writes). Deploy only what the hub needs:
 

@@ -37,7 +37,7 @@ sugerido, no fechas.**
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
 | 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Deployada 2026-10-26 (`89a4592`): demo con lector activo, SPI apagado |
 | 8b | **Lector que aprende I:** modo sombra en todas las rendiciones, aprendizaje por cliente, métricas en el tiempo; contrato y textos de consentimiento | Transparente (opt-in por tenant) | Deployada 2026-10-26 (`a79a856`): demo con modo sombra, SPI apagado |
-| 8c | Lector que aprende II: capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | Implementada 2026-10-26 con textos provisionales `derived-v0`; sin proyecto central aún (envíos al `learningOutbox` del cliente) |
+| 8c | Lector que aprende II: capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | Deployada 2026-10-26 (`4d8aad4`) en demo y SPI con el aporte apagado; textos provisionales `derived-v0`; sin proyecto central aún |
 | 8d | Lector que aprende III: corpus de imágenes con consentimiento separado y modelo propio | Transparente (opt-in) | Condicional (volumen + clientes que acepten) |
 | 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
 | 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |

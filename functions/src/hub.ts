@@ -1,5 +1,4 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
 import { OAuth2Client } from 'google-auth-library';
@@ -12,18 +11,20 @@ import { validateContribution, type Contribution } from './learning.logic';
 // per environment. scripts/build-reader-pack.mjs aggregates them into the
 // reader pack that ships with every build. Runbook: docs/runbooks/learning-hub.md.
 
-// Public URL of ingestContribution (the audience of the senders' ID tokens).
-export const HUB_AUDIENCE = defineString('HUB_AUDIENCE', { default: '' });
-// Comma-separated service-account emails allowed to send (one per tenant).
-export const HUB_ALLOWED_SENDERS = defineString('HUB_ALLOWED_SENDERS', { default: '' });
+// Plain env vars from functions/.env.<hub-project> (not params: this module
+// is loaded by every tenant build, which must deploy without them).
+// HUB_AUDIENCE: public URL of ingestContribution (audience of the ID tokens).
+// HUB_ALLOWED_SENDERS: comma-separated service-account emails, one per tenant.
+const audience = () => process.env.HUB_AUDIENCE ?? '';
+const allowedSenders = () => (process.env.HUB_ALLOWED_SENDERS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
 const verifier = new OAuth2Client();
 
 async function sender(authorization: string | undefined): Promise<string | null> {
   const token = authorization?.match(/^Bearer (.+)$/)?.[1];
-  if (!token || !HUB_AUDIENCE.value()) return null;
+  if (!token || !audience()) return null;
   try {
-    const ticket = await verifier.verifyIdToken({ idToken: token, audience: HUB_AUDIENCE.value() });
+    const ticket = await verifier.verifyIdToken({ idToken: token, audience: audience() });
     const p = ticket.getPayload();
     return p?.email && p.email_verified ? p.email : null;
   } catch {
@@ -37,8 +38,7 @@ export const ingestContribution = onRequest({ cors: false, memory: '256MiB', max
     return;
   }
   const email = await sender(req.get('authorization'));
-  const allowed = HUB_ALLOWED_SENDERS.value().split(',').map((s) => s.trim()).filter(Boolean);
-  if (!email || !allowed.includes(email)) {
+  if (!email || !allowedSenders().includes(email)) {
     logger.warn('hub: rejected sender', { email });
     res.status(403).send('forbidden');
     return;

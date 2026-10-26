@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { GoogleAuth } from 'google-auth-library';
@@ -14,7 +13,9 @@ import { DERIVED_TERMS_VERSION, buildContribution, isEmptyContribution, type Con
 // configured (LEARNING_HUB_URL empty) it is written to learningOutbox in the
 // tenant's own project instead: nothing leaves until the hub exists.
 
-export const LEARNING_HUB_URL = defineString('LEARNING_HUB_URL', { default: '' });
+// Optional: set in functions/.env.<projectId> to connect to the hub. A plain
+// env var (not a param) so tenants without a hub deploy without prompts.
+const hubUrl = () => process.env.LEARNING_HUB_URL ?? '';
 
 const STATE = 'cache/learning';
 
@@ -61,7 +62,7 @@ async function collect(db: Firestore, state: ExportState & { envId: string }): P
 }
 
 async function send(db: Firestore, c: Contribution): Promise<'hub' | 'outbox'> {
-  const url = LEARNING_HUB_URL.value();
+  const url = hubUrl();
   if (!url) {
     await db.doc(`learningOutbox/${c.generatedAt.slice(0, 10)}`).set(c);
     return 'outbox';
@@ -114,7 +115,7 @@ export const previewDerivedData = onCall(async (req) => {
   const [contribution, allowed] = await Promise.all([collect(db, state), consent(db)]);
   return {
     contribution,
-    destination: LEARNING_HUB_URL.value() ? 'hub' : 'outbox',
+    destination: hubUrl() ? 'hub' : 'outbox',
     consent: allowed,
     lastExportDay: state.lastExportDay ?? null,
     lastResult: state.lastResult ?? null,
