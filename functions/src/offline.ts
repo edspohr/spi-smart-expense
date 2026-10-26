@@ -150,6 +150,7 @@ export const verifyLocalRead = onDocumentCreated({ document: 'expenses/{expenseI
       mode,
       engine,
       readerVersion: typeof e.localRead.readerVersion === 'string' ? e.localRead.readerVersion : null,
+      packVersion: typeof e.localRead.packVersion === 'string' ? e.localRead.packVersion : null,
       docType: e.localRead.docType ?? null,
       offline: mode === 'offline',
       durationMs: typeof e.localRead.durationMs === 'number' ? e.localRead.durationMs : null,

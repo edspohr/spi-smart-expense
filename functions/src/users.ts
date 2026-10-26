@@ -3,6 +3,7 @@ import { getAuth, type UserRecord } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { TENANT_ID, nowIso, requireAuth } from './common';
+import { DERIVED_TERMS_VERSION } from './learning.logic';
 import type { Role } from './claims.logic';
 import { loadPinPolicy, requirePinFor } from './pin';
 import { PIN_ACTIONS } from './pin.logic';
@@ -285,6 +286,29 @@ export const adminUpdateSettings = onCall(async (req) => {
       update['approvalPolicy.staleDays'] = ap.staleDays;
     }
   }
+  // Ola 8c: consent to share derived data (ADR 0016). Granting requires the
+  // current text version; every change is logged in consentLog.
+  let consentEntry: Record<string, unknown> | null = null;
+  if (input.learning !== undefined) {
+    const share = input.learning?.shareDerived;
+    if (typeof share !== 'boolean') throw new HttpsError('invalid-argument', 'Valor no válido para el aporte de datos.');
+    const at = nowIso();
+    if (share) {
+      if (input.learning.termsVersion !== DERIVED_TERMS_VERSION) {
+        throw new HttpsError('failed-precondition', 'El texto del consentimiento cambió. Recarga la página y vuelve a leerlo.');
+      }
+      Object.assign(update, {
+        'learning.shareDerived': true,
+        'learning.termsVersion': DERIVED_TERMS_VERSION,
+        'learning.acceptedAt': at,
+        'learning.acceptedByUid': actor.uid,
+        'learning.acceptedByName': actor.name,
+      });
+    } else {
+      Object.assign(update, { 'learning.shareDerived': false, 'learning.revokedAt': at, 'learning.revokedByName': actor.name });
+    }
+    consentEntry = { at, action: share ? 'grant' : 'revoke', termsVersion: DERIVED_TERMS_VERSION, byUid: actor.uid, byName: actor.name };
+  }
   if (Object.keys(update).length === 0) throw new HttpsError('invalid-argument', 'No hay cambios.');
   // Changing settings needs the PIN only while it is already enforced.
   await requirePinFor(req, 'settings', { policy: await loadPinPolicy() });
@@ -302,5 +326,6 @@ export const adminUpdateSettings = onCall(async (req) => {
     node[keys[keys.length - 1] as string] = value;
   }
   await getFirestore().doc('settings/tenant').set(nested, { merge: true });
+  if (consentEntry) await getFirestore().collection('consentLog').add(consentEntry);
   return { ok: true };
 });

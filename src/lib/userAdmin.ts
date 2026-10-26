@@ -66,6 +66,7 @@ export interface SettingsPatch {
   modules?: Record<string, boolean>;
   ai?: { dailyLimitUser?: number; dailyLimitTenant?: number; localFirst?: boolean };
   offline?: { localReader?: boolean; shadowRead?: boolean };
+  learning?: { shareDerived: boolean; termsVersion?: string };
   approvalPolicy?: Partial<{
     mode: 'single' | 'levels';
     autoApproveBelow: number | null;

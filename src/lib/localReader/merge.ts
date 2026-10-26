@@ -18,6 +18,22 @@ export function dictionaryKey(taxId: string): string {
   return taxId.replace(/[.\s]/g, '').toUpperCase();
 }
 
+export interface ReaderPack {
+  version: string;
+  issuers: Record<string, { amountLabel?: string }>;
+}
+
+/**
+ * Learned total label per issuer: the cross-client pack (Ola 8c) first,
+ * then this tenant's own learning (dictionary), which wins.
+ */
+export function learnedLabels(dictionary: MerchantDictionary, pack: ReaderPack): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(pack.issuers)) if (entry.amountLabel) out[key] = entry.amountLabel;
+  for (const [key, entry] of Object.entries(dictionary)) if (entry.amountLabel) out[key] = entry.amountLabel;
+  return out;
+}
+
 export function fieldsFromBarcode(b: BarcodeData): LocalFields {
   const f: LocalFields = {};
   const hi = <T,>(value: T) => ({ value, confidence: 'high' as const, source: 'barcode' as const });

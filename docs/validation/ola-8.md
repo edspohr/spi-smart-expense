@@ -239,3 +239,64 @@ offline) aparece únicamente el aviso.
   (nuevos casos: `localRead`/`aiRead` inmutables tras crear, `ocrStats`
   solo lectura de superadmin, `readerProfiles` invisible) · ambos builds y
   functions: ✅
+
+---
+
+# Ola 8c — Lector que aprende II (capa general)
+
+**Fecha:** 2026-10-26
+**Impacto en SPI:** ninguno. El consentimiento está apagado y no hay
+proyecto central: aunque alguien lo active, el envío queda en el propio
+proyecto (`learningOutbox`). **Textos provisionales `derived-v0`**: no
+activar con clientes reales hasta la revisión legal (`docs/pendientes.md`).
+
+## 14. Consentimiento (Ajustes → "Aportar a la mejora del lector")
+
+**Qué cambió:** tarjeta con el texto (`src/lib/learningTerms.ts`, marcado
+"Versión provisional"), casilla para aceptar o revocar, estado con
+quién/cuándo/versión y aviso si el texto cambió. El callable
+`adminUpdateSettings` exige la versión vigente y registra cada cambio en
+`consentLog`; las reglas impiden escribir `settings/tenant.learning` desde
+el navegador.
+
+**Estado esperado:** al aceptar, "Activado por Sara Superadmin el … (texto
+derived-v0)" y un `consentLog` `grant`; al revocar, "Desactivado: nada sale
+de tu ambiente" y un `revoke`. ✅ (2026-10-26, emulador)
+
+## 15. "Ver qué se envía" y exportación
+
+**Qué cambió:** `previewDerivedData` devuelve el envío exacto, el destino y
+el último resultado. `exportDerivedData` corre a diario a las 07:00 UTC:
+sin consentimiento vigente no envía; con él, manda la foto de votos por
+emisor (solo personas jurídicas) y los contadores de los días cerrados
+desde el último envío, al hub o, sin `LEARNING_HUB_URL`, a
+`learningOutbox/{día}`.
+
+**Cómo se probó (emulador, SPI = CO):** perfiles `900123456-7` (empresa) y
+`1020304050` (persona) más un día de contadores con datos de la IA.
+
+**Estado esperado:** la vista previa muestra 1 emisor (solo la empresa) y 1
+día, sin el bloque `ai`; la primera exportación escribe el outbox con los 6
+campos del esquema y `lastExportDay = 2026-10-25`; la segunda manda 0 días
+nuevos; tras revocar, `status: skipped (sin consentimiento)`. ✅
+
+## 16. Hub y paquete de lectura
+
+**Qué cambió:** `ingestContribution` (solo con `HUB_MODE=true`; no existe en
+los proyectos de clientes) verifica el ID token de Google, la lista de
+remitentes y el esquema exacto. `npm run pack:build -- --project <hub>`
+genera `src/lib/localReader/pack/reader-pack.json` (hoy versión `0`,
+vacío); el lector usa sus etiquetas salvo que el cliente haya aprendido la
+suya. Runbook: `docs/runbooks/learning-hub.md`.
+
+**Estado esperado:** pruebas unitarias de esquema, filtro de personas
+naturales, agregación y precedencia del paquete. ✅ La verificación del
+token y el envío HTTPS real quedan sin probar hasta crear el proyecto
+central. ☐
+
+## 17. Checks de calidad (8c)
+
+- lint, typecheck: ✅ · `npm test -- --run`: ✅ 135 · `test:rules`: ✅ 21
+  (consentLog y learningOutbox solo lectura de superadmin; `learning` no
+  editable desde el navegador) · ambos builds y functions: ✅ ·
+  `ingestContribution` ausente sin `HUB_MODE`: ✅

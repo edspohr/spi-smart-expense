@@ -10,6 +10,7 @@ import { updateSettings } from '../lib/userAdmin';
 import { tenant } from '../lib/tenant';
 import ApprovalPolicyCard from '../components/ApprovalPolicyCard';
 import OfflineReaderCard from '../components/OfflineReaderCard';
+import LearningConsentCard from '../components/LearningConsentCard';
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -284,6 +285,7 @@ export default function AdminSettings() {
         </Card>
 
         <OfflineReaderCard />
+        <LearningConsentCard />
       </div>
     </Layout>
   );

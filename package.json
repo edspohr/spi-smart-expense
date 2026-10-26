@@ -27,6 +27,7 @@
     "dev:demo": "vite --mode demo",
     "dev:demo:emu": "VITE_USE_EMULATORS=true vite --mode demo",
     "seed:demo": "npm run functions:build && node scripts/seed-demo.mjs",
+    "pack:build": "npm run functions:build && node scripts/build-reader-pack.mjs",
     "reset:demo": "npm run functions:build && node scripts/seed-demo.mjs --reset",
     "bootstrap-tenant": "node scripts/bootstrap-tenant.mjs"
   },

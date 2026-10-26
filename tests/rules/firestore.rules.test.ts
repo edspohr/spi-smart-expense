@@ -244,6 +244,19 @@ describe('notifications and server-only collections', () => {
     await assertFails(getDoc(doc(admin(), 'ocrStats', '2026-10-26')));
     await assertFails(setDoc(doc(superadmin(), 'ocrStats', 'x'), { reads: 9 }));
     await assertFails(getDoc(doc(superadmin(), 'readerProfiles', '76354771-K')));
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'consentLog', 'c1'), { action: 'grant' });
+      await setDoc(doc(c.firestore(), 'learningOutbox', '2026-10-27'), { schema: 'derived-v0' });
+      await setDoc(doc(c.firestore(), 'settings', 'tenant'), { modules: { reports: true } });
+    });
+    await assertSucceeds(getDoc(doc(superadmin(), 'consentLog', 'c1')));
+    await assertFails(getDoc(doc(admin(), 'consentLog', 'c1')));
+    await assertFails(setDoc(doc(superadmin(), 'consentLog', 'c2'), { action: 'grant' }));
+    await assertSucceeds(getDoc(doc(superadmin(), 'learningOutbox', '2026-10-27')));
+    await assertFails(setDoc(doc(superadmin(), 'learningOutbox', 'x'), {}));
+    await assertFails(updateDoc(doc(superadmin(), 'settings', 'tenant'), { 'learning.shareDerived': true }));
+    await assertSucceeds(updateDoc(doc(superadmin(), 'settings', 'tenant'), { 'modules.reports': false }));
+    await assertFails(setDoc(doc(superadmin(), 'settings', 'other'), { learning: { shareDerived: true } }));
   });
 
   it('users cannot grant themselves PIN state', async () => {

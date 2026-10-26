@@ -78,6 +78,21 @@ cliente clasifica y opera** es del cliente.
   igual recibe las mejoras, solo que no aporta.
 - Las personas que rinden ven un aviso en "Listo para terreno" que explica
   qué se mide y qué no.
+- **Transporte (implementado en la Ola 8c):** el ambiente no escribe en el
+  proyecto central con permisos de base de datos (IAM de Firestore no
+  limita por colección). Envía por HTTPS a `ingestContribution` con un ID
+  token firmado por Google de su cuenta de servicio; el hub verifica el
+  token, una lista de remitentes permitidos y el esquema exacto
+  (`validateContribution`: cualquier campo extra rechaza el envío). El hub
+  no guarda la identidad del remitente, solo el seudónimo aleatorio del
+  ambiente, y conserva la última foto de votos por ambiente (reenviar no
+  duplica). Sin `LEARNING_HUB_URL`, el envío queda en `learningOutbox` del
+  propio cliente.
+- **Integridad del consentimiento:** `settings/tenant.learning` solo cambia
+  por el callable (las reglas lo impiden desde el navegador, incluso al
+  superadministrador), que exige la versión vigente del texto y registra
+  cada alta y baja en `consentLog`. Si cambia el texto, la exportación se
+  detiene hasta una nueva aceptación.
 
 ### 4. Corpus de imágenes y modelo propio (Ola 8d)
 

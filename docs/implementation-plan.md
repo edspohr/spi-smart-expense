@@ -37,7 +37,7 @@ sugerido, no fechas.**
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
 | 8 | Offline automatizado (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | Deployada 2026-10-26 (`89a4592`): demo con lector activo, SPI apagado |
 | 8b | **Lector que aprende I:** modo sombra en todas las rendiciones, aprendizaje por cliente, métricas en el tiempo; contrato y textos de consentimiento | Transparente (opt-in por tenant) | Deployada 2026-10-26 (`a79a856`): demo con modo sombra, SPI apagado |
-| 8c | **Lector que aprende II:** capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | **Siguiente** (requiere cláusula revisada) |
+| 8c | Lector que aprende II: capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | Implementada 2026-10-26 con textos provisionales `derived-v0`; sin proyecto central aún (envíos al `learningOutbox` del cliente) |
 | 8d | Lector que aprende III: corpus de imágenes con consentimiento separado y modelo propio | Transparente (opt-in) | Condicional (volumen + clientes que acepten) |
 | 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
 | 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |
@@ -992,6 +992,32 @@ cada build; métrica de mejora por versión del paquete en el corpus.
 
 **Requisitos previos (responsable):** cláusula revisada por abogado e
 incorporada al contrato; crear el proyecto central.
+
+### Resultado (2026-10-26)
+
+El responsable decidió avanzar con textos provisionales mientras la
+revisión legal queda en pendientes. Implementado:
+
+- Textos vigentes versionados (`docs/legal/textos-vigentes-lector.md`,
+  `derived-v0`, marcados "Versión provisional" en la app).
+- Consentimiento en Ajustes (`learning.shareDerived`) solo vía callable,
+  con versión del texto, quién/cuándo y `consentLog`; reglas que impiden
+  escribirlo desde el navegador.
+- `buildContribution` / `validateContribution` (`learning.logic.ts`):
+  emisores persona jurídica con votos de etiqueta y contadores diarios sin
+  datos de la IA; el hub rechaza cualquier campo extra.
+- `exportDerivedData` (diario, 07:00 UTC) y `previewDerivedData` ("Ver qué
+  se envía" con el JSON exacto). Sin `LEARNING_HUB_URL` → `learningOutbox`.
+- Hub `ingestContribution` (`HUB_MODE=true`): ID token de Google + lista de
+  remitentes + esquema; guarda la última foto por ambiente.
+- `npm run pack:build` → `src/lib/localReader/pack/reader-pack.json`
+  (≥ 3 votos, ≥ 70 %); el lector lo usa por debajo del aprendizaje propio del
+  cliente; cada lectura guarda `packVersion`.
+- Runbook `docs/runbooks/learning-hub.md`.
+
+**Sin verificar:** la verificación del ID token en el hub y el envío HTTPS
+real (requieren el proyecto central). Probado en emulador: consentimiento,
+vista previa, exportación al outbox, reenvío sin duplicar, revocación.
 
 ## Ola 8d — Lector que aprende III (corpus de imágenes y modelo propio)
 

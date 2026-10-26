@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeRut, parseDianQr, parseTaxBarcode, parseTed } from './barcodeParsers';
 import { amountCandidates, amountLabel, extractFromText, parseAmount, textLines } from './rules';
 import { guessCategory } from './categories';
-import { dictionaryKey, mergeLocalRead, toFormPatch } from './merge';
+import { dictionaryKey, learnedLabels, mergeLocalRead, toFormPatch } from './merge';
 
 const TODAY = new Date('2026-10-26T12:00:00Z');
 const CL = { country: 'CL' as const, baseCurrency: 'CLP', today: TODAY };
@@ -199,5 +199,14 @@ describe('learning hooks (Ola 8b)', () => {
     expect(extractFromText(RECEIPT, CL).amount?.value).not.toBe(12400);
     const learned = extractFromText(RECEIPT, { ...CL, amountLabels: { '76354771-K': 'SUMA' } });
     expect(learned.amount).toMatchObject({ value: 12400, confidence: 'high' });
+  });
+});
+
+describe('reader pack (Ola 8c)', () => {
+  it("uses the pack's labels unless the tenant learned its own", () => {
+    const pack = { version: '2026-11-01', issuers: { '99520000-7': { amountLabel: 'TOTAL' }, '76354771-K': { amountLabel: 'SUMA' } } };
+    const dictionary = { '76354771-K': { merchant: 'El Minero', amountLabel: 'TOTAL A PAGAR' } };
+    expect(learnedLabels(dictionary, pack)).toEqual({ '99520000-7': 'TOTAL', '76354771-K': 'TOTAL A PAGAR' });
+    expect(learnedLabels({}, { version: '0', issuers: {} })).toEqual({});
   });
 });

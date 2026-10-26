@@ -80,7 +80,11 @@ service cloud.firestore {
     // ---------- runtime tenant settings (PIN toggle, modules, AI limits)
     match /settings/{docId} {
       allow read: if isActive();
-      allow write: if isSuperadmin();
+      // `learning` (consent to share derived data, Ola 8c) changes only via
+      // adminUpdateSettings, which checks the text version and logs it.
+      allow create: if isSuperadmin() && !incoming().keys().hasAny(['learning']);
+      allow update: if isSuperadmin() && unchanged('learning');
+      allow delete: if isSuperadmin();
     }
 
     // ---------- projects (cost centers)
@@ -174,5 +178,9 @@ service cloud.firestore {
     // Ola 8b: daily reader accuracy counters and per-issuer learning.
     match /ocrStats/{day} { allow read: if isSuperadmin(); allow write: if false; }
     match /readerProfiles/{issuer} { allow read, write: if false; }
+    // Ola 8c: consent audit trail (superadmin read), export state and the
+    // local outbox used while no learning hub is configured (server-only).
+    match /consentLog/{entry} { allow read: if isSuperadmin(); allow write: if false; }
+    match /learningOutbox/{day} { allow read: if isSuperadmin(); allow write: if false; }
   }
 }

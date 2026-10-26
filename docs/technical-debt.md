@@ -613,3 +613,38 @@ diccionario de aprobados). Con el corpus real se verá qué campo falla más.
 
 **Recommended fix:** Mismo patrón de votos para el formato de fecha y la
 etiqueta del folio por emisor; llevarlo a la capa general en la Ola 8c.
+
+---
+
+## TD-035 — Envío al hub sin prueba de punta a punta
+
+**Severity:** Medium  
+**Impact:** Medium · **Effort:** Low  
+**Files:** `functions/src/learning.ts`, `functions/src/hub.ts`
+
+**Problem:** La verificación del ID token de Google en `ingestContribution`
+y el `POST` con `getIdTokenClient` no se pueden probar en el emulador (los
+tokens de cuenta de servicio reales solo existen en GCP). Probado: esquema,
+filtros, outbox, consentimiento.
+
+**Recommended fix:** Al crear el proyecto central, conectar el demo
+(runbook §2) y verificar `lastResult.destination = "hub"` y
+`envIssuers/<envId>`; luego, una prueba de humo que llame a
+`ingestContribution` sin token (403) y con un cuerpo con un campo extra
+(400).
+
+---
+
+## TD-036 — El paquete de lectura no tiene métrica automática de mejora
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `scripts/build-reader-pack.mjs`, `src/lib/localReader/localReader.corpus.test.ts`
+
+**Problem:** Cada lectura guarda `packVersion` en `ocrEval`, pero el panel no
+compara la precisión antes y después de un paquete, y `pack:build` no corre
+el corpus con el paquete nuevo antes de escribirlo.
+
+**Recommended fix:** Que `pack:build` corra el test de corpus con el paquete
+candidato y se niegue a escribirlo si baja la precisión; panel de
+precisión por `packVersion` desde `ocrEval`.

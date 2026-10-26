@@ -342,13 +342,14 @@ export default function ExpenseForm() {
   };
 
   // What is stored on the expense about a device read (compared server-side).
-  const readPayload = (result, mode, version) => ({
+  const readPayload = (result, mode, version, packVersion) => ({
       mode,
       engine: result.barcode ? `barcode:${result.barcode.kind}` : 'ocr',
       docType: result.barcode?.docType ?? null,
       offline: mode === 'offline',
       durationMs: result.durationMs,
       readerVersion: version,
+      packVersion: packVersion ?? null,
       values: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.value])),
       confidence: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, f.confidence])),
       ...(result.amountCandidates ? { amountCandidates: result.amountCandidates } : {}),
@@ -371,9 +372,9 @@ export default function ExpenseForm() {
       const seq = ++shadowSeq.current;
       void (async () => {
           try {
-              const { readReceiptLocally, READER_VERSION } = await import('../lib/localReader');
+              const { readReceiptLocally, READER_VERSION, READER_PACK_VERSION } = await import('../lib/localReader');
               const result = await readReceiptLocally(file, { categories: CATEGORIES_COMMON });
-              if (seq === shadowSeq.current) shadowRef.current = { localRead: readPayload(result, 'shadow', READER_VERSION), aiRead };
+              if (seq === shadowSeq.current) shadowRef.current = { localRead: readPayload(result, 'shadow', READER_VERSION, READER_PACK_VERSION), aiRead };
           } catch (err) {
               console.warn('[shadowRead]', err);
           }
@@ -382,7 +383,7 @@ export default function ExpenseForm() {
 
   // Reads the receipt on the device (no network) and pre-fills the form.
   const runLocalRead = async (offline) => {
-      const { readReceiptLocally, toFormPatch, READER_VERSION } = await import('../lib/localReader');
+      const { readReceiptLocally, toFormPatch, READER_VERSION, READER_PACK_VERSION } = await import('../lib/localReader');
       const result = await readReceiptLocally(files.receipt, { categories: CATEGORIES_COMMON });
       const { patch, confidence } = toFormPatch(result);
       setFormData(prev => {
@@ -397,7 +398,7 @@ export default function ExpenseForm() {
           barcode: result.barcode ? { kind: result.barcode.kind, docLabel: result.barcode.docLabel } : null,
           complete: result.complete,
           offline,
-          payload: readPayload(result, offline ? 'offline' : 'local-first', READER_VERSION),
+          payload: readPayload(result, offline ? 'offline' : 'local-first', READER_VERSION, READER_PACK_VERSION),
       });
       return result;
   };
@@ -435,8 +436,9 @@ export default function ExpenseForm() {
               }
               // Not confident enough: Gemini fills the form and this read is
               // kept as a shadow measurement.
-              unconfident = (await import('../lib/localReader')).READER_VERSION;
-              shadowRef.current = { localRead: readPayload(result, 'shadow', unconfident) };
+              const reader = await import('../lib/localReader');
+              unconfident = reader.READER_VERSION;
+              shadowRef.current = { localRead: readPayload(result, 'shadow', reader.READER_VERSION, reader.READER_PACK_VERSION) };
               setLocalRead(null);
           }
           if (!online) {

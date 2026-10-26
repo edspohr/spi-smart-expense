@@ -44,6 +44,13 @@ export interface TenantSettings {
   /** Ola 8: on-device receipt reading and "Listo para terreno". Off by default. */
   /** Ola 8: on-device reader; shadowRead measures it on every online expense (8b). */
   offline: { localReader: boolean; shadowRead: boolean };
+  /** Ola 8c: consent to share derived data across clients (ADR 0016). */
+  learning: {
+    shareDerived: boolean;
+    termsVersion: string | null;
+    acceptedAt: string | null;
+    acceptedByName: string | null;
+  };
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -67,6 +74,7 @@ export const DEFAULT_SETTINGS: TenantSettings = {
   modules: { ...tenant.modules },
   ai: { dailyLimitUser: null, dailyLimitTenant: null, localFirst: false },
   offline: { localReader: false, shadowRead: false },
+  learning: { shareDerived: false, termsVersion: null, acceptedAt: null, acceptedByName: null },
 };
 
 export function mergeSettings(doc: Record<string, unknown> | undefined | null): TenantSettings {
@@ -76,6 +84,7 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
   const threshold = security.pinApprovalThreshold;
   const modules = (doc.modules ?? {}) as Partial<TenantSettings['modules']>;
   const ai = (doc.ai ?? {}) as Partial<TenantSettings['ai']>;
+  const learning = (doc.learning ?? {}) as Record<string, unknown>;
   const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
   const int = (v: unknown) => (Number.isInteger(v) ? (v as number) : null);
   const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
@@ -105,6 +114,12 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
     offline: {
       localReader: (doc.offline as { localReader?: unknown } | undefined)?.localReader === true,
       shadowRead: (doc.offline as { shadowRead?: unknown } | undefined)?.shadowRead === true,
+    },
+    learning: {
+      shareDerived: learning.shareDerived === true,
+      termsVersion: typeof learning.termsVersion === 'string' ? learning.termsVersion : null,
+      acceptedAt: typeof learning.acceptedAt === 'string' ? learning.acceptedAt : null,
+      acceptedByName: typeof learning.acceptedByName === 'string' ? learning.acceptedByName : null,
     },
     updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : undefined,
     updatedByName: typeof doc.updatedByName === 'string' ? doc.updatedByName : undefined,

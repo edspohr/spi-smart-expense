@@ -1,7 +1,8 @@
 import { country, BASE_CURRENCY } from '../country';
 import { decodeTaxBarcode } from './barcode';
 import { getMerchantDictionary } from './dictionary';
-import { mergeLocalRead, type MerchantDictionary } from './merge';
+import { learnedLabels, mergeLocalRead } from './merge';
+import readerPack from './pack/reader-pack.json';
 import { recognizeText } from './ocr';
 import { amountCandidates, extractFromText, isWholeUnits, textLines, type CountryCode } from './rules';
 import type { BarcodeData, LocalFields, LocalReadResult } from './types';
@@ -12,7 +13,10 @@ export { toFormPatch } from './merge';
  * Version of the reading rules, stored with each read so accuracy can be
  * compared across versions. Bump it whenever rules.ts or merge.ts change.
  */
-export const READER_VERSION = '1.1.0';
+export const READER_VERSION = '1.2.0';
+
+/** Version of the cross-client reader pack built in (Ola 8c). */
+export const READER_PACK_VERSION: string = readerPack.version;
 export type { LocalReadResult, LocalField, Confidence } from './types';
 
 /**
@@ -41,7 +45,7 @@ export async function readReceiptLocally(image: Blob, opts: { categories: string
       const r = await recognizeText(image);
       ocrText = r.text;
       ocrConfidence = r.confidence;
-      ocrFields = extractFromText(r.text, { country: country.code as CountryCode, baseCurrency: BASE_CURRENCY, amountLabels: learnedLabels(dictionary) });
+      ocrFields = extractFromText(r.text, { country: country.code as CountryCode, baseCurrency: BASE_CURRENCY, amountLabels: learnedLabels(dictionary, readerPack) });
       candidates = amountCandidates(textLines(r.text), isWholeUnits(ocrFields.currency?.value ?? BASE_CURRENCY));
     } catch (err) {
       console.warn('[localReader] OCR failed', err);
@@ -60,10 +64,4 @@ export async function readReceiptLocally(image: Blob, opts: { categories: string
   });
   if (candidates?.length) result.amountCandidates = candidates;
   return result;
-}
-
-function learnedLabels(dictionary: MerchantDictionary): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, entry] of Object.entries(dictionary)) if (entry.amountLabel) out[key] = entry.amountLabel;
-  return out;
 }

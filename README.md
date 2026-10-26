@@ -56,9 +56,15 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Daily accuracy counters** (`ocrStats`) with a 30-day panel (device, by engine, AI accuracy, weekly trend) and a notice for the people who submit.
 - **Data governance:** ADR 0016 (what is learned per client vs. across clients) and a draft contract clause, technical annex, user notice and consent texts in `docs/legal/lector-datos-derivados.md`, pending legal review. Next: Ola 8c (cross-client layer with consent), 8d (image corpus with separate consent).
 
+### Ola 8c — Cross-client reader layer (2026-10-26)
+
+- **Consent** in Ajustes (`settings/tenant.learning`, only through `adminUpdateSettings`, versioned text, `consentLog` audit trail). Texts are provisional (`derived-v0`, `docs/legal/textos-vigentes-lector.md`) until legal review.
+- **Daily anonymised export** (`exportDerivedData`): legal-entity issuers with their total-label votes and daily accuracy counters; "Ver qué se envía" shows the exact JSON (`previewDerivedData`). Without `LEARNING_HUB_URL` it stays in the tenant's own `learningOutbox`.
+- **Learning hub** (`ingestContribution`, deployed only with `HUB_MODE=true`): Google ID token + sender allowlist + strict schema. `npm run pack:build` turns it into `src/lib/localReader/pack/reader-pack.json`, shipped with every build and used below each client's own learning. Runbook: `docs/runbooks/learning-hub.md`.
+
 ### Roadmap (plan v4, 2026-10-26)
 
-Next: **Ola 8c**, the cross-client reader layer (after legal review of the clause), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
+Next: create the learning hub and pass the legal texts to `derived-v1` (owner), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
 
 ### Ola 7 — Country per tenant and the Expense Buddy demo (2026-10-25)
 

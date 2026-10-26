@@ -16,13 +16,18 @@ hacer tú.
   `docs/legal/lector-datos-derivados.md` a un abogado (cláusula de datos
   derivados, anexo técnico, aviso a usuarios, consentimiento, cláusula de
   imágenes; la sección 7 lista las preguntas). Rellenar los `[ ]`
-  (razón social de Growth Buddies, retenciones, región). Es requisito para
-  la Ola 8c.
+  (razón social de Growth Buddies, retenciones, región). Hoy la app usa los
+  textos **provisionales** `derived-v0` (`docs/legal/textos-vigentes-lector.md`);
+  con la revisión, pasarlos a `derived-v1` (me avisas y cambio texto y
+  versión). No activar el aporte con clientes reales antes de eso.
 - [ ] **Decidir si SPI activa el modo sombra**: no cambia nada para quien
   rinde (solo mide y aparece el aviso en Mi Espacio). Recomendado: activarlo
   en Ajustes para empezar a medir con boletas reales de Colombia.
-- [ ] **Crear el proyecto central de Growth Buddies** para la capa general
-  (Ola 8c), cuando la cláusula esté lista.
+- [ ] **Crear el proyecto central de Growth Buddies** (capa general, Ola
+  8c; el código ya está): crear un proyecto Firebase (Blaze, Firestore en
+  `southamerica-west1`, p. ej. `growth-buddies-learning`) y avisarme el
+  ID; yo hago el resto según `docs/runbooks/learning-hub.md`. Sin él, los
+  aportes quedan guardados en cada cliente.
 
 - [ ] **Corpus de boletas para el lector offline (Ola 8)**: reunir 50-100
   fotos reales de comprobantes, sacadas con el teléfono como lo haría un
