@@ -114,6 +114,30 @@
         "text": "PIN para acciones sensibles, historial de cada cambio y un ambiente exclusivo para tu empresa, alojado en Chile."
       }
     ],
+    "offline": {
+      "eyebrow": "Modo sin conexión",
+      "title": "Así funciona cuando no hay señal",
+      "intro": "En faena, en ruta o en un subterráneo, tu equipo sigue rindiendo. Esto es lo que ve una persona en su teléfono:",
+      "steps": [
+        {
+          "title": "Rinde igual, sin señal",
+          "text": "Abre la app, toma la foto de la boleta y completa el gasto. La lectura con IA necesita conexión, así que sin señal se ingresan el monto y el comercio a mano."
+        },
+        {
+          "title": "Queda guardada en el teléfono",
+          "text": "Al enviar aparece «Sin conexión: la rendición quedó guardada y se enviará sola al recuperar señal», y arriba el aviso «Sin conexión · 1 sin enviar». La foto y los datos quedan seguros en el dispositivo."
+        },
+        {
+          "title": "Se envía sola al volver la señal",
+          "text": "Apenas hay conexión, o la próxima vez que se abre la app, la rendición se envía con sus fotos y avisa «Se envió 1 rendición guardada sin conexión». La jefatura la recibe para aprobar."
+        },
+        {
+          "title": "Nada se pierde ni se duplica",
+          "text": "Si algo impide el envío, la rendición queda en Mi Espacio para reintentar o descartar. Cada rendición tiene un identificador propio: aunque se reintente varias veces, llega una sola vez."
+        }
+      ],
+      "note": "Para usarla sin señal, la app debe haberse abierto con conexión al menos una vez en ese teléfono. Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
+    },
     "cta": {
       "title": "¿Lo quieres en tu empresa?",
       "text": "Lo implementamos con tu marca, tus centros de costo y tu flujo de aprobación, en un ambiente exclusivo para tu organización.",
@@ -149,29 +173,11 @@
           "path": "/admin/approvals"
         }
       ]
-    },
-    "calculator": {
-      "people": 20,
-      "reportsPerPerson": 8,
-      "minutesToday": 15,
-      "minutesWithApp": 3,
-      "hourlyCost": 12000
     }
   },
   "poweredBy": {
     "name": "Growth Buddies",
     "logo": "/brands/growth-buddies/logo.webp",
     "url": "https://growthbuddies.cl/?utm_source=expense-buddy&utm_medium=app&utm_campaign=powered-by"
-  },
-  "leads": {
-    "firebase": {
-      "apiKey": "AIzaSyBDdOtg0-svyfoiVNoNBBGeQc1BP-SDNjk",
-      "authDomain": "growth-buddies.firebaseapp.com",
-      "projectId": "growth-buddies",
-      "appId": "1:1035797595823:web:6e6b9225a6f1ee2047365a"
-    },
-    "collection": "leads",
-    "interest": "Rendición de gastos — Expense Buddy",
-    "source": "expense-buddy-demo"
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import {
   ArrowUpRight,
   CalendarCheck,
@@ -14,12 +14,8 @@ import {
 } from 'lucide-react';
 import { tenant, type TenantLanding, type TenantPoweredBy } from '../lib/tenant';
 import { track } from '../lib/analytics';
-import type { SavingsInput } from '../lib/savings';
 import DemoRoles from './landing/DemoRoles';
-import SavingsCalculator from './landing/SavingsCalculator';
-import LeadForm from './landing/LeadForm';
-
-const CALC_FALLBACK: SavingsInput = { people: 20, reportsPerPerson: 8, minutesToday: 15, minutesWithApp: 3, hourlyCost: 12_000 };
+import OfflineExplainer from './landing/OfflineExplainer';
 
 const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
@@ -43,7 +39,6 @@ interface Props {
 // have to scroll; on desktop the pitch sits left and the card right. As an
 // installed PWA (display-mode: standalone) only the card shows.
 export default function LoginLanding({ landing, poweredBy, children }: Props) {
-  const [calc, setCalc] = useState<SavingsInput>(landing.calculator ?? CALC_FALLBACK);
   useEffect(() => track('landing_view'), []);
 
   return (
@@ -104,7 +99,7 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
           })}
         </ul>
 
-        {landing.calculator ? <SavingsCalculator value={calc} onChange={setCalc} /> : null}
+        {landing.offline ? <OfflineExplainer offline={landing.offline} /> : null}
 
         {landing.cta ? (
           <div className="mt-12 max-w-3xl rounded-2xl bg-zinc-950 p-6 text-white ring-1 ring-white/10 sm:p-8">
@@ -132,7 +127,6 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
                 </a>
               ) : null}
             </div>
-            {tenant.leads ? <LeadForm calculator={calc} /> : null}
           </div>
         ) : null}
 

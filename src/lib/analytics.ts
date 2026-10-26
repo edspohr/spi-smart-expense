@@ -23,9 +23,7 @@ function load(): Promise<Analytics | null> {
 export type LandingEvent =
   | 'landing_view'
   | 'demo_start'
-  | 'cta_click'
-  | 'calculator_use'
-  | 'lead_submit';
+  | 'cta_click';
 
 /** Fire-and-forget; never throws. */
 export function track(event: LandingEvent, params: Record<string, string | number | boolean | undefined> = {}): void {

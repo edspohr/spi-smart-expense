@@ -12,13 +12,9 @@ Marcar `[x]` con la fecha al cerrar.
   `gcloud` de `docs/runbooks/bootstrap-tenant.md` (sección Tenant demo:
   `iamcredentials` + `serviceAccountTokenCreator`). Sin eso los botones
   "Entra al demo" muestran error.
-- [ ] **Probar un lead real** con tu correo desde
-  https://expense-buddy-demo.web.app/login (te llegará el aviso "Nuevo
-  lead" y entrará al seguimiento; bórralo luego del CRM si no quieres los
-  correos de días 1/3/7).
 - [ ] Revisar en Google Analytics (propiedad del proyecto
   `expense-buddy-demo`) que lleguen `landing_view`, `demo_start` y
-  `lead_submit`.
+  `cta_click`.
 
 - [ ] **Probar la Ola 3 en producción** (5 min): recargar la app (o cerrar y
   abrir sesión) y confirmar que ves Configuración → Usuarios y Ajustes;

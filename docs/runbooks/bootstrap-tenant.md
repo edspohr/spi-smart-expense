@@ -141,11 +141,6 @@ gcloud iam service-accounts add-iam-policy-binding 746906129123-compute@develope
   --role="roles/iam.serviceAccountTokenCreator" --project expense-buddy-demo
 ```
 
-- Los leads de la landing van al CRM de Growth Buddies (`leads` en el
-  proyecto `growth-buddies`); la config pública está en `tenants/demo.json`
-  → `leads`. Para probar en emuladores, cargar las reglas de Growth Buddies
-  en el emulador para ese proyecto (ver `docs/validation/ola-7.md`).
-
 ## Checklist de cierre
 
 - [ ] Login con la marca del cliente, sin registro abierto si corresponde

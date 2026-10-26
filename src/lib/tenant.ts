@@ -20,28 +20,20 @@ export interface TenantLanding {
     primary: { label: string; url: string };
     secondary?: { label: string; url: string };
   };
+  /** "How it works without signal" section, told from the user's side. */
+  offline?: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    steps: { title: string; text: string }[];
+    note?: string;
+  };
   /** One-click demo by role (needs DEMO_MODE functions). */
   demo?: {
     title: string;
     text: string;
     roles: { role: 'worker' | 'manager' | 'finance'; label: string; description: string; path: string }[];
   };
-  /** Savings calculator defaults (all editable by the visitor). */
-  calculator?: {
-    people: number;
-    reportsPerPerson: number;
-    minutesToday: number;
-    minutesWithApp: number;
-    hourlyCost: number;
-  };
-}
-
-/** Where landing leads are written (the Growth Buddies CRM). Public web config only. */
-export interface TenantLeads {
-  firebase: { apiKey: string; authDomain: string; projectId: string; appId: string };
-  collection: string;
-  interest: string;
-  source: string;
 }
 
 /** "Powered by" badge for the platform vendor. */
@@ -94,7 +86,6 @@ export interface TenantConfig {
   cardCompanies: string[];
   landing?: TenantLanding;
   poweredBy?: TenantPoweredBy;
-  leads?: TenantLeads;
   /** Starter cost centres offered by "Cargar centros por defecto" (AdminProjects). */
   defaultProjects?: { code: string; name: string; client: string }[];
   // Expense categories; omitted = the historical SPI list.

@@ -219,3 +219,19 @@ columna de login ✅; Aprobaciones con sidebar y encabezado tinta y tabla
 clara ✅; dashboard móvil con encabezado tinta y CTA ámbar ✅; SPI sin
 `data-chrome`, botón de login azul `rgb(37, 99, 235)`, CTA verde y tokens
 iguales a los grises originales ✅; 99 tests ✅.
+
+## Landing: sin calculadora ni formulario, con modo sin conexión (2026-10-25)
+
+**Qué cambió:** por decisión del responsable se quitaron la calculadora de
+ahorro y el formulario de contacto (y su código: `SavingsCalculator`,
+`LeadForm`, `leads.ts`, `savings.ts`); quedan "Agenda una demo" y WhatsApp.
+Nueva sección "Así funciona cuando no hay señal"
+(`src/components/landing/OfflineExplainer.tsx`, texto en
+`tenants/demo.json` → `landing.offline`): cuatro pasos desde el punto de
+vista de quien rinde, con los mismos mensajes que muestra la app ("Sin
+conexión · 1 sin enviar", "Se envió 1 rendición guardada sin conexión") y la
+aclaración honesta de que la lectura con IA necesita conexión y de que los
+envíos salen con la app abierta.
+
+**Estado (verificado en navegador):** escritorio y móvil sin scroll
+horizontal ✅; 96 tests ✅.
