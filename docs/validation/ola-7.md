@@ -205,7 +205,7 @@ reinicio borra gasto, PIN y token de un visitante y deja saldos idénticos
 (Valentina $223.500, Matías $1.745.790) ✅; bundle SPI sin rastro del demo
 ni del CRM ✅. **Producción:** funciones y hosting desplegados; `demoSignIn`
 activo tras el permiso `serviceAccountTokenCreator` (2026-10-25): "Jefatura" entra a Mis aprobaciones en producción ✅;
-probar un lead real con un correo propio ☐; ver eventos en GA4 ☐.
+ver eventos en GA4 ☐ (el formulario de leads se retiró después).
 
 ## Identidad "Tinta" del demo (2026-10-25)
 
