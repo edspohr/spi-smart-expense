@@ -21,7 +21,7 @@ hacer tú.
   con la revisión, pasarlos a `derived-v1` (me avisas y cambio texto y
   versión). No activar el aporte con clientes reales antes de eso.
 - [ ] **Revisar el panel de precisión de SPI hacia el 2026-11-16** (modo
-  sombra activo desde el 2026-10-26): Ajustes → Lectura sin conexión →
+  sombra activo desde el 2026-10-26, deploy `a6096f5`): Ajustes → Lectura sin conexión →
   Precisión del lector. Si monto y fecha están sobre ~85 %, activar
   "Lectura sin conexión" para SPI (verán "Listo para viajar") y avisarles
   antes de su próxima feria.
@@ -112,6 +112,8 @@ hacer tú.
   (`expense-buddy-demo.web.app`) y clave Web Push si se quiere mostrar push.
 
 ## Cerrados
+
+- [x] 2026-10-26 — Activar el modo sombra en SPI (autorizado por el responsable; lo activé por script, `settings/tenant.offline.shadowRead`).
 
 - [x] 2026-10-25 — Activar el demo en un clic (`iamcredentials` +
   `serviceAccountTokenCreator` en `expense-buddy-demo`); verificado en

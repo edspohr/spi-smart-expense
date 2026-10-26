@@ -89,6 +89,7 @@ Backend / infra: **Felipe Soto Santibáñez**
 | 8 | `89a4592` | 2026-10-26 (SPI con lector apagado; demo activo) |
 | 8b | `a79a856` | 2026-10-26 (SPI apagado; demo con modo sombra) |
 | 8c | `4d8aad4` | 2026-10-26 (aporte apagado en SPI y demo; sin hub) |
+| SPI viajeros | `a6096f5` | 2026-10-26 (lector 1.3.0, TRM al enviar, "Listo para viajar"; modo sombra activo en SPI) |
 
 ### Plan v2 — fases (archivado)
 
