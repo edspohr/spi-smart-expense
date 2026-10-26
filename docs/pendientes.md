@@ -6,7 +6,27 @@ no se detiene por ellas; se revisan al cierre de cada ola.
 
 Marcar `[x]` con la fecha al cerrar.
 
+**Ola 8 (siguiente) incluye cerrar esta lista** junto con el offline
+automatizado (plan v4, ADR 0014). Las dos primeras tareas son nuevas y
+alimentan esa ola.
+
 ## Abiertos
+
+- [ ] **Corpus de boletas para el lector offline (Ola 8)**: reunir 50-100
+  fotos reales de comprobantes, sacadas con el teléfono como lo haría un
+  rendidor (incluye algunas arrugadas o con mala luz): boletas y facturas
+  electrónicas chilenas con timbre (código de barras PDF417), boletas de
+  papel sin timbre (peajes, estacionamientos, almacenes, combustible) y
+  algunas facturas colombianas con QR DIAN. Para cada una, anotar RUT/NIT,
+  fecha, total y folio correctos (una planilla basta). Tapar o recortar
+  datos personales (nombres, tarjetas). Son los casos de prueba que miden
+  la precisión del lector en cada versión.
+- [ ] **Decidir el mensaje "Datos alojados en Chile"**: el benchmark lo
+  descarta como diferenciador; hoy aparece en la landing del demo
+  (destacados y pilar "Tu propio ambiente") y en el brochure (portada y
+  página 5). Propuesta: reemplazarlo por "ambiente exclusivo por
+  cliente". También presentar WhatsApp como "en roadmap", nunca como "en
+  desarrollo".
 
 - [ ] Revisar en Google Analytics (propiedad del proyecto
   `expense-buddy-demo`) que lleguen `landing_view`, `demo_start` y

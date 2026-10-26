@@ -17,7 +17,6 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | UX de login sin Google por tenant (`auth.googleLogin: false`) | El flag existe desde Ola 0, pero la pantalla de login solo se ajusta visualmente (ocultar botón). Falta revisar onboarding solo-password y mensajes de error. | Ola 3 |
 | `minInstances: 1` en `extractReceipt` | Elimina el cold start (2-10 s en la primera lectura del día) pero cuesta ~USD 3-5/mes por tenant. Medir primero la latencia real con Sentry. | Ola 8 |
 | Fecha de enforce de App Check | Desplegado en monitor en Ola 2. Requiere registrar la key reCAPTCHA Enterprise (manual), una semana de métricas limpias y luego `enforceAppCheck: true` en los `onCall`. Anotar aquí la fecha cuando se active. | Tras el deploy de Ola 2 + 1 semana |
-| Service account dedicada para Functions | Hoy las Functions corren con la service account por defecto de Compute (rol Editor amplio). Crear `expense-buddy-functions@<proyecto>` con `datastore.user`, `firebaseauth.admin`, `aiplatform.user`, `logging.logWriter`, `eventarc.eventReceiver` y fijarla en `setGlobalOptions({ serviceAccount })`. | Ola 8 (operación) o al dar de alta el tenant demo |
 | Eliminar la key de Google AI Studio | Estuvo pública en el bundle hasta Ola 2 y ya nada la usa (Vertex AI con IAM). Borrarla en AI Studio / GCP Credenciales. | Inmediatamente después del deploy de Ola 2 |
 | Series históricas EUR→COP / EUR→CLP — TD-007 | Requiere API pagada; solo si contabilidad exige exactitud histórica en EUR. | Ola 7 |
 | PIN al abrir la app (`AppLock` de Comandas) | Se decidió PIN por acción (ADR 0005). Puede ofrecerse como opción por tenant si un cliente lo pide. | Ola 4 |
@@ -33,5 +32,8 @@ Al mover un ítem al plan, borrarlo de aquí y referenciar la ola.
 | Avatar del sidebar con degradado `indigo` | Color fijo fuera de la paleta; cambiarlo a `brand` también altera el look de SPI. | Cuando SPI acepte retoques visuales |
 | Calculadora de ahorro y formulario de contacto en la landing | Implementados y retirados por decisión del responsable (no convencían); recuperables desde el historial de git (commit 50a76ea). | A demanda |
 | Video de 20 s en la landing, caso SPI y logos, planes visibles, dominio propio | Siguientes palancas comerciales propuestas con la landing; requieren material o decisiones del responsable (video, permiso de SPI, precios, dominio). | Tras medir la landing |
-| Validar facturas electrónicas (DTE) ante el SII y exportar a Defontana / Nubox / Softland | Diferenciador fuerte para finanzas en Chile; requiere certificado digital y alcance con un cliente. | Con Elecnor u otro cliente chileno |
+| Perú (SUNAT) y México (CFDI con socio PAC) | Sin validación tributaria local no se compite allí (benchmark); diferido en el roadmap v4 (ADR 0014). | Con un caso validado en ese país |
+| Agentes de IA de auditoría (revisor automático) | Rindegastos, Xpendit y Mendel los tienen; se construyen sobre el motor de políticas de la Ola 12. | Ola 12 |
+| Certificación ISO 27001 | El paquete de seguridad (Olas 9 y 14) es el paso previo; certificar es caro y lento. | Cuando un cliente la exija |
+| Emisión de tarjetas, reserva de viajes, movimiento de dinero propio | Excluido del roadmap (ADR 0014): modelo fintech fuera de foco; la tarjeta se cubre con conciliación de cartola (Ola 15). | No se reevalúa sin cambio de estrategia |
 | Niveles de aprobación genéricos | Hoy: responsable → finanzas con doble firma (ADR 0012). Un arreglo arbitrario de niveles por monto si un cliente lo pide. | A demanda |

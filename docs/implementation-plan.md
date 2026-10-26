@@ -1,4 +1,4 @@
-# Expense Buddy — Implementation Plan (v3)
+# Expense Buddy — Implementation Plan (v4)
 
 **Producto:** Expense Buddy, plataforma genérica de rendición de gastos
 desplegada como una instancia independiente por cliente (un Firebase project
@@ -10,6 +10,11 @@ Elecnor y la oferta a otros clientes.
 
 **Stack:** React 19 + Vite + Tailwind + Firebase (Auth / Firestore / Storage /
 Functions / App Check) + Gemini + TypeScript gradual.
+
+**v4 (2026-10-26):** las olas 0-7 (v3) quedan como historia; las olas 8-16
+siguen el roadmap acordado tras el benchmark de mercado
+(`docs/research/benchmark-2026-10.md`, ADR 0014). **Solo hay orden
+sugerido, no fechas.**
 
 **Plan anterior:** `docs/archive/implementation-plan-v2-fases-1-6.md`
 (fases 1-6, deployadas 2026-04-16).
@@ -30,8 +35,19 @@ Functions / App Check) + Gemini + TypeScript gradual.
 | 5 | Flujos de aprobación + auditoría + email | Transparente (política por defecto = actual) | Deployada 2026-10-25 (`ed26b9c`) |
 | 6 | Offline, push y share target | Visible positivo (opt-in) | Deployada 2026-10-25 (`1f5d0af`) |
 | 7 | País configurable + tenant demo | Transparente | Deployada 2026-10-25: SPI (`6378638`) y demo `expense-buddy-demo` |
-| 8 | Observabilidad y operación | Transparente | Pendiente |
-| 9 | Calidad (refactor monolitos, e2e) | Transparente | Pendiente |
+| 8 | **Offline automatizado** (lectura sin conexión + "Listo para terreno") + cierre de pendientes del responsable | Visible positivo (opt-in por tenant) | **Siguiente** |
+| 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
+| 10 | Documentos tributarios Chile: timbre electrónico + validación SII | Transparente (add-on apagado) | Pendiente |
+| 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Pendiente |
+| 12 | Fondos por rendir, viáticos, kilometraje, políticas y nómina de pago | Transparente (opt-in) | Pendiente |
+| 13 | Canales conversacionales: WhatsApp + email | Transparente (opt-in) | Pendiente |
+| 14 | Enterprise: SSO, paquete de seguridad, roles finos | Transparente (opt-in) | Pendiente |
+| 15 | Colombia DIAN + conciliación de cartola de tarjeta | Visible positivo para SPI si lo activa | Pendiente |
+| 16 | Calidad y escala (refactor monolitos, e2e, modo oscuro completo) | Transparente | Pendiente |
+
+El orden 9-16 es sugerido y puede cambiar con lo que pidan los clientes
+fundadores. Los prompts de las olas 9-16 se escriben al iniciar cada una
+(así no quedan obsoletos); cada sección deja el alcance acordado.
 
 Actualizar esta tabla al cerrar cada ola (estado `Deployada YYYY-MM-DD` +
 commit en `docs/README.md`).
@@ -739,97 +755,322 @@ ACCEPTANCE CRITERIA
 
 ---
 
-## Ola 8 — Observabilidad y operación
+## Ola 8 — Offline automatizado
 
-**Goal:** Saber qué pasa en producción y poder operar varios tenants con
-procedimientos escritos.
+**Goal:** Que rendir sin señal sea tan automático como rendir con señal: la
+app lee la boleta en el teléfono (sin IA en la nube), sabe de antemano todo
+lo que necesita para trabajar en faena, envía sola al volver la cobertura y
+verifica con IA lo que leyó offline. Es el gancho comercial principal
+(ADR 0014): ningún competidor del benchmark documenta rendición offline, y
+cada uso real (testing o clientes) mejora el motor.
+
+**Por qué ahora:** hoy, sin señal, la cola guarda la rendición pero los
+datos se escriben a mano. "Funciona sin señal" vende; "lee la boleta sin
+señal" cierra negocios.
 
 **Scope**
-- Sentry sobre `logger.js` con scrub de PII; `Sentry.ErrorBoundary`
-  (cierra TD-019).
-- Scheduled: reconciliación semanal de balances con alerta de drift
-  (cierra TD-018), export diario de Firestore a GCS, limpieza de
-  invitaciones vencidas.
-- Dashboard ops del superadmin: consumo Gemini, errores, usuarios activos,
-  storage, gastos sin sincronizar, cold starts.
-- Queries paginadas con índices en Reports / Approvals / BulkUpload
-  (cierra TD-003, TD-021).
-- Runbooks: handover a proyecto GCP del cliente (basado en
-  `etfa-ruido/docs/plan-cierre.md`), deploy por tenant, rotación de
-  secretos, restore desde backup.
 
-**Dependencies:** Ola 2, Ola 3.
-**Impacto en SPI:** Transparente.
+1. **Lectura por código de barras (exacta, milisegundos, sin red).**
+   - Chile: el timbre electrónico (TED, PDF417) de todo DTE (factura,
+     boleta, nota) trae RUT emisor, tipo, folio, fecha y monto total.
+     Decodificar con `zxing-wasm` (o equivalente WebAssembly) y parsear el
+     XML del TED. Esta base la reutiliza la Ola 10 (validación SII).
+   - Colombia: el QR de la factura electrónica DIAN (NIT emisor, total,
+     fecha, CUFE). Base de la Ola 15.
+   - Resultado con confianza "alta" y origen `barcode`.
+2. **OCR local para lo que no trae código.** `tesseract.js` (WebAssembly)
+   con modelo español; carga diferida (solo cuando se necesita) y guardado
+   en caché para uso offline. Preprocesado en canvas: escala, grises,
+   contraste/umbral, rotación (OSD). Corre en un Web Worker para no
+   congelar la UI.
+3. **Motor de reglas sobre el texto** (`src/lib/localReader/`, TypeScript
+   puro y testeado):
+   - RUT/NIT con validación de dígito verificador (reusa `country.ts`).
+   - Total: montos junto a "TOTAL", "TOTAL A PAGAR", "MONTO"; descarta
+     subtotales, IVA y vuelto; heurística del mayor monto coherente.
+   - Fecha en sus formatos locales, folio/número de boleta, medio de pago
+     ("DÉBITO", "CRÉDITO", "EFECTIVO"), moneda.
+   - Comercio y categoría: diccionario del tenant RUT emisor → razón
+     social y categoría, construido de sus gastos aprobados (se sincroniza
+     al teléfono), más palabras clave por país (Copec/Shell → Combustible,
+     peajes, estacionamientos...).
+   - Confianza por campo (alta/media/baja) y origen (`barcode`, `ocr`,
+     `dictionary`).
+4. **UX "leído sin conexión".** El formulario se precarga con lo leído y
+   marca cada campo con su confianza ("revisa este monto"). Nunca se envía
+   sin confirmación de la persona. El mismo flujo funciona con señal si el
+   tenant activa `localFirst` (abajo).
+5. **"Listo para terreno".** Indicador y botón en Mi Espacio (y aviso al
+   instalar la app) que descarga y verifica todo lo necesario para operar
+   sin red: motor OCR y modelo, diccionario del tenant, centros de costo,
+   categorías, saldos y perfil (hoy el formulario carga los centros de
+   costo con `getDocs`: si nunca se cargaron con red, offline quedan
+   vacíos). Se refresca solo al abrir la app con red. Estado visible: "Listo
+   para terreno · actualizado hace 2 h".
+6. **Verificación con IA al reconectar (aprendizaje).** Cuando una
+   rendición leída offline se sincroniza, una Function la relee con Gemini
+   y compara campo a campo. Si difiere (monto, RUT, fecha), marca la
+   rendición "Revisar: la IA leyó otro monto" para quien rinde y para quien
+   aprueba. Cada comparación se guarda como métrica anónima
+   (`ocrEval`: tipo de documento, campo, acierto/error, origen) sin
+   imagen ni datos personales.
+7. **Panel de precisión (superadmin).** Tasa de acierto por campo y por
+   origen, en el tiempo y por tenant; lista de casos fallidos para ajustar
+   reglas. Así "mientras más se usa, mejor lee" es medible.
+8. **Corpus de pruebas en CI.** `test/fixtures/receipts/` con fotos reales
+   anonimizadas (boletas y facturas chilenas y colombianas) y sus valores
+   esperados; un test mide la precisión del motor (barcode + OCR + reglas)
+   y falla si baja de un umbral. El responsable aporta las primeras
+   50-100 boletas (ver pendientes).
+9. **Modo "simular sin señal" para demos.** En el tenant demo (y como
+   opción de superadmin), un interruptor que corta la red de la app
+   (`disableNetwork` de Firestore + bloqueo de llamadas) para mostrar el
+   flujo offline completo en una reunión sin modo avión.
+10. **Lectura local también con señal (opcional por tenant).**
+    `settings/tenant.ai.localFirst`: si la lectura local es de confianza
+    alta, no se llama a Gemini (más rápido y más barato); si es baja, se
+    usa Gemini como hoy. Apagado por defecto.
+11. **Investigación acotada:** envío en segundo plano en Android
+    (Background Sync) para que la cola salga aunque la app esté cerrada.
+    Se implementa solo si es viable con la sesión de Firebase; si no, queda
+    documentado como límite.
+
+**Cierre de pendientes del responsable (parte de esta ola):** verificar
+Olas 2/3 en producción, borrar la key vieja de AI Studio, enforce de App
+Check (desde 2026-11-01, luego `enforceAppCheck` en Functions), campana de
+notificaciones, instalación PWA en Android e iPhone, clave Web Push (VAPID)
+para activar push, Brevo (API key + remitente) para correos, prueba de
+offline y compartir en terreno, eventos GA4 del demo, y el corpus de
+boletas para el punto 8. Lista viva en `docs/pendientes.md`.
+
+**Límites honestos (se comunican así en ventas):** el OCR local es menos
+preciso que la IA en boletas de papel térmico sin código de barras, arrugadas
+o mal fotografiadas; en teléfonos de gama media tarda algunos segundos.
+Con timbre electrónico o QR DIAN la lectura es exacta.
+
+**Dependencies:** Ola 6 (cola offline), Ola 7 (país, RUT/NIT).
+**Impacto en SPI:** Opt-in por tenant (`settings/tenant.offline.localReader`);
+"Listo para terreno" visible solo si se activa. Comportamiento actual intacto.
 
 ### Prompt 8 (paste into Claude Code)
 
 ```
-Implement Ola 8: observability and operations.
+Implement Ola 8: automated offline mode (local receipt reading +
+"Listo para terreno" + AI verification on sync), per docs/implementation-plan.md.
+
+CONTEXT
+- Offline queue exists (src/lib/offlineQueue.ts, offlineSync.ts, Ola 6);
+  AI extraction is the extractReceipt callable (Gemini on Vertex).
+- Country helpers (RUT/NIT validation, base currency) in src/lib/country.ts.
+- ExpenseForm loads projects with getDocs: offline it only works if they
+  were cached before.
 
 TASKS
-1. @sentry/react wired into logger.js (error + warn in production only),
-   DSN per tenant via VITE_SENTRY_DSN, PII scrubbing, Sentry.ErrorBoundary
-   wrapping ErrorBoundary.jsx. Functions use @sentry/node.
-2. functions/src/scheduled.ts: weeklyBalanceReconciliation (dry-run of
-   fixBalances logic, notify superadmin on drift > 100 base units),
-   dailyFirestoreExport to gs://<bucket>/backups/<date>, purgeExpiredInvites.
-3. /admin/ops (superadmin): Gemini calls/day and cost estimate, error
-   count, active users 7d, storage usage, offline queue backlog, last
-   backup status.
-4. Paginate Reports/Approvals/BulkUpload with Firestore cursors and the
-   indexes in firestore.indexes.json; remove client-side full scans.
-5. docs/runbooks/: handover-cliente.md (adapted from etfa-ruido
-   docs/plan-cierre.md), deploy-por-tenant.md, rotacion-secretos.md,
-   restore-backup.md.
-6. Docs: technical-debt (close TD-003, TD-018, TD-019, TD-021),
-   validation/ola-8.md.
+1. src/lib/localReader/: barcode.ts (zxing-wasm: PDF417 TED for Chilean DTE,
+   QR DIAN for Colombia; parse to {taxId, docType, folio, date, total,
+   currency}), ocr.ts (tesseract.js in a Web Worker, Spanish model, lazy,
+   cached; canvas preprocessing), rules.ts (pure TS: totals, dates, RUT/NIT
+   with check digit, payment method, merchant/category from the tenant
+   dictionary + per-country keywords), index.ts (pipeline returning
+   per-field value + confidence + source). Unit tests for rules.ts.
+2. Tenant dictionary: build taxId -> {merchant, category} from approved
+   expenses (callable or scheduled function), cache on device.
+3. ExpenseForm: when offline (or settings.ai.localFirst with high
+   confidence), prefill from localReader and show per-field confidence
+   badges; never auto-submit.
+4. "Listo para terreno": src/lib/fieldReady.ts preloads OCR assets, the
+   dictionary, projects, categories, balances and profile into caches;
+   status card in Mi Espacio; refresh on app open when online.
+5. Functions: on sync of an expense read offline (flag localRead: true),
+   re-read with Gemini, compare fields, set reviewFlags on mismatch and
+   write anonymized ocrEval docs (no image, no personal data). Rules:
+   ocrEval server-only.
+6. Superadmin accuracy panel (Ajustes or a new page): accuracy per field
+   and source over time, failed cases list.
+7. test/fixtures/receipts + an accuracy test with a threshold in CI
+   (start with the fixtures available; document how to add more).
+8. "Simular sin señal" toggle (demo tenant + superadmin): Firestore
+   disableNetwork/enableNetwork and a guard on callables/uploads.
+9. settings/tenant: offline.localReader (default false), ai.localFirst
+   (default false); SPI unchanged.
+10. Spike: Background Sync on Android for the queue; implement only if the
+    Firebase session works from the worker, else document the limit.
+11. Docs: ADR if a library choice is architectural, validation/ola-8.md,
+    README, CLAUDE.md, technical-debt, backlog, pendientes.
 
 ACCEPTANCE CRITERIA
-- A thrown error in production appears in Sentry with tenant tag and no
-  email/name in payload.
-- Reconciliation job runs on schedule and creates a notification on
-  injected drift.
-- Reports with 10k synthetic expenses load the first page under 1 s.
+- Airplane mode: a Chilean electronic boleta with TED is read exactly
+  (RUT, folio, date, total) and a paper receipt gets total/date/merchant
+  with confidence badges; "Listo para terreno" lets a fresh session submit
+  offline with cost centers available.
+- On reconnect the expense syncs, Gemini verifies it and a mismatch is
+  flagged; ocrEval records appear in the accuracy panel.
+- Fixture accuracy test runs in CI. SPI build and behaviour unchanged.
 ```
 
 ---
 
-## Ola 9 — Calidad
+## Ola 9 — Operación de flota, observabilidad y seguridad base
 
-**Goal:** Reducir riesgo de regresión en los tres componentes monolíticos y
-cubrir el flujo crítico con e2e.
+**Goal:** Operar 5+ ambientes dedicados sin que el costo de soporte crezca
+con cada cliente (riesgo de escalabilidad del modelo single-tenant) y tener
+la evidencia de seguridad que pide compras.
 
 **Scope**
-- Descomponer `AdminApprovals.jsx` (1292 loc), `ExpenseForm.jsx` (1164),
-  `BulkUpload.jsx` (877) en hooks + componentes `.tsx` (cierra TD-014).
+- Flota: comando para desplegar y migrar todos los tenants en secuencia
+  con smoke tests; inventario de versiones por ambiente; canario
+  demo → SPI → resto.
+- Observabilidad: Sentry con scrub de PII (TD-019), alertas de uptime y
+  errores de Functions, costo y consumo Gemini por tenant, dashboard ops del
+  superadmin.
+- Backups: export diario de Firestore a GCS + runbook de restore probado;
+  reconciliación semanal de saldos con alerta de drift (TD-018).
+- Seguridad: App Check en enforce, service account dedicada por ambiente
+  (en lugar de la de Compute), paquete de seguridad (arquitectura,
+  respuestas al cuestionario estándar de compras, certificaciones de GCP
+  heredadas) como paso previo a ISO 27001.
+- Queries paginadas (TD-003, TD-021); limpieza de invitaciones vencidas.
+- Runbooks: handover a la cuenta de nube del cliente, rotación de secretos.
+
+**Dependencies:** Ola 2, Ola 3. **Impacto en SPI:** Transparente.
+
+---
+
+## Ola 10 — Documentos tributarios Chile: timbre electrónico + validación SII
+
+**Goal:** Cerrar la brecha #1 del benchmark para licitaciones chilenas.
+
+**Scope**
+- Reusa la lectura del TED (Ola 8) para datos exactos del DTE.
+- **Spike primero:** verificación criptográfica de autenticidad del TED (el
+  CAF firmado por el SII viaja en el timbre, posible incluso offline);
+  consulta de estado ante el SII con certificado digital de la empresa
+  (facturas emitidas a su nombre) vs. proveedor de validación de terceros
+  (costo, cobertura de boletas). Sin scraping del sitio público (CAPTCHA).
+- RUT emisor existente y vigente.
+- Estado por gasto: "Validado SII", "No encontrado", "Anulado",
+  "Discrepancia de monto"; política por tenant (bloquear, advertir,
+  exigir aprobador).
+- Add-on por tenant, apagado por defecto.
+
+**Dependencies:** Ola 8. **Impacto en SPI:** Transparente (no aplica a COP).
+
+---
+
+## Ola 11 — Integración contable
+
+**Goal:** Cerrar la brecha #2: que finanzas centralice sin digitar.
+
+**Scope**
+- Prerrequisito: cerrar TD-026 (agregados siempre en moneda base).
+- Mapeo contable por tenant: categoría → cuenta, centro de costo → centro
+  ERP, IVA recuperable, auxiliares.
+- Cierre de rendiciones por período con lotes de exportación marcados
+  "Contabilizado" (sin doble exportación).
+- Formatos: CSV/Excel configurable, archivo plano Softland y Defontana,
+  plantilla de importación SAP B1. Conectores API en un segundo paso,
+  idealmente con un partner ERP (canal sugerido por el benchmark).
+
+**Dependencies:** Ola 9 (backups antes de migrar agregados).
+**Impacto en SPI:** Transparente (add-on).
+
+---
+
+## Ola 12 — Fondos por rendir, viáticos, kilometraje y políticas
+
+**Goal:** Cubrir las brechas #3, #4, #8 y #10 y el motor de políticas.
+
+**Scope**
+- Ciclo formal de fondos por rendir: solicitado → aprobado → entregado →
+  rendido → devuelto/reintegrado, con saldo por fondo (sobre los saldos y
+  asignaciones actuales).
+- Viáticos por política: monto diario por zona, cargo o turno de faena,
+  sin boleta.
+- Kilometraje: km × tarifa por tenant.
+- Motor de políticas: topes por categoría o rol, antigüedad máxima de la
+  boleta, campos obligatorios; acción "bloquear" o "advertir".
+- Archivo de nómina bancaria genérico para pagar reembolsos (bancos
+  chilenos principales).
+
+**Dependencies:** Ola 11 (cuentas contables para fondos y viáticos).
+**Impacto en SPI:** Transparente (opt-in).
+
+---
+
+## Ola 13 — Canales conversacionales: WhatsApp + email
+
+**Goal:** Rendir y aprobar sin abrir la app (brecha #7; los 4 locales
+relevantes lo tienen o lo anuncian). **Hoy no está en desarrollo: en
+propuestas se comunica como "en roadmap".**
+
+**Scope**
+- WhatsApp (Meta Cloud API; cada cliente verifica su negocio en Meta y
+  tiene su número como parte de la implementación): rendir enviando la
+  foto (identifica por el teléfono del perfil, lee con IA o con el lector
+  local, pide el centro de costo con botones y crea el gasto); consultar
+  saldo y estado; aprobar o rechazar con botones respetando el PIN. Los
+  mensajes de plantilla tienen costo de Meta, incluido en la mensualidad.
+- Email: reenviar el comprobante a una dirección por tenant crea el gasto
+  (útil para facturas que llegan por correo).
+
+**Dependencies:** Ola 8 (lector local reutilizable), Ola 5 (aprobaciones).
+**Impacto en SPI:** Transparente (opt-in).
+
+---
+
+## Ola 14 — Enterprise
+
+**Goal:** Pasar los filtros de TI y compras de empresas grandes.
+
+**Scope**
+- SSO con Google Workspace y Microsoft Entra (Identity Platform en el
+  proyecto del cliente).
+- Segunda parte del paquete de seguridad: pentest externo, política de
+  retención y borrado de datos.
+- Roles más finos: auditor de solo lectura, aprobador por centro de costo.
+
+**Dependencies:** Ola 9. **Impacto en SPI:** Transparente (opt-in).
+
+---
+
+## Ola 15 — Colombia DIAN y conciliación de cartola
+
+**Goal:** Escalar en Colombia (cliente actual) y cubrir el gasto con tarjeta
+corporativa sin emitir tarjetas.
+
+**Scope**
+- Validación DIAN: lectura del QR/CUFE (reusa Ola 8) y consulta a la DIAN.
+- Conciliación de cartola de tarjeta: subir el CSV/Excel del banco y cruzar
+  automáticamente contra los gastos.
+
+**Dependencies:** Ola 8, Ola 11. **Impacto en SPI:** Visible positivo si
+SPI lo activa.
+
+---
+
+## Ola 16 — Calidad y escala
+
+**Goal:** Reducir riesgo de regresión y deuda visual antes de crecer el
+equipo o la base de clientes (era la Ola 9 del plan v3).
+
+**Scope**
+- Descomponer `AdminApprovals.jsx`, `ExpenseForm.jsx`, `BulkUpload.jsx` en
+  hooks + componentes `.tsx` (TD-014).
 - Playwright e2e contra emuladores: login → gasto → aprobar con PIN →
-  reporte; en CI.
-- Cobertura mínima 60% en `src/lib/` y `functions/src/`, 100% de callables
-  de dinero (cierra TD-013).
+  reporte, en CI; cobertura mínima de `src/lib/` y `functions/src/`
+  (TD-013).
+- Modo oscuro completo: migrar los ~1.200 colores fijos a tokens
+  semánticos (ADR 0013).
+- Wrapper de tiendas (iOS/Android) solo si un cliente lo exige.
 
-**Dependencies:** Olas 2-5 estables.
-**Impacto en SPI:** Transparente.
+**Dependencies:** Olas 8-12 estables. **Impacto en SPI:** Transparente.
 
-### Prompt 9 (paste into Claude Code)
+---
 
-```
-Implement Ola 9: decompose monolithic components and add e2e coverage.
+## Fuera del roadmap (decisión)
 
-TASKS
-1. AdminApprovals → useApprovalsQuery, useApprovalsFilters,
-   ApprovalsTable.tsx, BulkActionsController.tsx. ExpenseForm →
-   UploadStep, ReviewStep, ClassifyStep + useReceiptExtraction. BulkUpload →
-   useBulkParser, BulkReviewTable. Behaviour identical; snapshot the
-   rendered DOM before/after for the spi tenant.
-2. Playwright against firebase emulators: seed, login as professional,
-   submit expense with fixture receipt, login as admin, approve with PIN
-   (security.pinEnabled on in test tenant), verify report export. Run in CI.
-3. Coverage thresholds in vitest.config.ts; fill gaps in src/lib and
-   functions/src.
-4. Docs: technical-debt (close TD-013, TD-014), validation/ola-9.md.
-
-ACCEPTANCE CRITERIA
-- No file in src/pages over 400 lines.
-- e2e suite green in CI in under 5 minutes.
-- Coverage thresholds enforced.
-```
+- **Excluido:** emisión de tarjetas corporativas, reserva de viajes,
+  movimiento de dinero propio (fintech).
+- **Diferido hasta que el mercado lo pida:** Perú (SUNAT) y México (CFDI,
+  con socio PAC) — solo con un caso validado; agentes de IA de auditoría
+  sobre el motor de políticas de la Ola 12; certificación ISO 27001.

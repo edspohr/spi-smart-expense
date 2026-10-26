@@ -136,4 +136,4 @@ Every phase ("Ola") updates, as part of its acceptance criteria: `docs/implement
 
 ## Active implementation plan
 
-See `docs/implementation-plan.md`. Execute olas in order; each is self-contained and independently deployable. Decisions behind the plan are recorded in `docs/adr/`.
+See `docs/implementation-plan.md` (plan v4). Olas 0-7 are deployed; the roadmap continues with Ola 8 (automated offline mode: local receipt reading, "Listo para terreno", AI verification on sync) and then Olas 9-16 in suggested order, without dates (ADR 0014; market research in `docs/research/benchmark-2026-10.md`). Execute olas in order; each is self-contained and independently deployable. Prompts for Olas 9-16 are written when each wave starts. Decisions behind the plan are recorded in `docs/adr/`.

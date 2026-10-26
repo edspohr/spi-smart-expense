@@ -44,6 +44,8 @@ que estuvo pública (runbook `deploy-ola-2.md`, paso 7).
 
 ## TD-003 — Full Firestore collection scans
 
+**Plan v4:** se resuelve en la Ola 9.
+
 **Severity:** Medium (scalability)  
 **Files:** `AdminReports.jsx`, `AdminApprovals.jsx`, `BulkUpload.jsx`, `ExpenseForm.jsx`
 
@@ -187,6 +189,8 @@ admin y otro para dashboard) que muestre fallback local y permita "reintentar".
 
 ## TD-013 — Test suite (Vitest + emulador Firebase)
 
+**Plan v4:** se resuelve en la Ola 16.
+
 **Severity:** High (calidad)  
 **Impact:** High · **Effort:** High  
 **Status:** consolidates TD-005
@@ -203,6 +207,8 @@ aprobar/rechazar/editar.
 ---
 
 ## TD-014 — Refactor de componentes monolíticos
+
+**Plan v4:** se resuelve en la Ola 16.
 
 **Severity:** Medium (mantenibilidad)  
 **Impact:** Medium · **Effort:** High  
@@ -277,6 +283,8 @@ alcanzan >200 filas en pantalla.
 
 ## TD-018 — Cloud Function para recalcular balances (cron semanal + alerta)
 
+**Plan v4:** se resuelve en la Ola 9.
+
 **Severity:** Medium (integridad)  
 **Impact:** Medium · **Effort:** Medium  
 **File:** `src/utils/fixBalances.js`
@@ -293,6 +301,8 @@ detecta drift > 100 COP.
 ---
 
 ## TD-019 — Integrar Sentry sobre `logger.js`
+
+**Plan v4:** se resuelve en la Ola 9.
 
 **Severity:** Medium (observabilidad)  
 **Impact:** Medium · **Effort:** Low  
@@ -326,6 +336,8 @@ falta alguna.
 ---
 
 ## TD-021 — Índice Firestore + `orderBy` en UserExpenses
+
+**Plan v4:** se resuelve en la Ola 9.
 
 **Status:** Parcial (Ola 0). El índice `userId ASC + createdAt DESC` ya está
 declarado en `firestore.indexes.json`. Falta deployarlo (`firebase deploy
@@ -431,6 +443,8 @@ siendo estáticos de SPI. Un build con `VITE_TENANT=demo` instala con nombre e
 ---
 
 ## TD-026 — `projects.expenses` y `users.balance` suman montos de distintas monedas
+
+**Plan v4:** se resuelve en la Ola 11 (prerrequisito de la integración contable).
 
 **Severity:** High (integridad financiera)  
 **Impact:** High · **Effort:** Medium  

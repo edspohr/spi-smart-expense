@@ -40,6 +40,10 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **`/admin/settings`**: PIN toggle (enforced from Ola 4), module switches that hide sections for everyone instantly, daily AI reading limits. Stored in `settings/tenant`, defaults from `tenants/<id>.json`.
 - **Scripts**: `npm run superadmin:bootstrap` (first superadmin) and `npm run migrate:003` (user fields backfill).
 
+### Roadmap (plan v4, 2026-10-26)
+
+Next wave: **Ola 8, automated offline mode** — on-device receipt reading (Chilean electronic stamp PDF417 and Colombian DIAN QR decoded exactly; local OCR + rules for the rest), "Listo para terreno" preloading, AI verification on sync with an accuracy metric, and a "simular sin señal" demo switch. Then, in suggested order without dates: fleet operations and security baseline, SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
+
 ### Ola 7 — Country per tenant and the Expense Buddy demo (2026-10-25)
 
 - **Country registry** (`src/lib/country.ts`): base currency, FX provider (BanRep for COP, mindicador.cl for CLP, open.er-api fallback), NIT/RUT label and validator, wallets and number formats come from `tenants/<id>.json`. Every expense stores `baseCurrency` + `amountBase`; the base currency now counts in all totals. SPI is unchanged (COP, TRM, NIT).
