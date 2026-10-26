@@ -6,6 +6,29 @@ export type BrandPalette = Record<'50' | '100' | '500' | '600' | '700' | '800' |
 
 export type FxProvider = 'banrep' | 'mindicador' | 'open-er-api';
 
+/** Commercial landing around the login card (LoginLanding). */
+export interface TenantLanding {
+  eyebrow: string;
+  headline: string;
+  subheadline: string;
+  highlights?: string[];
+  /** icon: sparkles | workflow | offline | phone | budget | security */
+  features: { icon: string; title: string; text: string }[];
+  cta?: {
+    title: string;
+    text: string;
+    primary: { label: string; url: string };
+    secondary?: { label: string; url: string };
+  };
+}
+
+/** "Powered by" badge for the platform vendor. */
+export interface TenantPoweredBy {
+  name: string;
+  logo: string;
+  url: string;
+}
+
 export interface TenantConfig {
   id: string;
   name: string;
@@ -45,6 +68,8 @@ export interface TenantConfig {
   };
   // Paying entities shown in "Empresa tarjeta" (empty list hides nothing).
   cardCompanies: string[];
+  landing?: TenantLanding;
+  poweredBy?: TenantPoweredBy;
   /** Starter cost centres offered by "Cargar centros por defecto" (AdminProjects). */
   defaultProjects?: { code: string; name: string; client: string }[];
   // Expense categories; omitted = the historical SPI list.

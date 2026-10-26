@@ -3,6 +3,8 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      // `standalone:` = running as the installed PWA (hide marketing there).
+      screens: { standalone: { raw: '(display-mode: standalone)' } },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
       },

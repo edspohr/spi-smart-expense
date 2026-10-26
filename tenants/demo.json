@@ -69,5 +69,65 @@
     "TELEFONÍA E INTERNET",
     "GASTOS DE REPRESENTACIÓN",
     "VARIOS"
-  ]
+  ],
+  "landing": {
+    "eyebrow": "Rendición de gastos con IA",
+    "headline": "Rendiciones de gastos que se hacen solas.",
+    "subheadline": "Expense Buddy convierte la foto de una boleta en una rendición lista para aprobar. Pensado para equipos en terreno que no tienen tiempo para el papeleo.",
+    "highlights": [
+      "RUT validado",
+      "CLP, USD y EUR con tipo de cambio oficial",
+      "Datos alojados en Chile",
+      "Sin papeles ni planillas"
+    ],
+    "features": [
+      {
+        "icon": "sparkles",
+        "title": "De boleta a datos en segundos",
+        "text": "Fotografía la boleta o factura: la IA lee RUT, comercio, fecha y monto. Tú solo confirmas."
+      },
+      {
+        "icon": "workflow",
+        "title": "Aprobación por niveles",
+        "text": "Jefatura directa y luego finanzas, doble firma sobre montos altos, delegación en vacaciones y aprobación automática de montos menores."
+      },
+      {
+        "icon": "offline",
+        "title": "Funciona sin señal",
+        "text": "En faena o en ruta, la rendición queda guardada en el teléfono y se envía sola al volver la conexión."
+      },
+      {
+        "icon": "phone",
+        "title": "La app en tu teléfono",
+        "text": "Se instala en Android y iPhone sin pasar por tiendas. Comparte una foto directo a la app y sigue cada aprobación."
+      },
+      {
+        "icon": "budget",
+        "title": "Presupuesto bajo control",
+        "text": "Saldos por persona y centro de costo en tiempo real, reportes y exportación a Excel con todos los comprobantes."
+      },
+      {
+        "icon": "security",
+        "title": "Seguro y trazable",
+        "text": "PIN para acciones sensibles, historial de cada cambio y un ambiente exclusivo para tu empresa, alojado en Chile."
+      }
+    ],
+    "cta": {
+      "title": "¿Lo quieres en tu empresa?",
+      "text": "Lo implementamos con tu marca, tus centros de costo y tu flujo de aprobación, en un ambiente exclusivo para tu organización.",
+      "primary": {
+        "label": "Agenda una demo",
+        "url": "https://calendly.com/espohr/conversemos"
+      },
+      "secondary": {
+        "label": "Escríbenos por WhatsApp",
+        "url": "https://wa.me/56975991366?text=Hola%20Growth%20Buddies%21%20Vi%20Expense%20Buddy%20y%20quiero%20una%20demo%20para%20mi%20empresa."
+      }
+    }
+  },
+  "poweredBy": {
+    "name": "Growth Buddies",
+    "logo": "/brands/growth-buddies/logo.webp",
+    "url": "https://growthbuddies.cl/?utm_source=expense-buddy&utm_medium=app&utm_campaign=powered-by"
+  }
 }

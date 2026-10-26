@@ -45,6 +45,7 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Country registry** (`src/lib/country.ts`): base currency, FX provider (BanRep for COP, mindicador.cl for CLP, open.er-api fallback), NIT/RUT label and validator, wallets and number formats come from `tenants/<id>.json`. Every expense stores `baseCurrency` + `amountBase`; the base currency now counts in all totals. SPI is unchanged (COP, TRM, NIT).
 - **Country-aware Gemini prompt**: Chilean receipts (RUT, boleta/factura, IVA 19 %, CLP without decimals, Copec/Shell/Aramco as fuel); the Colombian prompt stays verbatim.
 - **Demo tenant "Expense Buddy"** for a fictitious Chilean company (Andes Energía SpA): green branding, own logo/icon, Chilean categories, invitation-only login (`auth.selfSignup: false`). `npm run seed:demo` / `npm run reset:demo` load people with managers, cost centres, a two-level approval policy and 25 expenses.
+- **Commercial login landing** (per tenant, `landing` + `poweredBy` in `tenants/<id>.json`): features, call to action (Calendly / WhatsApp) and a "Powered by Growth Buddies" badge around the login card; hidden when running as the installed app. SPI keeps its plain login.
 - **`npm run bootstrap-tenant`** scaffolds a new client (tenant JSON, functions env, web env example, Firebase alias) — see `docs/runbooks/bootstrap-tenant.md`.
 
 ### Ola 6 — Offline, push and share (2026-10-25)

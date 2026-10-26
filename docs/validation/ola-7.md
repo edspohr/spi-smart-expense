@@ -152,3 +152,21 @@ defecto). Logo/ícono **"B-recibo"** (B blanca cuya base es el borde dentado de 
 dashboard móvil con el logo ExB ✅; íconos legibles de 512 a 32 px ✅; build
 SPI con `--cta-600: 22 163 74` (verde) ✅; demo publicado con el manifest
 nuevo ✅. Pendiente: ver el ícono instalado en un teléfono real ☐
+
+## Landing comercial en el login del demo (2026-10-25)
+
+**Qué cambió:** `src/components/LoginLanding.tsx` envuelve la tarjeta de
+login cuando el tenant declara `landing` (y opcional `poweredBy`) en
+`tenants/<id>.json`: titular, beneficios, seis funcionalidades reales (IA,
+aprobación por niveles, sin señal, app instalable, presupuesto, seguridad),
+llamado a la acción ("Agenda una demo" → Calendly, WhatsApp) y la insignia
+"Powered by Growth Buddies" (enlace con UTM). Escritorio: propuesta a la
+izquierda y login fijo a la derecha. Teléfono: titular corto → login →
+funcionalidades. Como app instalada (`display-mode: standalone`) solo se ve
+el login. SPI no declara `landing`: su login no cambia.
+
+**Estado (verificado en navegador):** escritorio 1440 px y móvil 375 px sin
+scroll horizontal ✅; login completo sobre el pliegue en móvil ✅; regla
+`standalone` generada ✅; sin errores de consola ✅; bundle SPI sin el texto
+de la landing ✅. Pendiente: abrir la app instalada y confirmar que salta la
+landing ☐

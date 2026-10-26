@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import InstallButton from '../components/InstallButton';
 import { consumeAuthNotice } from '../context/authNotice';
 import { tenant } from '../lib/tenant';
+import LoginLanding from '../components/LoginLanding';
 
 export default function Login() {
   const { login, resetPassword, currentUser } = useAuth();
@@ -111,10 +112,10 @@ export default function Login() {
       // Keep email if typed
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+  const card = (
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-        <div className="flex justify-center mb-6">
+        {/* With a landing the hero already shows the brand on phones, so the card logo is desktop-only there. */}
+        <div className={`${tenant.landing ? 'hidden lg:flex standalone:flex' : 'flex'} justify-center mb-6`}>
             <img src={tenant.branding.logo} alt={tenant.name} className="h-24 w-auto" />
         </div>
         <h2 className="text-2xl font-bold mb-2 text-gray-800">
@@ -219,6 +220,16 @@ export default function Login() {
 
         <p className="mt-6 text-xs text-gray-400">© {new Date().getFullYear()} {tenant.branding.legalName}. Todos los derechos reservados.</p>
       </div>
+  );
+
+  // Tenants with a commercial landing (the demo) wrap the card; others (SPI) keep the plain login.
+  if (tenant.landing) {
+    return <LoginLanding landing={tenant.landing} poweredBy={tenant.poweredBy}>{card}</LoginLanding>;
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      {card}
     </div>
   );
 }
