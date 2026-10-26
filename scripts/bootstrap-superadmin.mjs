@@ -3,8 +3,10 @@
 //
 //   node scripts/bootstrap-superadmin.mjs --email edmundo@spohr.cl --dry-run           # emulators
 //   node scripts/bootstrap-superadmin.mjs --email edmundo@spohr.cl --apply --prod      # production
+//   node scripts/bootstrap-superadmin.mjs --email x --apply --prod --project expense-buddy-demo --tenant demo
 //
-// --prod uses scripts/serviceAccountKey.json (never committed). If the email
+// --prod uses scripts/serviceAccountKey.json (never committed), or your gcloud
+// Application Default Credentials when --project is given. If the email
 // has no Auth account yet, --apply creates it and prints a one-time
 // password-setup link instead of a password.
 
@@ -32,11 +34,15 @@ if (!prod) {
   process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8080';
   process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9099';
 }
-const { initializeApp, cert } = await import('firebase-admin/app');
+const { initializeApp, cert, applicationDefault } = await import('firebase-admin/app');
 const { getAuth } = await import('firebase-admin/auth');
 const { getFirestore } = await import('firebase-admin/firestore');
 
-if (prod) {
+const projectOpt = opt('--project');
+if (prod && projectOpt) {
+  initializeApp({ credential: applicationDefault(), projectId: projectOpt });
+  console.log(`Target: PRODUCTION ${projectOpt} (gcloud ADC)`);
+} else if (prod) {
   const keyPath = path.join(root, 'scripts/serviceAccountKey.json');
   if (!existsSync(keyPath)) {
     console.error('Missing scripts/serviceAccountKey.json for --prod');
