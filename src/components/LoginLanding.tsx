@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import {
-  ArrowUpRight,
-  CalendarCheck,
+  ArrowRight,
   Check,
   MessageCircle,
   PieChart,
@@ -34,6 +33,43 @@ interface Props {
   children: ReactNode;
 }
 
+const PILL_PRIMARY =
+  'inline-flex items-center gap-2 rounded-full bg-[#0097B2] px-5 py-2.5 text-sm font-semibold text-[#0B0B0F] transition hover:bg-[#00B5D6]';
+const PILL_SECONDARY =
+  'inline-flex items-center gap-2 rounded-full border border-chrome-line px-5 py-2.5 text-sm font-semibold text-chrome-strong transition hover:border-chrome-accent';
+
+function CtaRow({ cta }: { cta: NonNullable<TenantLanding['cta']> }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <a
+        href={cta.primary.url}
+        onClick={() => track('cta_click', { type: 'proposal' })}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={PILL_PRIMARY}
+      >
+        {cta.primary.label} <ArrowRight className="h-4 w-4" aria-hidden />
+      </a>
+      {cta.demoLabel ? (
+        <a href="#demo" onClick={() => track('cta_click', { type: 'demo' })} className={PILL_SECONDARY}>
+          {cta.demoLabel} <ArrowRight className="h-4 w-4" aria-hidden />
+        </a>
+      ) : null}
+      {cta.secondary ? (
+        <a
+          href={cta.secondary.url}
+          onClick={() => track('cta_click', { type: 'whatsapp' })}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-chrome-muted underline-offset-2 hover:underline"
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden /> {cta.secondary.label}
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
 // Commercial landing around the login card, for tenants that declare
 // `landing` in tenants/<id>.json (the Expense Buddy demo). Mobile order:
 // short hero → login → features, so people who only want to sign in never
@@ -55,6 +91,11 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
         </p>
         <h1 className="mt-4 sm:mt-5 max-w-xl text-[2rem] sm:text-4xl font-bold leading-[1.05] tracking-tight lg:text-5xl">{landing.headline}</h1>
         <p className="mt-4 sm:mt-5 max-w-xl text-base leading-relaxed text-chrome-muted sm:text-lg">{landing.subheadline}</p>
+        {landing.cta ? (
+          <div className="mt-6">
+            <CtaRow cta={landing.cta} />
+          </div>
+        ) : null}
         {landing.highlights?.length ? (
           <ul className="mt-6 hidden max-w-xl flex-wrap sm:flex gap-x-5 gap-y-2 text-sm text-chrome-fg">
             {landing.highlights.map((h) => (
@@ -74,7 +115,7 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
         <div className="w-full max-w-md lg:my-auto lg:py-8">
           {children}
           {landing.demo ? (
-            <div className="standalone:hidden">
+            <div id="demo" className="scroll-mt-4 standalone:hidden">
               <DemoRoles demo={landing.demo} />
             </div>
           ) : null}
@@ -105,48 +146,48 @@ export default function LoginLanding({ landing, poweredBy, children }: Props) {
         {landing.offline ? <OfflineExplainer offline={landing.offline} /> : null}
 
         {landing.cta ? (
-          <div className="mt-12 max-w-3xl rounded-2xl bg-zinc-950 p-6 text-white ring-1 ring-white/10 sm:p-8">
+          <div className="mt-12 max-w-3xl rounded-2xl bg-chrome-card p-6 ring-1 ring-chrome-line sm:p-8">
             <h2 className="text-xl font-semibold tracking-tight">{landing.cta.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{landing.cta.text}</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <a
-                href={landing.cta.primary.url}
-                onClick={() => track('cta_click', { type: 'calendar' })}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-cta-600 px-4 py-2.5 text-sm font-semibold text-cta-fg transition hover:bg-cta-700 focus-ring"
-              >
-                <CalendarCheck className="h-4 w-4" aria-hidden /> {landing.cta.primary.label}
-              </a>
-              {landing.cta.secondary ? (
-                <a
-                  href={landing.cta.secondary.url}
-                  onClick={() => track('cta_click', { type: 'whatsapp' })}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-zinc-400 focus-ring"
-                >
-                  <MessageCircle className="h-4 w-4" aria-hidden /> {landing.cta.secondary.label}
-                </a>
-              ) : null}
-            </div>
+            <p className="mt-2 mb-5 text-sm leading-relaxed text-chrome-muted">{landing.cta.text}</p>
+            <CtaRow cta={landing.cta} />
           </div>
         ) : null}
 
-        {poweredBy ? (
-          <a
-            href={poweredBy.url}
-            onClick={() => track('cta_click', { type: 'powered_by' })}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-10 inline-flex items-center gap-3 rounded-full border border-chrome-line py-1.5 pl-1.5 pr-4 text-sm text-chrome-muted transition hover:border-chrome-subtle hover:text-chrome-strong focus-ring"
-          >
-            <img src={poweredBy.logo} alt="" className="h-8 w-8 rounded-full bg-white object-contain" />
-            <span>
-              Powered by <strong className="font-semibold text-chrome-strong">{poweredBy.name}</strong>
-            </span>
-            <ArrowUpRight className="h-4 w-4" aria-hidden />
-          </a>
+        {poweredBy && landing.footer ? (
+          <footer className="mt-10 max-w-3xl border-t border-chrome-line pt-6 text-sm text-chrome-muted">
+            <a
+              href={poweredBy.url}
+              onClick={() => track('cta_click', { type: 'powered_by' })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 font-semibold text-chrome-strong hover:underline underline-offset-2"
+            >
+              <img src={poweredBy.logo} alt="" className="h-8 w-8 rounded-full bg-white object-contain" />
+              {poweredBy.name} · {landing.footer.siteLabel}
+            </a>
+            <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+              <a href={`mailto:${landing.footer.email}`} className="hover:underline underline-offset-2">
+                {landing.footer.email}
+              </a>
+              <a
+                href={landing.footer.whatsappUrl}
+                onClick={() => track('cta_click', { type: 'whatsapp' })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline underline-offset-2"
+              >
+                WhatsApp {landing.footer.whatsappLabel}
+              </a>
+              <a
+                href={landing.footer.privacyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline underline-offset-2"
+              >
+                Privacidad
+              </a>
+            </p>
+          </footer>
         ) : null}
       </div>
     </div>

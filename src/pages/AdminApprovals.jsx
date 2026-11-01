@@ -26,7 +26,7 @@ import { useAuth } from '../context/useAuth';
 import { logger } from '../lib/logger';
 import { approveExpense, rejectExpense, deleteExpense } from '../lib/expenseActions';
 import { PinCancelled } from '../lib/pin';
-import { BASE_CURRENCY, country, baseEquivalentOf } from '../lib/country';
+import { BASE_CURRENCY, country, baseEquivalentOf, FX_RATE_LABEL } from '../lib/country';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
 const DEFAULT_FILTERS = {
@@ -43,8 +43,8 @@ const ERROR_HIGHLIGHT_MS = 10000;
 const CSV_HEADERS = [
   "Fecha","Hora","Usuario","Código Proyecto","Proyecto","Evento","Proveedor",country.taxIdLabel,
   "No. Factura","Dirección","Ciudad","Teléfono","Forma Pago","Tarjeta Last4","Empresa Tarjeta",
-  "Marca Tarjeta","Descripción","Categoría","Monto","Moneda","TRM",`Equivalente ${BASE_CURRENCY}`,
-  "Fuente TRM","Estado","Motivo Rechazo",
+  "Marca Tarjeta","Descripción","Categoría","Monto","Moneda",FX_RATE_LABEL,`Equivalente ${BASE_CURRENCY}`,
+  `Fuente ${FX_RATE_LABEL}`,"Estado","Motivo Rechazo",
 ];
 
 function expenseToCsvRow(e, projectMap) {

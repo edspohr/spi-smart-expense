@@ -1,3 +1,4 @@
+import { BASE_CURRENCY } from '../lib/country';
 import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
@@ -351,7 +352,7 @@ export default function AdminReconciliation() {
                         <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">
                           {isMissing
                             ? formatCurrency(Number(r.expense.amount) || 0, r.expense.currency || 'COP')
-                            : formatCurrency(r.bankRow.amount, 'COP')}
+                            : formatCurrency(r.bankRow.amount, BASE_CURRENCY)}
                         </td>
                         <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">
                           {isMissing ? (r.expense.merchant || '—') : (r.bankRow.merchant || '—')}

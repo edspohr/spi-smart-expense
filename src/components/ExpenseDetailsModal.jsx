@@ -199,7 +199,7 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
            {/* Conversion rate info (USD and EUR expenses) */}
            {(expense.currency === 'USD' || expense.currency === 'EUR') && expense.trm && (
              <div className="bg-brand-50 p-4 rounded-xl border border-brand-100">
-               <h4 className="text-xs font-bold text-brand-800 uppercase mb-2">Conversión {expense.currency} → COP</h4>
+               <h4 className="text-xs font-bold text-brand-800 uppercase mb-2">Conversión {expense.currency} → {BASE_CURRENCY}</h4>
                <div className="grid grid-cols-2 gap-2 text-sm">
                  <div>
                    <label className="text-xs text-brand-600 block mb-0.5">Tasa aplicada</label>

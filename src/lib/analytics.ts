@@ -20,6 +20,22 @@ function load(): Promise<Analytics | null> {
   return analytics;
 }
 
+type Gtag = (...args: unknown[]) => void;
+let secondaryReady = false;
+
+// Firebase Analytics only talks to its own stream, so the main site's property
+// gets the same events through the gtag.js that the SDK already loaded.
+function sendToSecondary(event: string, params: Record<string, unknown>) {
+  const id = tenant.landing?.secondaryMeasurementId;
+  const gtag = (window as unknown as { gtag?: Gtag }).gtag;
+  if (!id || !gtag) return;
+  if (!secondaryReady) {
+    gtag('config', id, { send_page_view: false });
+    secondaryReady = true;
+  }
+  gtag('event', event, { ...params, send_to: id });
+}
+
 export type LandingEvent =
   | 'landing_view'
   | 'demo_start'
@@ -31,5 +47,6 @@ export function track(event: LandingEvent, params: Record<string, string | numbe
     if (!a) return;
     const { logEvent } = await import('firebase/analytics');
     logEvent(a, event, { tenant: tenant.id, ...params });
+    sendToSecondary(event, { tenant: tenant.id, ...params });
   });
 }
