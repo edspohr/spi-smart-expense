@@ -378,7 +378,7 @@ export default function EditExpenseModal({ isOpen, onClose, expense, onSave }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-0.5">
                       <p className="text-brand-800 text-xs font-medium">
-                        Tasa {form.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> COP/{form.currency}
+                        Tasa {form.currency}→{BASE_CURRENCY}: <span className="font-mono">{formatCurrency(trmState.trm, BASE_CURRENCY)}</span> COP/{form.currency}
                       </p>
                       {form.amount > 0 && (
                         <p className="text-brand-700 text-xs">

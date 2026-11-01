@@ -1,3 +1,4 @@
+import { BASE_CURRENCY } from '../lib/country';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '../utils/format';
 
@@ -17,7 +18,7 @@ function CustomTooltip({ active, payload, label }) {
           <span className="inline-block w-2 h-2 rounded-full" style={{ background: entry.color }} aria-hidden="true" />
           <span className="text-slate-600">{entry.name}:</span>
           <span className="font-mono font-semibold text-slate-900 tabular-nums">
-            {formatCurrency(entry.value, 'COP')}
+            {formatCurrency(entry.value, BASE_CURRENCY)}
           </span>
         </p>
       ))}

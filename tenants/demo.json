@@ -77,67 +77,67 @@
     "headline": "Rendiciones de gastos que se hacen solas.",
     "subheadline": "Expense Buddy convierte la foto de una boleta en una rendición lista para aprobar. Pensado para equipos en terreno que no tienen tiempo para el papeleo.",
     "highlights": [
-      "RUT validado",
-      "CLP, USD y EUR con tipo de cambio oficial",
-      "Datos alojados en Chile",
+      "Lectura de boletas con IA",
+      "CLP, USD y EUR con tipo de cambio de referencia actualizado",
+      "Funciona sin señal",
       "Sin papeles ni planillas"
     ],
     "features": [
       {
         "icon": "sparkles",
         "title": "De boleta a datos en segundos",
-        "text": "Fotografía la boleta o factura: la IA lee RUT, comercio, fecha y monto. Tú solo confirmas."
+        "text": "Fotografíe la boleta o factura: la IA lee RUT, comercio, fecha y monto. Usted solo confirma."
       },
       {
         "icon": "workflow",
-        "title": "Aprobación por niveles",
-        "text": "Jefatura directa y luego finanzas, doble firma sobre montos altos, delegación en vacaciones y aprobación automática de montos menores."
+        "title": "Aprobación en dos niveles, con delegación",
+        "text": "Jefatura directa y luego finanzas, doble revisión sobre montos altos, delegación en vacaciones y aprobación automática de montos menores."
       },
       {
         "icon": "offline",
         "title": "Funciona sin señal",
-        "text": "En faena o en ruta, la rendición queda guardada en el teléfono y se envía sola al volver la conexión."
+        "text": "En faena o en ruta, los registros se guardan sin señal y se sincronizan cuando se abre la aplicación con conexión."
       },
       {
         "icon": "phone",
-        "title": "La app en tu teléfono",
-        "text": "Se instala en Android y iPhone sin pasar por tiendas. Comparte una foto directo a la app y sigue cada aprobación."
+        "title": "La app en su teléfono",
+        "text": "Se instala en Android y iPhone sin pasar por tiendas, y permite seguir cada aprobación."
       },
       {
         "icon": "budget",
         "title": "Presupuesto bajo control",
-        "text": "Saldos por persona y centro de costo en tiempo real, reportes y exportación a Excel con todos los comprobantes."
+        "text": "Saldos por persona y centro de costo, reportes y exportación a Excel con todos los comprobantes."
       },
       {
         "icon": "security",
         "title": "Seguro y trazable",
-        "text": "PIN para acciones sensibles, historial de cada cambio y un ambiente exclusivo para tu empresa, alojado en Chile."
+        "text": "PIN para acciones sensibles, historial de cada cambio y un ambiente exclusivo para su empresa."
       }
     ],
     "model": {
-      "eyebrow": "Implementada a tu medida",
-      "title": "No es otro software por suscripción. Es tu herramienta.",
-      "intro": "Las plataformas de autoservicio te piden adaptar tu proceso a su forma de trabajar. Expense Buddy hace lo contrario: la implementamos en tu organización, con tu flujo, tus reglas y tu marca, y la dejamos funcionando con tu equipo.",
+      "eyebrow": "Implementada a su medida",
+      "title": "No es otro software por suscripción. Es su herramienta.",
+      "intro": "Las plataformas de autoservicio le piden adaptar su proceso a su forma de trabajar. Expense Buddy hace lo contrario: la implementamos en su organización, con su flujo, sus reglas y su marca, y la dejamos funcionando con su equipo.",
       "pillars": [
         {
           "icon": "process",
-          "title": "Tu proceso, no el nuestro",
-          "text": "Configuramos niveles de aprobación, responsables, montos de doble firma, centros de costo, categorías y monedas tal como trabaja tu empresa."
+          "title": "Su proceso, no el nuestro",
+          "text": "Configuramos el flujo de aprobación, responsables, montos de doble revisión, centros de costo, categorías y monedas tal como trabaja su empresa."
         },
         {
           "icon": "environment",
-          "title": "Tu propio ambiente",
-          "text": "Cada organización tiene su instancia y su base de datos, separadas de las demás y alojadas en Chile. Puede vivir en la cuenta de Google Cloud de tu empresa o administrada por nosotros."
+          "title": "Su propio ambiente",
+          "text": "Cada organización tiene su instancia y su base de datos, separadas de las demás. Puede vivir en la cuenta de Google Cloud de su empresa o administrada por nosotros."
         },
         {
           "icon": "brand",
-          "title": "Con tu marca",
-          "text": "Tu logo, tus colores y tu nombre. Para tu equipo es la herramienta de la empresa, no la de un proveedor."
+          "title": "Con su marca",
+          "text": "Su logo, sus colores y su nombre. Para su equipo es la herramienta de la empresa, no la de un proveedor."
         },
         {
           "icon": "partner",
           "title": "Implementación y acompañamiento",
-          "text": "Growth Buddies la pone en marcha contigo: usuarios, centros de costo, capacitación y soporte directo. Si necesitas un ajuste o una integración, se construye sobre tu instancia."
+          "text": "Growth Buddies la pone en marcha con usted: usuarios, centros de costo, capacitación y soporte directo. Si necesita un ajuste o una integración, se evalúa sobre su instancia."
         }
       ],
       "comparison": {
@@ -146,16 +146,16 @@
         "right": "Expense Buddy",
         "rows": [
           [
-            "Tu equipo se adapta a la plataforma",
-            "La herramienta se adapta a tu proceso"
+            "Su equipo se adapta a la plataforma",
+            "La herramienta se adapta a su proceso"
           ],
           [
-            "Base compartida con miles de empresas",
-            "Ambiente y datos exclusivos de tu organización"
+            "Base compartida con otras empresas",
+            "Ambiente y datos exclusivos de su organización"
           ],
           [
             "La marca del proveedor",
-            "Tu marca"
+            "Su marca"
           ],
           [
             "Autoservicio y mesa de ayuda",
@@ -163,7 +163,7 @@
           ],
           [
             "Mejoras según la hoja de ruta del proveedor",
-            "Ajustes según las prioridades de tu empresa"
+            "Ajustes según las prioridades de su empresa"
           ]
         ]
       }
@@ -171,19 +171,19 @@
     "offline": {
       "eyebrow": "Modo sin conexión",
       "title": "Así funciona cuando no hay señal",
-      "intro": "En faena, en ruta o en un subterráneo, tu equipo sigue rindiendo. Esto es lo que ve una persona en su teléfono:",
+      "intro": "En faena, en ruta o en un subterráneo, su equipo sigue rindiendo. Esto es lo que ve una persona en su teléfono:",
       "steps": [
         {
-          "title": "Rinde igual, sin señal",
-          "text": "Abre la app, toma la foto de la boleta y completa el gasto. La lectura con IA necesita conexión, así que sin señal se ingresan el monto y el comercio a mano."
+          "title": "Rinda igual, sin señal",
+          "text": "Abra la app, tome la foto de la boleta y complete el gasto. La lectura con IA necesita conexión, así que sin señal se ingresan el monto y el comercio a mano."
         },
         {
           "title": "Queda guardada en el teléfono",
-          "text": "Al enviar aparece «Sin conexión: la rendición quedó guardada y se enviará sola al recuperar señal», y arriba el aviso «Sin conexión · 1 sin enviar». La foto y los datos quedan seguros en el dispositivo."
+          "text": "Al enviar, la app avisa que la rendición quedó guardada y muestra cuántas faltan por enviar. La foto y los datos quedan en el dispositivo."
         },
         {
-          "title": "Se envía sola al volver la señal",
-          "text": "Apenas hay conexión, o la próxima vez que se abre la app, la rendición se envía con sus fotos y avisa «Se envió 1 rendición guardada sin conexión». La jefatura la recibe para aprobar."
+          "title": "Se sincroniza al abrir la app con conexión",
+          "text": "Cuando se abre la app con conexión, la rendición se envía con sus fotos y la app lo confirma. La jefatura la recibe para aprobar."
         },
         {
           "title": "Nada se pierde ni se duplica",
@@ -193,31 +193,32 @@
       "note": "Para usarla sin señal, la app debe haberse abierto con conexión al menos una vez en ese teléfono. Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
     },
     "cta": {
-      "title": "¿Lo quieres en tu empresa?",
-      "text": "Lo implementamos con tu marca, tus centros de costo y tu flujo de aprobación, en un ambiente exclusivo para tu organización.",
+      "title": "¿Lo quiere en su empresa?",
+      "text": "Lo implementamos con su marca, sus centros de costo y su flujo de aprobación, en un ambiente exclusivo para su organización.",
       "primary": {
-        "label": "Agenda una demo",
-        "url": "https://calendly.com/espohr/conversemos"
+        "label": "Recibir propuesta en 24 horas hábiles",
+        "url": "https://growthbuddies.cl/expense-buddy?utm_source=expense-buddy-demo&utm_medium=landing&utm_campaign=propuesta#propuesta"
       },
+      "demoLabel": "Entrar al demo",
       "secondary": {
-        "label": "Escríbenos por WhatsApp",
-        "url": "https://wa.me/56975991366?text=Hola%20Growth%20Buddies%21%20Vi%20Expense%20Buddy%20y%20quiero%20una%20demo%20para%20mi%20empresa."
+        "label": "Escríbanos por WhatsApp",
+        "url": "https://wa.me/56975991366?text=Hola%20Growth%20Buddies%2C%20vi%20Expense%20Buddy%20y%20quisiera%20una%20propuesta%20para%20mi%20empresa."
       }
     },
     "demo": {
-      "title": "¿Solo quieres mirar? Entra al demo",
-      "text": "Sin registro: elige un rol y recorre la app con datos de ejemplo. Los cambios se borran cada noche.",
+      "title": "¿Solo quiere mirar? Entre al demo",
+      "text": "Sin registro: elija un rol y recorra la app con datos de ejemplo. Los cambios se borran cada noche.",
       "roles": [
         {
           "role": "worker",
           "label": "Trabajador en terreno",
-          "description": "Rinde un gasto con la foto de una boleta",
+          "description": "Rinda un gasto con la foto de una boleta",
           "path": "/dashboard/new-expense"
         },
         {
           "role": "manager",
           "label": "Jefatura",
-          "description": "Aprueba los gastos de tu equipo",
+          "description": "Apruebe los gastos de su equipo",
           "path": "/dashboard/approvals"
         },
         {
@@ -227,11 +228,25 @@
           "path": "/admin/approvals"
         }
       ]
+    },
+    "meta": {
+      "title": "Expense Buddy: rendición de gastos para equipos en terreno",
+      "description": "Rinda gastos desde el teléfono, incluso sin señal. Pruebe el demo sin registro: trabajador, jefatura o finanzas.",
+      "image": "/brands/demo/og.jpg",
+      "url": "https://expense-buddy-demo.web.app/"
+    },
+    "secondaryMeasurementId": "G-TJRCBKJKFX",
+    "footer": {
+      "siteLabel": "growthbuddies.cl",
+      "email": "edmundo@spohr.cl",
+      "whatsappLabel": "+56 9 7599 1366",
+      "whatsappUrl": "https://wa.me/56975991366?text=Hola%20Growth%20Buddies%2C%20vi%20Expense%20Buddy%20y%20quisiera%20una%20propuesta%20para%20mi%20empresa.",
+      "privacyUrl": "https://growthbuddies.cl/privacidad?utm_source=expense-buddy-demo&utm_medium=landing&utm_campaign=footer"
     }
   },
   "poweredBy": {
     "name": "Growth Buddies",
     "logo": "/brands/growth-buddies/logo.webp",
-    "url": "https://growthbuddies.cl/?utm_source=expense-buddy&utm_medium=app&utm_campaign=powered-by"
+    "url": "https://growthbuddies.cl/?utm_source=expense-buddy-demo&utm_medium=landing&utm_campaign=footer"
   }
 }

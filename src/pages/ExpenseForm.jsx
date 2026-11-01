@@ -1217,7 +1217,7 @@ export default function ExpenseForm() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="space-y-0.5">
                               <p className="text-brand-800 font-medium">
-                                Tasa {formData.currency}→COP: <span className="font-mono">{formatCurrency(trmState.trm, 'COP')}</span> <span className="text-brand-600">COP/{formData.currency}</span>
+                                Tasa {formData.currency}→{BASE_CURRENCY}: <span className="font-mono">{formatCurrency(trmState.trm, BASE_CURRENCY)}</span> <span className="text-brand-600">COP/{formData.currency}</span>
                               </p>
                               {formData.amount > 0 && (
                                 <p className="text-brand-700">

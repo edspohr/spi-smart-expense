@@ -58,11 +58,31 @@ function loadTenant(id) {
 
 // Replaces %TENANT_*% placeholders in index.html so each build ships its own
 // title, description, icons and theme colour without touching React code.
+function tenantMetaTags(meta) {
+  const image = new URL(meta.image, meta.url).href
+  return [
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:title" content="${meta.title}" />`,
+    `<meta property="og:description" content="${meta.description}" />`,
+    `<meta property="og:url" content="${meta.url}" />`,
+    `<meta property="og:image" content="${image}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<link rel="canonical" href="${meta.url}" />`,
+  ].join('\n    ')
+}
+
 function tenantHtmlPlugin(tenant) {
   return {
     name: 'tenant-html',
     transformIndexHtml(html) {
-      return html
+      const meta = tenant.landing?.meta
+      const page = meta
+        ? html
+            .replace('<title>%TENANT_NAME%</title>', `<title>${meta.title}</title>`)
+            .replace('content="%TENANT_DESCRIPTION%"', `content="${meta.description}"`)
+            .replace('</head>', `  ${tenantMetaTags(meta)}\n  </head>`)
+        : html
+      return page
         .replaceAll('%TENANT_ID%', tenant.id)
         .replaceAll('%TENANT_NAME%', tenant.name)
         .replaceAll('%TENANT_SHORT_NAME%', tenant.shortName)

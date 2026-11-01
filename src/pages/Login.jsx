@@ -137,7 +137,7 @@ export default function Login() {
             {isRegistering ? 'Crear Cuenta' : tenant.branding.productName}
         </h2>
         <p className="text-sm text-gray-500 mb-6">
-            {isRegistering ? 'Regístrate para gestionar tus rendiciones' : 'Inicia sesión para continuar'}
+            {isRegistering ? 'Regístrate para gestionar tus rendiciones' : (tenant.landing ? 'Inicie sesión para continuar' : 'Inicia sesión para continuar')}
         </p>
         
         {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-left">{error}</div>}
@@ -198,7 +198,7 @@ export default function Login() {
             {!isRegistering && (
                 <div className="text-right">
                     <button type="button" onClick={handleResetPassword} className="text-sm text-brand-600 hover:underline">
-                        ¿Olvidaste tu contraseña?
+                        {tenant.landing ? '¿Olvidó su contraseña?' : '¿Olvidaste tu contraseña?'}
                     </button>
                 </div>
             )}
@@ -206,7 +206,7 @@ export default function Login() {
             <button
                 type="submit"
                 className={`w-full font-bold py-2 px-4 rounded transition duration-200 flex items-center justify-center ${
-                    tenant.branding.ctaPalette ? 'bg-cta-600 text-cta-fg hover:bg-cta-700' : 'bg-brand-600 text-white hover:bg-brand-700'
+                    tenant.landing ? 'bg-[#0097B2] text-[#0B0B0F] hover:bg-[#00B5D6]' : tenant.branding.ctaPalette ? 'bg-cta-600 text-cta-fg hover:bg-cta-700' : 'bg-brand-600 text-white hover:bg-brand-700'
                 }`}
             >
                 {isRegistering ? (

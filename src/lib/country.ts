@@ -102,6 +102,9 @@ export const country: CountryProfile = COUNTRIES[tenant.locale.country as Countr
 
 export const BASE_CURRENCY = tenant.locale.baseCurrency;
 
+// TRM is the Colombian term; other countries see the generic label.
+export const FX_RATE_LABEL = BASE_CURRENCY === 'COP' ? 'TRM' : 'Tipo de cambio';
+
 // Foreign currencies need a rate to the tenant's base currency.
 export const needsRate = (currency: string | null | undefined): boolean => Boolean(currency) && currency !== BASE_CURRENCY;
 

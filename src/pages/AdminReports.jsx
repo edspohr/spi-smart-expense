@@ -10,7 +10,7 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { toast } from 'sonner';
 import { useTenantSettings } from '../context/SettingsContext';
-import { BASE_CURRENCY, baseEquivalentOf, country } from '../lib/country';
+import { BASE_CURRENCY, baseEquivalentOf, country, FX_RATE_LABEL } from '../lib/country';
 import { ensureExportAllowed } from '../lib/pin';
 import { CARD_BRANDS, CARD_BRAND_LABELS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 
@@ -25,11 +25,11 @@ const CSV_HEADERS = [
   'Fecha', 'Hora', 'Persona', 'Empresa Tarjeta', 'Marca Tarjeta', 'Tarjeta Last4', 'Evento',
   'Proyecto', 'Código Proyecto', 'Comercio', country.taxIdLabel, 'No. Factura', 'Dirección', 'Ciudad',
   'Categoría', 'Forma Pago', 'Descripción', 'Monto', 'Moneda',
-  'TRM', `Equivalente ${BASE_CURRENCY}`, 'Fuente TRM', 'Estado', 'Motivo Rechazo',
+  FX_RATE_LABEL, `Equivalente ${BASE_CURRENCY}`, `Fuente ${FX_RATE_LABEL}`, 'Estado', 'Motivo Rechazo',
 ];
 
 // Excel adds one extra column (24 total)
-const XLSX_HEADERS = [...CSV_HEADERS, 'Diferencia TRM'];
+const XLSX_HEADERS = [...CSV_HEADERS, `Diferencia ${FX_RATE_LABEL}`];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -784,7 +784,7 @@ export default function AdminReports() {
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Comercio</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Categoría</th>
                       <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Monto</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">TRM</th>
+                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">{FX_RATE_LABEL}</th>
                       <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Equiv {BASE_CURRENCY}</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Estado</th>
                     </tr>

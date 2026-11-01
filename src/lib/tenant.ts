@@ -19,7 +19,14 @@ export interface TenantLanding {
     text: string;
     primary: { label: string; url: string };
     secondary?: { label: string; url: string };
+    /** Label of the button that scrolls to the demo roles. */
+    demoLabel?: string;
   };
+  /** SEO and social tags for the public landing (see tenantHtmlPlugin). */
+  meta?: { title: string; description: string; image: string; url: string };
+  /** Second GA4 property that also receives the landing events. */
+  secondaryMeasurementId?: string;
+  footer?: { siteLabel: string; email: string; whatsappLabel: string; whatsappUrl: string; privacyUrl: string };
   /** Implementation model ("not another subscription SaaS"). */
   model?: {
     eyebrow: string;

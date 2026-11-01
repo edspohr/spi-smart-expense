@@ -1,3 +1,4 @@
+import { BASE_CURRENCY } from '../lib/country';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '../utils/format';
 
@@ -20,7 +21,7 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs">
       <p className="font-semibold text-slate-800">{item.name}</p>
-      <p className="font-mono text-slate-900 tabular-nums">{formatCurrency(item.value, 'COP')}</p>
+      <p className="font-mono text-slate-900 tabular-nums">{formatCurrency(item.value, BASE_CURRENCY)}</p>
     </div>
   );
 }
@@ -66,7 +67,7 @@ export default function DonutCategories({ data, totalLabel = 'Total' }) {
                 {totalLabel}
               </span>
               <span className="text-xl font-bold text-slate-900 tabular-nums">
-                {formatCurrency(total, 'COP')}
+                {formatCurrency(total, BASE_CURRENCY)}
               </span>
             </>
           )}
@@ -87,7 +88,7 @@ export default function DonutCategories({ data, totalLabel = 'Total' }) {
                 <span className="flex-1 text-slate-600 truncate" title={d.name}>{d.name}</span>
                 <span className="text-xs text-slate-400 tabular-nums">{pct.toFixed(0)}%</span>
                 <span className="font-mono text-xs text-slate-700 tabular-nums">
-                  {formatCurrency(d.value, 'COP')}
+                  {formatCurrency(d.value, BASE_CURRENCY)}
                 </span>
               </li>
             );

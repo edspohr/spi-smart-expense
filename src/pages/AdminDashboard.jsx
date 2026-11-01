@@ -555,7 +555,7 @@ export default function AdminDashboard() {
   // Values for stat cards
   const rendidoValue = renderStack(stats.rendidoByCurrency);
   const aprobadoValue = renderStack(stats.aprobadoByCurrency);
-  const promedioValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{formatCurrency(Math.round(stats.avgCOP), 'COP')}</p>;
+  const promedioValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{formatCurrency(Math.round(stats.avgCOP), BASE_CURRENCY)}</p>;
   const proyectosValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{stats.projectCount}</p>;
   const pendingValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{stats.pendingCount}</p>;
 
@@ -585,7 +585,7 @@ export default function AdminDashboard() {
           iconBgClass="bg-green-50"
           iconColorClass="text-green-600"
           value={aprobadoValue}
-          subtitle={`${formatCurrency(stats.pendingCOP, 'COP')} pendiente por aprobar`}
+          subtitle={`${formatCurrency(stats.pendingCOP, BASE_CURRENCY)} pendiente por aprobar`}
         />
         <StatCardLarge
           label="Promedio por gasto"
@@ -609,7 +609,7 @@ export default function AdminDashboard() {
           iconBgClass="bg-red-50"
           iconColorClass="text-red-600"
           value={pendingValue}
-          subtitle={`${formatCurrency(stats.pendingCOP, 'COP')} por aprobar`}
+          subtitle={`${formatCurrency(stats.pendingCOP, BASE_CURRENCY)} por aprobar`}
           onClick={() => navigate('/admin/approvals')}
           ariaLabel="Ver gastos por revisar"
         />
