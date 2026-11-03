@@ -287,6 +287,62 @@ export default function AdminProjectDetails() {
   if (loading) return <Layout title="Detalles del Centro de Costo"><TableSkeleton rows={5} cols={6} /></Layout>;
   if (!project) return <Layout title="Error">Centro de Costo no encontrado.</Layout>;
 
+  const renderStatusBadge = (e) => (
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap
+          ${e.status === 'approved' ? 'bg-green-100 text-green-800' :
+            e.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+          {e.status === 'approved' ? 'Aprobado' : e.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+      </span>
+  );
+
+  // Row actions, shared by the desktop tables and the mobile cards.
+  const renderExpenseActions = (e) => (
+      <div className="flex items-center space-x-2">
+          {e.status === 'pending' && (
+              <>
+                  <button type="button" aria-label="Aprobar rendición" onClick={() => handleUpdateStatus(e.id, 'approved', e.amount, e.userId)} className="text-green-600 hover:text-green-800 focus-ring rounded p-2 lg:p-1" title="Aprobar">
+                      <CheckCircle className="w-5 h-5" aria-hidden="true" />
+                  </button>
+                  <button type="button" aria-label="Rechazar rendición" onClick={() => handleUpdateStatus(e.id, 'rejected', e.amount, e.userId)} className="text-red-600 hover:text-red-800 focus-ring rounded p-2 lg:p-1" title="Rechazar">
+                      <XCircle className="w-5 h-5" aria-hidden="true" />
+                  </button>
+              </>
+          )}
+          <button
+              type="button"
+              aria-label="Eliminar rendición definitivamente"
+              onClick={() => handleDeleteExpense(e)}
+              className="text-gray-400 hover:text-red-500 focus-ring rounded p-2 lg:p-1"
+              title="Eliminar Definitivamente"
+          >
+              <Trash2 className="w-5 h-5" aria-hidden="true" />
+          </button>
+      </div>
+  );
+
+  const renderAllocationActions = (a) => (
+      <div className="flex justify-end gap-2">
+          <button
+              type="button"
+              aria-label="Editar asignación"
+              onClick={() => openEditAllocation(a)}
+              className="text-gray-400 hover:text-brand-500 focus-ring rounded p-2 md:p-1"
+              title="Editar Asignación"
+          >
+              <Pencil className="w-5 h-5" aria-hidden="true" />
+          </button>
+          <button
+              type="button"
+              aria-label="Eliminar asignación"
+              onClick={() => handleDeleteAllocation(a)}
+              className="text-gray-400 hover:text-red-500 focus-ring rounded p-2 md:p-1"
+              title="Eliminar Asignación"
+          >
+              <Trash2 className="w-5 h-5" aria-hidden="true" />
+          </button>
+      </div>
+  );
+
   return (
     <Layout title={`Acciones: ${project.code ? `[${project.code}] ` : ''}${project.name}`}>
         <div className="mb-6">
@@ -343,18 +399,57 @@ export default function AdminProjectDetails() {
              );
         })()}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
+        {/* Side by side only on very wide screens: the six-column expenses table needs the room */}
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-8">
+
             {/* Expenses List */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                <div className="px-4 md:px-6 py-4 border-b bg-gray-50 flex justify-between items-center gap-2">
                     <h3 className="font-bold text-gray-700 flex items-center">
                         <FileText className="w-5 h-5 mr-2 text-gray-400" />
                         Historial de Rendiciones
                     </h3>
                     <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-1 rounded-full">{expenses.length}</span>
                 </div>
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                {/* Phones and tablets: one card per expense */}
+                <ul className="lg:hidden divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                    {expenses.map(e => (
+                        <li key={e.id} className="p-4 text-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="font-semibold text-gray-800 truncate">{e.userName}</p>
+                                    {e.isCompanyExpense && <span className="block text-xs text-brand-500">Empresa</span>}
+                                </div>
+                                <p className="font-bold text-gray-700 whitespace-nowrap text-right">{formatCurrency(e.amount, e.currency)}</p>
+                            </div>
+                            <p className="mt-1 text-xs text-gray-500">
+                                {[e.date, e.category].filter(Boolean).join(' · ')}
+                            </p>
+                            {e.description && <p className="text-xs text-gray-500 truncate">{e.description}</p>}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {renderStatusBadge(e)}
+                                {e.imageUrl && (
+                                    <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline text-xs py-2">Ver Recibo</a>
+                                )}
+                            </div>
+                            {e.rejectionReason && e.status === 'rejected' && (
+                                <p className="text-xs text-red-500 mt-1 italic">"{e.rejectionReason}"</p>
+                            )}
+                            <div className="mt-2 -ml-2">{renderExpenseActions(e)}</div>
+                        </li>
+                    ))}
+                    {expenses.length === 0 && (
+                        <li>
+                            <EmptyState
+                                icon={FileText}
+                                title="Sin rendiciones"
+                                description="No hay rendiciones registradas en este centro de costo."
+                                small
+                            />
+                        </li>
+                    )}
+                </ul>
+                <div className="hidden lg:block overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="sticky top-0 bg-white">
                             <tr className="border-b">
@@ -385,39 +480,9 @@ export default function AdminProjectDetails() {
                                         )}
 
                                     </td>
-                                    <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(e.amount, e.currency)}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                                            ${e.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                              e.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {e.status === 'approved' ? 'Aprobado' : e.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center space-x-2">
-                                                <>
-                                                    {e.status === 'pending' && (
-                                                        <>
-                                                            <button type="button" aria-label="Aprobar rendición" onClick={() => handleUpdateStatus(e.id, 'approved', e.amount, e.userId)} className="text-green-600 hover:text-green-800 focus-ring rounded p-1" title="Aprobar">
-                                                                <CheckCircle className="w-5 h-5" aria-hidden="true" />
-                                                            </button>
-                                                            <button type="button" aria-label="Rechazar rendición" onClick={() => handleUpdateStatus(e.id, 'rejected', e.amount, e.userId)} className="text-red-600 hover:text-red-800 focus-ring rounded p-1" title="Rechazar">
-                                                                <XCircle className="w-5 h-5" aria-hidden="true" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        aria-label="Eliminar rendición definitivamente"
-                                                        onClick={() => handleDeleteExpense(e)}
-                                                        className="text-gray-400 hover:text-red-500 focus-ring rounded p-1"
-                                                        title="Eliminar Definitivamente"
-                                                    >
-                                                        <Trash2 className="w-5 h-5" aria-hidden="true" />
-                                                    </button>
-                                                </>
-                                        </div>
-                                    </td>
+                                    <td className="px-4 py-3 font-bold text-gray-700 whitespace-nowrap">{formatCurrency(e.amount, e.currency)}</td>
+                                    <td className="px-4 py-3">{renderStatusBadge(e)}</td>
+                                    <td className="px-4 py-3">{renderExpenseActions(e)}</td>
                                 </tr>
                             ))}
                              {expenses.length === 0 && (
@@ -439,14 +504,42 @@ export default function AdminProjectDetails() {
 
             {/* Allocations List */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                <div className="px-4 md:px-6 py-4 border-b bg-gray-50 flex justify-between items-center gap-2">
                     <h3 className="font-bold text-gray-700 flex items-center">
                         <Calendar className="w-5 h-5 mr-2 text-gray-400" />
                         Historial de Asignaciones
                     </h3>
                      <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-1 rounded-full">{allocations.length}</span>
                 </div>
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                {/* Phones: one row per allocation */}
+                <ul className="md:hidden divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                    {allocations.map(a => (
+                        <li key={a.id} className="flex items-center gap-3 p-4 text-sm">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="font-medium text-gray-800 truncate flex items-center">
+                                        <User className="w-4 h-4 mr-2 shrink-0 text-gray-400" />
+                                        {a.userName}
+                                    </p>
+                                    <p className="font-bold text-gray-700 whitespace-nowrap text-right">{formatCurrency(a.amount)}</p>
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">{new Date(a.date).toLocaleDateString()}</p>
+                            </div>
+                            <div className="shrink-0 -mr-2">{renderAllocationActions(a)}</div>
+                        </li>
+                    ))}
+                    {allocations.length === 0 && (
+                        <li>
+                            <EmptyState
+                                icon={Calendar}
+                                title="Sin asignaciones"
+                                description="No hay asignaciones de presupuesto registradas."
+                                small
+                            />
+                        </li>
+                    )}
+                </ul>
+                <div className="hidden md:block overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table className="w-full text-left text-sm">
                          <thead className="sticky top-0 bg-white">
                             <tr className="border-b">
@@ -466,27 +559,8 @@ export default function AdminProjectDetails() {
                                             {a.userName}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(a.amount)}</td>
-                                    <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            aria-label="Editar asignación"
-                                            onClick={() => openEditAllocation(a)}
-                                            className="text-gray-400 hover:text-brand-500 focus-ring rounded p-1"
-                                            title="Editar Asignación"
-                                        >
-                                            <Pencil className="w-5 h-5" aria-hidden="true" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            aria-label="Eliminar asignación"
-                                            onClick={() => handleDeleteAllocation(a)}
-                                            className="text-gray-400 hover:text-red-500 focus-ring rounded p-1"
-                                            title="Eliminar Asignación"
-                                        >
-                                            <Trash2 className="w-5 h-5" aria-hidden="true" />
-                                        </button>
-                                    </td>
+                                    <td className="px-4 py-3 font-bold text-gray-700 whitespace-nowrap">{formatCurrency(a.amount)}</td>
+                                    <td className="px-4 py-3 text-right">{renderAllocationActions(a)}</td>
                                 </tr>
                             ))}
                             {allocations.length === 0 && (

@@ -50,6 +50,29 @@ export default function TeamTable({ rows }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+      {/* Phones: one row per person, 30-day total on the right */}
+      <ul className="md:hidden divide-y divide-slate-100">
+        {visible.map(row => (
+          <li key={row.id}>
+            <Link
+              to={`/admin/users/${row.id}`}
+              className="flex items-center gap-3 px-4 py-3 min-h-[44px] hover:bg-slate-50 focus-ring"
+              aria-label={`Ver detalles de ${row.displayName}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-slate-800 truncate">{row.displayName || 'Sin nombre'}</div>
+                {row.email && <div className="text-xs text-slate-400 truncate">{row.email}</div>}
+                <div className="mt-0.5 text-xs text-gray-500">
+                  {[relativeDays(row.lastActivityDate), `${row.count} rendiciones`].join(' · ')}
+                </div>
+              </div>
+              <div className="shrink-0 text-right">{renderCurrencyTotals(row.last30ByCurrency)}</div>
+              <ChevronRight className="w-4 h-4 shrink-0 text-slate-300" aria-hidden="true" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden md:block overflow-x-auto">
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-slate-100">
@@ -89,12 +112,13 @@ export default function TeamTable({ rows }) {
           ))}
         </tbody>
       </table>
+      </div>
       {overflow > 0 && (
         <div className="px-5 py-3 border-t border-slate-100 text-center">
           <button
             type="button"
             onClick={() => setExpanded(e => !e)}
-            className="text-xs font-semibold text-brand-600 hover:text-brand-700 focus-ring rounded px-2 py-1"
+            className="text-xs font-semibold text-brand-600 hover:text-brand-700 focus-ring rounded px-3 py-2"
           >
             {expanded ? 'Mostrar solo los 10 más recientes' : `Ver todas (${rows.length})`}
           </button>

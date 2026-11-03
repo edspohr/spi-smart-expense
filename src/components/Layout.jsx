@@ -74,7 +74,7 @@ export default function Layout({ children, title }) {
             </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-zinc-50/50 p-6 md:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-zinc-50/50 p-4 sm:p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
                 <PinSetupBanner />
                 <PageTransition key={location.pathname}>

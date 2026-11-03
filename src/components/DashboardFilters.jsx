@@ -22,7 +22,7 @@ export default function DashboardFilters({ filters, onChange, projects, onRefres
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-white border border-slate-100 rounded-2xl p-4 mb-6 shadow-sm">
+    <div className="lg:sticky lg:top-0 z-10 bg-white border border-slate-100 rounded-2xl p-4 mb-6 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-end gap-3">
         <div className="flex-1 min-w-[160px]">
           <label htmlFor="df-client" className="block text-xs font-semibold text-slate-500 mb-1">Cliente</label>

@@ -158,6 +158,107 @@ export default function AdminUsers() {
 
   const inputClass = 'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm focus-ring';
 
+  // Row controls, shared by the desktop table and the mobile cards.
+  const renderRoleSelect = (u: ManagedUser, busy: boolean, isSelf: boolean, extraClass = 'py-1.5') => (
+    <select
+      value={u.role}
+      disabled={busy || isSelf}
+      onChange={(e) => applyPatch(u, { role: e.target.value as Role }, 'Rol actualizado.')}
+      className={`rounded-lg border border-zinc-200 bg-white px-2 text-sm focus-ring disabled:opacity-60 ${extraClass}`}
+      aria-label={`Rol de ${u.displayName}`}
+      title={isSelf ? 'No puedes cambiar tu propio rol' : undefined}
+    >
+      {ASSIGNABLE_ROLES.map((r) => (
+        <option key={r} value={r}>
+          {ROLE_LABELS[r]}
+        </option>
+      ))}
+    </select>
+  );
+
+  const renderManagerSelect = (u: ManagedUser, busy: boolean, extraClass = 'py-1.5') => (
+    <select
+      value={u.managerUid ?? ''}
+      disabled={busy}
+      onChange={(e) => applyPatch(u, { managerUid: e.target.value || null }, 'Responsable actualizado.')}
+      className={`rounded-lg border border-zinc-200 bg-white px-2 text-sm focus-ring disabled:opacity-60 ${extraClass}`}
+      aria-label={`Responsable de ${u.displayName}`}
+    >
+      <option value="">Sin responsable</option>
+      {managers
+        .filter((m) => m.uid !== u.uid)
+        .map((m) => (
+          <option key={m.uid} value={m.uid}>
+            {m.displayName}
+          </option>
+        ))}
+    </select>
+  );
+
+  const renderStatusBadge = (status: Exclude<Filter, 'all'>) => (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${STATUS_BADGE[status].className}`}>
+      {STATUS_BADGE[status].label}
+    </span>
+  );
+
+  const renderActions = (u: ManagedUser, busy: boolean, isSelf: boolean, status: Exclude<Filter, 'all'>) => (
+    <div className="flex items-center justify-end gap-1">
+      {busy && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" aria-label="Guardando" />}
+      <label className="mr-2 inline-flex min-h-[36px] cursor-pointer items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          checked={u.active}
+          disabled={busy || isSelf}
+          onChange={(e) =>
+            applyPatch(u, { active: e.target.checked }, e.target.checked ? 'Usuario activado.' : 'Usuario desactivado; su sesión se cerrará.')
+          }
+          className="h-4 w-4 rounded border-zinc-300 text-brand-600 focus-ring"
+        />
+        Activo
+      </label>
+      <button
+        type="button"
+        onClick={() => handleResend(u)}
+        disabled={busy || !u.email}
+        className="rounded-lg p-2.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 focus-ring disabled:opacity-40 lg:p-2"
+        title={status === 'pending' ? 'Reenviar invitación' : 'Enviar correo para restablecer contraseña'}
+        aria-label={status === 'pending' ? `Reenviar invitación a ${u.displayName}` : `Restablecer contraseña de ${u.displayName}`}
+      >
+        <Mail className="h-4 w-4" />
+      </button>
+      {(u.hasPin || u.pinDisabled) && (
+        <button
+          type="button"
+          onClick={() => handleResetPin(u)}
+          disabled={busy}
+          className={`rounded-lg p-2.5 hover:bg-zinc-100 focus-ring disabled:opacity-40 lg:p-2 ${u.pinDisabled ? 'text-red-500' : 'text-zinc-500 hover:text-zinc-800'}`}
+          title={u.pinDisabled ? 'PIN desactivado por intentos fallidos — restablecer' : 'Restablecer PIN'}
+          aria-label={`Restablecer PIN de ${u.displayName}`}
+        >
+          <KeyRound className="h-4 w-4" />
+        </button>
+      )}
+      <Link
+        to={`/admin/users/${u.uid}`}
+        className="rounded-lg p-2.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 focus-ring lg:p-2"
+        title="Ver detalle, saldo y permisos"
+        aria-label={`Ver detalle de ${u.displayName}`}
+      >
+        <ExternalLink className="h-4 w-4" />
+      </Link>
+      <button
+        type="button"
+        onClick={() => setToDelete(u)}
+        disabled={busy || isSelf}
+        className="rounded-lg p-2.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 focus-ring disabled:opacity-40 lg:p-2"
+        title="Eliminar (solo sin rendiciones)"
+        aria-label={`Eliminar a ${u.displayName}`}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+
   return (
     <Layout title="Usuarios">
       <div className="space-y-6">
@@ -190,7 +291,7 @@ export default function AdminUsers() {
               role="tab"
               aria-selected={filter === f}
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition focus-ring ${
+              className={`rounded-full px-3 py-2 text-xs font-semibold transition focus-ring ${
                 filter === f ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-50'
               }`}
             >
@@ -207,134 +308,72 @@ export default function AdminUsers() {
           ) : visible.length === 0 ? (
             <p className="p-12 text-center text-sm text-zinc-500">No hay usuarios que coincidan.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  <tr>
-                    <th className="px-4 py-3">Usuario</th>
-                    <th className="px-4 py-3">Rol</th>
-                    <th className="px-4 py-3">Responsable</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">Último ingreso</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {visible.map((u) => {
-                    const isSelf = u.uid === currentUser?.uid;
-                    const status = statusOf(u);
-                    const busy = busyUid === u.uid;
-                    return (
-                      <tr key={u.uid} className={!u.active ? 'bg-zinc-50/60' : undefined}>
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-zinc-800">
+            <>
+              {/* Phones and tablets: one card per user with the same controls as the table */}
+              <ul className="divide-y divide-zinc-100 lg:hidden">
+                {visible.map((u) => {
+                  const isSelf = u.uid === currentUser?.uid;
+                  const status = statusOf(u);
+                  const busy = busyUid === u.uid;
+                  return (
+                    <li key={u.uid} className={`p-4 ${!u.active ? 'bg-zinc-50/60' : ''}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-zinc-800">
                             {u.displayName || '—'} {isSelf && <span className="text-xs font-normal text-zinc-400">(tú)</span>}
                           </div>
-                          <div className="text-xs text-zinc-500">{u.email}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={u.role}
-                            disabled={busy || isSelf}
-                            onChange={(e) => applyPatch(u, { role: e.target.value as Role }, 'Rol actualizado.')}
-                            className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm focus-ring disabled:opacity-60"
-                            aria-label={`Rol de ${u.displayName}`}
-                            title={isSelf ? 'No puedes cambiar tu propio rol' : undefined}
-                          >
-                            {ASSIGNABLE_ROLES.map((r) => (
-                              <option key={r} value={r}>
-                                {ROLE_LABELS[r]}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={u.managerUid ?? ''}
-                            disabled={busy}
-                            onChange={(e) => applyPatch(u, { managerUid: e.target.value || null }, 'Responsable actualizado.')}
-                            className="max-w-[12rem] rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm focus-ring disabled:opacity-60"
-                            aria-label={`Responsable de ${u.displayName}`}
-                          >
-                            <option value="">Sin responsable</option>
-                            {managers
-                              .filter((m) => m.uid !== u.uid)
-                              .map((m) => (
-                                <option key={m.uid} value={m.uid}>
-                                  {m.displayName}
-                                </option>
-                              ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${STATUS_BADGE[status].className}`}>
-                            {STATUS_BADGE[status].label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-zinc-500">{formatDate(u.lastSignInAt)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
-                            {busy && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" aria-label="Guardando" />}
-                            <label className="mr-2 inline-flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
-                              <input
-                                type="checkbox"
-                                checked={u.active}
-                                disabled={busy || isSelf}
-                                onChange={(e) =>
-                                  applyPatch(u, { active: e.target.checked }, e.target.checked ? 'Usuario activado.' : 'Usuario desactivado; su sesión se cerrará.')
-                                }
-                                className="h-4 w-4 rounded border-zinc-300 text-brand-600 focus-ring"
-                              />
-                              Activo
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => handleResend(u)}
-                              disabled={busy || !u.email}
-                              className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 focus-ring disabled:opacity-40"
-                              title={status === 'pending' ? 'Reenviar invitación' : 'Enviar correo para restablecer contraseña'}
-                              aria-label={status === 'pending' ? `Reenviar invitación a ${u.displayName}` : `Restablecer contraseña de ${u.displayName}`}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </button>
-                            {(u.hasPin || u.pinDisabled) && (
-                              <button
-                                type="button"
-                                onClick={() => handleResetPin(u)}
-                                disabled={busy}
-                                className={`rounded-lg p-2 hover:bg-zinc-100 focus-ring disabled:opacity-40 ${u.pinDisabled ? 'text-red-500' : 'text-zinc-500 hover:text-zinc-800'}`}
-                                title={u.pinDisabled ? 'PIN desactivado por intentos fallidos — restablecer' : 'Restablecer PIN'}
-                                aria-label={`Restablecer PIN de ${u.displayName}`}
-                              >
-                                <KeyRound className="h-4 w-4" />
-                              </button>
-                            )}
-                            <Link
-                              to={`/admin/users/${u.uid}`}
-                              className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 focus-ring"
-                              title="Ver detalle, saldo y permisos"
-                              aria-label={`Ver detalle de ${u.displayName}`}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => setToDelete(u)}
-                              disabled={busy || isSelf}
-                              className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 focus-ring disabled:opacity-40"
-                              title="Eliminar (solo sin rendiciones)"
-                              aria-label={`Eliminar a ${u.displayName}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                          <div className="truncate text-xs text-zinc-500">
+                            {[u.email, formatDate(u.lastSignInAt)].filter(Boolean).join(' · ')}
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                        <div className="shrink-0">{renderStatusBadge(status)}</div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {renderRoleSelect(u, busy, isSelf, 'w-full py-2')}
+                        {renderManagerSelect(u, busy, 'w-full py-2')}
+                      </div>
+                      <div className="mt-2 -mr-2">{renderActions(u, busy, isSelf, status)}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <tr>
+                      <th className="px-4 py-3">Usuario</th>
+                      <th className="px-4 py-3">Rol</th>
+                      <th className="px-4 py-3">Responsable</th>
+                      <th className="px-4 py-3">Estado</th>
+                      <th className="hidden px-4 py-3 xl:table-cell">Último ingreso</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {visible.map((u) => {
+                      const isSelf = u.uid === currentUser?.uid;
+                      const status = statusOf(u);
+                      const busy = busyUid === u.uid;
+                      return (
+                        <tr key={u.uid} className={!u.active ? 'bg-zinc-50/60' : undefined}>
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-zinc-800">
+                              {u.displayName || '—'} {isSelf && <span className="text-xs font-normal text-zinc-400">(tú)</span>}
+                            </div>
+                            <div className="text-xs text-zinc-500">{u.email}</div>
+                          </td>
+                          <td className="px-4 py-3">{renderRoleSelect(u, busy, isSelf)}</td>
+                          <td className="px-4 py-3">{renderManagerSelect(u, busy, 'max-w-[12rem] py-1.5')}</td>
+                          <td className="px-4 py-3">{renderStatusBadge(status)}</td>
+                          <td className="hidden px-4 py-3 text-zinc-500 xl:table-cell">{formatDate(u.lastSignInAt)}</td>
+                          <td className="px-4 py-3">{renderActions(u, busy, isSelf, status)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

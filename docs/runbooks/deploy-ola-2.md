@@ -102,8 +102,9 @@ conteo.
 3. Aprobar una rendición y rechazar otra: toasts correctos, la campana del
    profesional recibe la notificación, `movements` tiene la entrada con
    `byName`.
-4. Reconciliar saldos: ejecutar `recalculateAllUserBalances` en modo dry-run
-   desde `/admin/reconciliation` (TD-018) y confirmar que no hay drift.
+4. Reconciliar saldos: comparar algunos `users.balance` con sus rendiciones y
+   asignaciones (el reconciliador del navegador se eliminó el 2026-11-03;
+   la verificación automática es TD-018).
 5. Revisar Logs de Functions en Firebase console: sin errores en
    `onExpenseWritten` ni `onUserWritten`.
 6. Dejar la Ola 2 como "Deployada" en `docs/implementation-plan.md`,

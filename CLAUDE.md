@@ -130,7 +130,7 @@ Server-only collections: `rateLimits` (Gemini quotas), `aggregateLedger` (trigge
 
 - `src/lib/` — service wrappers (`firebase.js`, `gemini.js`, `exchangeRate.js`, `notifications.js`, `audit.js`, `permissions.js`, `tenant.ts`, `env.ts`, `logger.js`)
 - `src/types/models.ts` — Firestore document types; import these instead of re-declaring shapes
-- `src/utils/` — `format.js`, `imageUtils.js`, `fixBalances.js`, `sort.js`
+- `src/utils/` — `format.js`, `imageUtils.js`, `sort.js`
 - `functions/src/` — Cloud Functions: `extractReceipt.ts`, `expenses.ts` (`reviewExpense`), `aggregates.ts` + `aggregates.logic.ts`, `claims.ts` + `claims.logic.ts`, `common.ts` (params, auth helpers); `*.logic.ts` files are pure and unit-tested from the root Vitest run
 - `tests/rules/` — Firestore rules suite (`@firebase/rules-unit-testing`, needs the emulator)
 - `scripts/` — Admin SDK scripts (never commit `serviceAccountKey.json`); `scripts/migrations/` for idempotent dry-run data migrations

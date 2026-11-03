@@ -144,6 +144,29 @@ function buildImageFilename(expense, type, ext, _projectsMap, usedNames) {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
+// Result cells shared by the desktop table and the mobile cards.
+function renderAmount(e) {
+  return (
+    <span className="font-semibold">
+      {formatCurrency(e.amount, e.currency)}
+      {e.currency && e.currency !== BASE_CURRENCY && (
+        <span className="text-xs text-gray-400 ml-1">{e.currency}</span>
+      )}
+    </span>
+  );
+}
+
+function renderStatusBadge(e) {
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
+      ${e.status === 'approved' ? 'bg-green-100 text-green-700' :
+        e.status === 'rejected' ? 'bg-red-100 text-red-700' :
+        'bg-yellow-100 text-yellow-700'}`}>
+      {STATUS_LABELS[e.status] || e.status}
+    </span>
+  );
+}
+
 export default function AdminReports() {
   const tenantSettings = useTenantSettings();
   const allowExport = async () => {
@@ -791,21 +814,50 @@ export default function AdminReports() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              {/* Phones and tablets: one card per expense */}
+              <ul className="lg:hidden divide-y divide-gray-100">
+                {results.map(e => (
+                  <li key={e.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 truncate">{e.userName || '—'}</p>
+                        <p className="text-sm text-gray-600 truncate">{e.merchant || '—'}</p>
+                      </div>
+                      <div className="text-right whitespace-nowrap">{renderAmount(e)}</div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {[e.date, e.category, e.eventName].filter(Boolean).join(' · ')}
+                    </p>
+                    {(e.cardCompany || e.cardBrand || e.cardLast4 || e.trm || baseEquivalentOf(e)) && (
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {[
+                          e.cardCompany,
+                          e.cardBrand && (CARD_BRAND_LABELS[e.cardBrand] || e.cardBrand),
+                          e.cardLast4 && `**** ${e.cardLast4}`,
+                          e.trm && `${FX_RATE_LABEL} ${formatCurrency(e.trm, BASE_CURRENCY)}`,
+                          baseEquivalentOf(e) && `Equiv ${BASE_CURRENCY} ${formatCurrency(baseEquivalentOf(e), BASE_CURRENCY)}`,
+                        ].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                    <div className="mt-2">{renderStatusBadge(e)}</div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden lg:block overflow-x-auto max-h-[600px] overflow-y-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-white border-b z-10">
                     <tr>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Fecha</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Persona</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Empresa</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Marca</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Tarjeta</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Evento</th>
+                      <th className="hidden xl:table-cell px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Empresa</th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Marca</th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Tarjeta</th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Evento</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Comercio</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Categoría</th>
+                      <th className="hidden xl:table-cell px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Categoría</th>
                       <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Monto</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">{FX_RATE_LABEL}</th>
-                      <th className="px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Equiv {BASE_CURRENCY}</th>
+                      <th className="hidden 2xl:table-cell px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">{FX_RATE_LABEL}</th>
+                      <th className="hidden xl:table-cell px-4 py-3 font-medium text-gray-500 text-right whitespace-nowrap">Equiv {BASE_CURRENCY}</th>
                       <th className="px-4 py-3 font-medium text-gray-500 whitespace-nowrap">Estado</th>
                     </tr>
                   </thead>
@@ -814,36 +866,24 @@ export default function AdminReports() {
                       <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.date}</td>
                         <td className="px-4 py-3 text-gray-800 font-medium whitespace-nowrap">{e.userName || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.cardCompany || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        <td className="hidden xl:table-cell px-4 py-3 text-gray-600 whitespace-nowrap">{e.cardCompany || '—'}</td>
+                        <td className="hidden 2xl:table-cell px-4 py-3 text-gray-600 whitespace-nowrap">
                           {e.cardBrand ? (CARD_BRAND_LABELS[e.cardBrand] || e.cardBrand) : '—'}
                         </td>
-                        <td className="px-4 py-3 font-mono text-gray-600 whitespace-nowrap">
+                        <td className="hidden 2xl:table-cell px-4 py-3 font-mono text-gray-600 whitespace-nowrap">
                           {e.cardLast4 ? `**** ${e.cardLast4}` : '—'}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[130px] truncate">{e.eventName || '—'}</td>
+                        <td className="hidden 2xl:table-cell px-4 py-3 text-gray-600 max-w-[130px] truncate">{e.eventName || '—'}</td>
                         <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate">{e.merchant || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{e.category || '—'}</td>
-                        <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
-                          {formatCurrency(e.amount, e.currency)}
-                          {e.currency && e.currency !== BASE_CURRENCY && (
-                            <span className="text-xs text-gray-400 ml-1">{e.currency}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-500 text-xs whitespace-nowrap">
+                        <td className="hidden xl:table-cell px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{e.category || '—'}</td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">{renderAmount(e)}</td>
+                        <td className="hidden 2xl:table-cell px-4 py-3 text-right text-gray-500 text-xs whitespace-nowrap">
                           {e.trm ? formatCurrency(e.trm, BASE_CURRENCY) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
+                        <td className="hidden xl:table-cell px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                           {baseEquivalentOf(e) ? formatCurrency(baseEquivalentOf(e), BASE_CURRENCY) : '—'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                            ${e.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              e.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'}`}>
-                            {STATUS_LABELS[e.status] || e.status}
-                          </span>
-                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">{renderStatusBadge(e)}</td>
                       </tr>
                     ))}
                   </tbody>
