@@ -116,7 +116,7 @@
       {
         "icon": "phone",
         "title": "La app en su teléfono",
-        "text": "Se instala en Android y iPhone sin pasar por tiendas. Rinda, apruebe y revise saldos desde el teléfono con la misma información que en el computador."
+        "text": "Se instala en Android y iPhone sin pasar por tiendas y queda lista para rendir sin señal. Rinda, apruebe y revise saldos desde el teléfono con la misma información que en el computador."
       },
       {
         "icon": "budget",
@@ -205,7 +205,7 @@
           "text": "Si algo impide el envío, la rendición queda guardada en la app para reintentar o descartar. Cada rendición tiene un identificador propio: aunque se reintente varias veces, llega una sola vez."
         }
       ],
-      "note": "Para usarla sin señal, abra la app con conexión una vez y toque «Preparar para terreno» (Mi Resumen lo indica): así el lector queda descargado en el teléfono. Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
+      "note": "Para usarla sin señal, instale la app y ábrala una vez con conexión: el lector se descarga solo al teléfono. Desde el navegador, sin instalar, se prepara con «Preparar para terreno». Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
     },
     "cta": {
       "title": "¿Lo quiere en su empresa?",
