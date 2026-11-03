@@ -17,6 +17,7 @@ que `expense-buddy` gane algo que `main` no tiene, o al revés.
 
 | Fecha | Commit en `main` | Qué |
 |---|---|---|
+| 2026-11-03 | `8a527bf` | Modo sin conexión discreto (sin franja en Mi Resumen, una línea en Mi Espacio) y texto oscuro en los campos del login. |
 | 2026-11-03 | `2f06db1` | La app instalada prepara sola el kit sin conexión (TD-030). SPI no lo nota: tiene el lector apagado. |
 | 2026-11-03 | `e24edfb` | Documentación del cambio de abajo: README, plan, backlog, TD-018/TD-026, CLAUDE.md y `docs/validation/ux-movil-2026-11.md`. |
 | 2026-11-03 | `def7cba` | Dashboard con 6 tarjetas compactas orientadas a acción; todas las tablas pasan a tarjetas en móvil; se elimina «Recalcular Saldos (Repair)» y `src/utils/fixBalances.js` (TD-018). Desplegado a SPI (solo hosting) y al demo. |
