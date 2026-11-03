@@ -1,11 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { signedByteCandidates, verifyTed } from './tedVerify.logic';
+import { pemBase64, signedByteCandidates, verifyTed } from './tedVerify.logic';
 
 // Official example from the SII's "Manual para empresas usuarias, ambiente de
 // certificación factura electrónica" (2009-02-02, §5.1-5.2): a factura timbre
 // built from a certification CAF (IDK 100, 512-bit issuer key, e = 3) and the
 // FRMT the SII says it produces. It checks our signed-string rules against the
-// SII's own output; FRMA cannot be checked without the IDK 100 SII key.
+// SII's own output, and the committed IDK 100 key against the SII's FRMA.
 const DD =
   '<DD><RE>97975000-5</RE><TD>33</TD><F>27</F><FE>2003-09-08</FE><RR>8414240-9</RR>' +
   '<RSR>JORGE GONZALEZ LTDA</RSR><MNT>502946</MNT><IT1>Cajon AFECTO</IT1>' +
@@ -41,19 +43,35 @@ describe('official SII timbre example', () => {
     expect(results).toContain(true);
   });
 
-  it('parses it and stops at the missing IDK 100 key', async () => {
+  it('verifies end to end with the committed IDK 100 SII key', async () => {
+    const pem = readFileSync(join(__dirname, '__fixtures__', 'sii-idk-100.pem'), 'utf8');
+    const siiKey = await crypto.subtle.importKey(
+      'spki',
+      bytes(pemBase64(pem)),
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' },
+      false,
+      ['verify'],
+    );
     const { verification } = await verifyTed(
       { rawTed: RAW_TED, readerVersion: 'test', verifiedOn: 'server', now: new Date('2026-11-03T12:00:00Z') },
-      { getSiiPublicKey: async () => null },
+      { getSiiPublicKey: async (idk) => (idk === '100' ? siiKey : null) },
     );
     expect(verification).toMatchObject({
-      status: 'error',
+      status: 'verified',
       issuerRut: '97975000-5',
       docType: '33',
       folio: '27',
       cafRange: { desde: 1, hasta: 200 },
       cafKeyId: '100',
     });
+  });
+
+  it('reports a missing key as pending, never as a failure', async () => {
+    const { verification } = await verifyTed(
+      { rawTed: RAW_TED, readerVersion: 'test', verifiedOn: 'server', now: new Date('2026-11-03T12:00:00Z') },
+      { getSiiPublicKey: async () => null },
+    );
+    expect(verification.status).toBe('error');
     expect(verification.reason).toContain('IDK 100');
   });
 });

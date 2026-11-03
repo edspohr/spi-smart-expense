@@ -16,9 +16,34 @@ muestra "Verificación pendiente" (`status: error`) y nunca "fallido".
 
 ## 2. Obtener una clave
 
-**No confirmado todavía.** La fuente oficial y el formato en que el SII
-publica estas claves no se verificaron en esta ola (`docs/pendientes.md`).
-Opciones, en orden de preferencia:
+**Estado (2026-11-03): `300.pem` publicada.**
+
+- **El SII no publica estas claves** en ningún lugar localizable. Circulan
+  como dos certificados X.509 autofirmados del SII de 2003 (vencidos en
+  2004, pero en uso): `100.cer` (certificación) y `300.cer` (producción).
+  Su número de serie es el `IDK`. Fuente usada: LibreDTE,
+  `libredte-lib-core/certs/` @ `06f03bdf16b95a3f7246a72ac5ca465f137f435b`
+  (huellas comparadas con los archivos de GitHub).
+- **`100` comprobada:** verifica la `FRMA` del CAF de ejemplo oficial del
+  manual de certificación del SII, y con ella el timbre completo verifica
+  (`functions/src/tedVerify.official.test.ts`). Se guarda solo como fixture
+  de test (`functions/src/__fixtures__/sii-idk-100.pem`): los CAF de
+  certificación no tienen validez tributaria y no deben verse "verificados".
+- **`300` comprobada por estructura:** en cuatro CAF de producción públicos
+  (repositorios de GitHub de 2020 a 2023), la `FRMA` descifrada con esta
+  clave da un bloque PKCS#1 v1.5 SHA-1 bien formado. Eso solo ocurre si la
+  firmó la clave privada correspondiente. El hash no coincide con el `<DA>`
+  publicado porque esos repositorios anonimizaron el CAF (RUT `11111111-1`,
+  nombres). Falta una verificación completa con una boleta real
+  (`docs/pendientes.md`).
+- **Seguridad:** RSA de 512 bits con SHA-1. Detecta timbres alterados o
+  inventados, pero no resiste a un atacante que factorice la clave (horas y
+  decenas de dólares en la nube, según "Factoring as a Service", 2016).
+- **Rotación:** no hay canal oficial. La señal sería un CAF nuevo con un
+  `IDK` distinto de 300; la app lo muestra como "Verificación pendiente",
+  nunca como falla.
+
+Opciones si aparece un `IDK` nuevo, en orden de preferencia:
 
 1. Documentación técnica del SII para DTE (formato del CAF y del TED) o la
    mesa de ayuda del SII para desarrolladores.

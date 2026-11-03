@@ -10,6 +10,12 @@ que el SII autorizó el rango de folios al RUT emisor). ADR 0017.
 - Si llega un `IDK` que no está aquí, la rendición queda en "Verificación
   pendiente" con razón "Clave pública SII no disponible (IDK …)".
 
+- `300.pem`: producción (palena), la que firma los CAF reales.
+- **IDK 100 (certificación) no va aquí a propósito:** sus CAF son de prueba,
+  sin validez tributaria, así que una boleta de prueba quedaría "verificada".
+  Su clave vive solo como fixture de test
+  (`functions/src/__fixtures__/sii-idk-100.pem`).
+
 Cómo obtener, probar y publicar una clave: `docs/runbooks/sii-keys.md`.
 
 Son claves **públicas**. Nunca poner aquí claves privadas ni la clave falsa

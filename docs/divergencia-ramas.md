@@ -33,6 +33,7 @@ que `expense-buddy` gane algo que `main` no tiene, o al revés.
   `src/lib/fiscalStatus.ts`; insignias en `ExpenseForm`, `AdminApprovals`
   (tabla y tarjetas móviles), `MyApprovals`, `ExpenseDetailsModal`; anomalía
   `fiscal-failed` en el dashboard.
+- **Claves:** `functions/sii-keys/300.pem` (producción) desde el 2026-11-03.
 - **Datos:** campos `rawTed` y `fiscalVerification` en `expenses`.
 - **Ajustes:** `settings/tenant.fiscal.tedVerification` (`off` por defecto).
 - **Reglas:** `validFiscal()` en la creación; `rawTed` y `fiscalVerification`

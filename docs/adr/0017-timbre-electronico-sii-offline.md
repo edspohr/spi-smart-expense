@@ -53,8 +53,13 @@ claves públicas del SII.
    entre etiquetas.
 6. **Claves del SII en el repo.** PEM públicos en `functions/sii-keys/<IDK>.pem`,
    empaquetados en el bundle (`siiKeys.ts`, `import.meta.glob`) y leídos del
-   disco en Functions. Sin claves, todo TED real queda en `error`
+   disco en Functions. Sin la clave de su `IDK`, un TED queda en `error`
    ("Verificación pendiente"). Runbook: `docs/runbooks/sii-keys.md`.
+   *Actualización 2026-11-03:* se publicó `300.pem` (producción). El SII no
+   publica estas claves; la de producción viene del certificado del SII que
+   distribuye LibreDTE y se comprobó con firmas reales del SII. `IDK 100`
+   (certificación) se excluye a propósito: sus CAF no tienen validez
+   tributaria y no deben verse "verificados".
 7. **Política por tenant** `settings/tenant.fiscal.tedVerification`:
    `off` (por defecto, SPI) | `advisory` (demo) | `required`. Con `required`
    el formulario no deja enviar un TED cuyo resultado sea una falla; un

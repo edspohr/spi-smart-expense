@@ -76,11 +76,15 @@ Solo existe para clientes en Chile.
 
 ### Estado actual (2026-11-03)
 
-- Probado con timbres sintéticos firmados con claves de prueba. **No se ha
-  probado aún con una boleta real**, y la app **no trae todavía las claves
-  públicas del SII**: hoy toda boleta real queda en "Verificación
-  pendiente". No ofrecer "validación SII" como disponible hasta cerrar ambas
-  cosas.
+- La app trae la clave pública del SII de producción (`IDK 300`) desde el
+  2026-11-03. Está comprobada contra el ejemplo oficial del SII y contra
+  firmas reales del SII, pero **todavía no con una boleta real completa
+  fotografiada**. Hasta esa prueba, decir "en piloto" antes que
+  "disponible".
+- Las claves del SII son RSA de 512 bits con SHA-1 (de 2003). Bastan para
+  detectar timbres alterados o inventados por cualquiera, pero un atacante
+  con recursos podría factorizar una clave de 512 bits. No prometer
+  "imposible de falsificar".
 - iPhone: no confirmado que Safari acepte el tamaño de clave de los CAF; si
   no, el teléfono muestra "pendiente" y verifica el servidor.
 - La landing del demo ya presenta la función (2026-11-03), con un texto que

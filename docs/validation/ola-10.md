@@ -9,9 +9,11 @@ filtro, columnas ni tarjeta nuevas y `READER_VERSION` sigue en 1.3.0. Lo que
 sí cambia para SPI: el bundle crece ~13 KiB (precache 2539,44 → 2552,33 KiB)
 y `firestore.rules` valida dos campos que SPI nunca escribe.
 
-**Límite principal:** no hay claves reales del SII en el repo. Hasta
-agregarlas, todo TED real queda en "Verificación pendiente". Todo lo marcado
-✅ se probó con timbres sintéticos firmados por una clave falsa del SII.
+**Límite principal (actualizado 2026-11-03):** la clave de producción del
+SII (`IDK 300`) ya está en el repo, y el timbre oficial de ejemplo del SII
+verifica de punta a punta (`functions/src/tedVerify.official.test.ts`, con la
+clave de certificación como fixture). Falta probar una boleta real
+fotografiada. El resto de lo marcado ✅ se probó con timbres sintéticos.
 
 Formato: qué cambió → cómo probarlo → estado esperado. Marcar ✅ al verificar.
 

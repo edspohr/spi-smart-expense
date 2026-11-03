@@ -73,7 +73,7 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **TED verification on the device** (`functions/src/tedVerify.logic.ts`, WebCrypto, shared with Functions): SII signature over the CAF (FRMA, key by `IDK`), issuer signature over the document (FRMT, CAF's `RSAPK`), folio inside the authorised range, RUT consistency; amount/date/RUT differences with the submission are warnings. No SII query.
 - **Server is authoritative:** `verifyFiscalDocument` (exported only for `COUNTRY=CL`) re-verifies `rawTed` and overwrites `fiscalVerification`; rules accept a device result only at creation.
 - **Where it shows:** badges in approvals and details, a dashboard anomaly, report filter and Excel/CSV columns, Ajustes card. Setting `settings/tenant.fiscal.tedVerification` (`off` for SPI, `advisory` for the demo, `required`).
-- **SII public keys** go in `functions/sii-keys/<IDK>.pem`; none shipped yet, so real receipts show "Verificación pendiente". Runbook `docs/runbooks/sii-keys.md`; scripts `scripts/fixtures/make-ted-fixture.mjs` and `scripts/sii/verify-ted.mjs`. Decision: ADR 0017; sales scope: `docs/sales/fiscal-and-erp.md`.
+- **SII public keys** go in `functions/sii-keys/<IDK>.pem`; the production key (IDK 300) ships since 2026-11-03 (the SII does not publish it: it comes from the SII certificate distributed by LibreDTE, checked against real SII signatures). The certification key (IDK 100) is a test fixture only. An unknown IDK shows "Verificación pendiente". Runbook `docs/runbooks/sii-keys.md`; scripts `scripts/fixtures/make-ted-fixture.mjs` and `scripts/sii/verify-ted.mjs`. Decision: ADR 0017; sales scope: `docs/sales/fiscal-and-erp.md`.
 
 ### Ola 11 — Accounting export (2026-11-03)
 
