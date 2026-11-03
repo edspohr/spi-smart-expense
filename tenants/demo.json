@@ -82,9 +82,10 @@
     "subheadline": "Expense Buddy convierte la foto de una boleta en una rendición lista para aprobar. Pensado para equipos en terreno que no tienen tiempo para el papeleo.",
     "highlights": [
       "Lectura de boletas con IA",
-      "CLP, USD y EUR con tipo de cambio de referencia actualizado",
+      "Timbre SII verificado en el teléfono",
+      "Exportación contable a su ERP",
       "Funciona sin señal",
-      "Sin papeles ni planillas"
+      "CLP, USD y EUR con tipo de cambio de referencia actualizado"
     ],
     "features": [
       {
@@ -93,9 +94,19 @@
         "text": "Fotografíe la boleta o factura: la IA lee RUT, comercio, fecha y monto. Usted solo confirma."
       },
       {
+        "icon": "fiscal",
+        "title": "Timbre electrónico SII verificado",
+        "text": "Al fotografiar una boleta o factura electrónica, la app revisa el timbre: que la emitió ese RUT, con un folio autorizado por el SII y por el monto rendido. Funciona en el teléfono, incluso sin señal."
+      },
+      {
         "icon": "workflow",
         "title": "Aprobación en dos niveles, con delegación",
         "text": "Jefatura directa y luego finanzas, doble revisión sobre montos altos, delegación en vacaciones y aprobación automática de montos menores."
+      },
+      {
+        "icon": "accounting",
+        "title": "Directo a su contabilidad",
+        "text": "Los gastos aprobados salen como asientos cuadrados, con el IVA crédito fiscal de las facturas separado, en archivos para Softland, Defontana, SAP Business One o CSV. El formato se ajusta a su ERP en la implementación."
       },
       {
         "icon": "offline",
@@ -105,12 +116,12 @@
       {
         "icon": "phone",
         "title": "La app en su teléfono",
-        "text": "Se instala en Android y iPhone sin pasar por tiendas, y permite seguir cada aprobación."
+        "text": "Se instala en Android y iPhone sin pasar por tiendas. Rinda, apruebe y revise saldos desde el teléfono con la misma información que en el computador."
       },
       {
         "icon": "budget",
         "title": "Presupuesto bajo control",
-        "text": "Saldos por persona y centro de costo, reportes y exportación a Excel con todos los comprobantes."
+        "text": "Saldos por persona y centro de costo, un panel con lo pendiente y lo más atrasado, reportes y exportación a Excel con todos los comprobantes."
       },
       {
         "icon": "security",

@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
 import {
   ArrowRight,
+  BookOpenCheck,
   Check,
+  FileCheck2,
   MessageCircle,
   PieChart,
   ShieldCheck,
@@ -24,6 +26,8 @@ const ICONS: Record<string, LucideIcon> = {
   phone: Smartphone,
   budget: PieChart,
   security: ShieldCheck,
+  fiscal: FileCheck2,
+  accounting: BookOpenCheck,
 };
 
 interface Props {

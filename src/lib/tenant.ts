@@ -12,7 +12,7 @@ export interface TenantLanding {
   headline: string;
   subheadline: string;
   highlights?: string[];
-  /** icon: sparkles | workflow | offline | phone | budget | security */
+  /** icon: sparkles | workflow | offline | phone | budget | security | fiscal | accounting */
   features: { icon: string; title: string; text: string }[];
   cta?: {
     title: string;
