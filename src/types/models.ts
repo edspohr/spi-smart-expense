@@ -40,7 +40,7 @@ export interface UserDoc {
 
 export interface TenantSettingsDoc {
   security?: { pinEnabled?: boolean };
-  modules?: Partial<Record<'bulkUpload' | 'reports' | 'reconciliation' | 'balances', boolean>>;
+  modules?: Partial<Record<'bulkUpload' | 'reports' | 'reconciliation' | 'balances' | 'accounting', boolean>>;
   ai?: { dailyLimitUser?: number; dailyLimitTenant?: number };
   updatedAt?: string;
   updatedByUid?: string;

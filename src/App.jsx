@@ -10,6 +10,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminSettings from './pages/AdminSettings';
 import AdminReports from './pages/AdminReports';
 import AdminReconciliation from './pages/AdminReconciliation';
+import AdminAccounting from './pages/AdminAccounting';
 import UserDashboard from './pages/UserDashboard';
 import UserExpenses from './pages/UserExpenses';
 import ExpenseForm from './pages/ExpenseForm';
@@ -48,6 +49,7 @@ function App() {
         <Route path="/admin/balances" element={<ProtectedRoute requiredRole="admin" module="balances"><AdminBalances /></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin" module="reports"><AdminReports /></ProtectedRoute>} />
         <Route path="/admin/reconciliation" element={<ProtectedRoute requiredRole="admin" module="reconciliation"><AdminReconciliation /></ProtectedRoute>} />
+        <Route path="/admin/accounting" element={<ProtectedRoute requiredRole="admin" module="accounting"><AdminAccounting /></ProtectedRoute>} />
 
         {/* Superadmin */}
         <Route path="/admin/users" element={<ProtectedRoute requiredRole="superadmin"><AdminUsers /></ProtectedRoute>} />

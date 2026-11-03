@@ -1,4 +1,5 @@
 import { tenant, type TenantConfig } from './tenant';
+import { EMPTY_ACCOUNTING_SETTINGS, parseAccountingSettings, type AccountingSettings } from '../../functions/src/accounting.logic';
 
 // Runtime settings a superadmin edits in /admin/settings (Firestore
 // settings/tenant). Build-time tenants/<id>.json values are the defaults, so
@@ -42,7 +43,7 @@ export type TedVerificationMode = 'off' | 'advisory' | 'required';
 export interface TenantSettings {
   approvalPolicy: ApprovalPolicy;
   security: { pinEnabled: boolean; pinApprovalThreshold: number | null; pinActions: Record<PinAction, boolean> };
-  modules: TenantConfig['modules'];
+  modules: Required<TenantConfig['modules']>;
   ai: { dailyLimitUser: number | null; dailyLimitTenant: number | null; localFirst: boolean };
   /** Ola 8: on-device receipt reading and "Listo para terreno". Off by default. */
   /** Ola 8: on-device reader; shadowRead measures it on every online expense (8b). */
@@ -56,6 +57,8 @@ export interface TenantSettings {
   };
   /** Ola 10: offline SII timbre verification for Chilean DTEs. */
   fiscal: { tedVerification: TedVerificationMode };
+  /** Ola 11: chart-of-accounts mapping for the accounting export (ADR 0018). */
+  accounting: AccountingSettings;
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -67,6 +70,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   reports: 'Reportes',
   reconciliation: 'Conciliación',
   balances: 'Finanzas',
+  accounting: 'Contabilidad',
 };
 
 export const DEFAULT_SETTINGS: TenantSettings = {
@@ -76,11 +80,12 @@ export const DEFAULT_SETTINGS: TenantSettings = {
     pinApprovalThreshold: null,
     pinActions: Object.fromEntries(ALL_ACTIONS.map((a) => [a, true])) as Record<PinAction, boolean>,
   },
-  modules: { ...tenant.modules },
+  modules: { ...tenant.modules, accounting: tenant.modules.accounting ?? false },
   ai: { dailyLimitUser: null, dailyLimitTenant: null, localFirst: false },
   offline: { localReader: false, shadowRead: false },
   learning: { shareDerived: false, termsVersion: null, acceptedAt: null, acceptedByName: null },
   fiscal: { tedVerification: tenant.fiscal?.tedVerification ?? 'off' },
+  accounting: EMPTY_ACCOUNTING_SETTINGS,
 };
 
 export function mergeSettings(doc: Record<string, unknown> | undefined | null): TenantSettings {
@@ -116,6 +121,7 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
       reports: bool(modules.reports, DEFAULT_SETTINGS.modules.reports),
       reconciliation: bool(modules.reconciliation, DEFAULT_SETTINGS.modules.reconciliation),
       balances: bool(modules.balances, DEFAULT_SETTINGS.modules.balances),
+      accounting: bool(modules.accounting, DEFAULT_SETTINGS.modules.accounting),
     },
     ai: { dailyLimitUser: int(ai.dailyLimitUser), dailyLimitTenant: int(ai.dailyLimitTenant), localFirst: ai.localFirst === true },
     offline: {
@@ -135,6 +141,7 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
           ? fiscal.tedVerification
           : DEFAULT_SETTINGS.fiscal.tedVerification,
     },
+    accounting: doc.accounting ? parseAccountingSettings(doc.accounting) : DEFAULT_SETTINGS.accounting,
     updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : undefined,
     updatedByName: typeof doc.updatedByName === 'string' ? doc.updatedByName : undefined,
   };

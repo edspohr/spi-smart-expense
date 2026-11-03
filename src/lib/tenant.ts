@@ -115,6 +115,8 @@ export interface TenantConfig {
     reports: boolean;
     reconciliation: boolean;
     balances: boolean;
+    /** Ola 11: accounting export (/admin/accounting). Off when omitted. */
+    accounting?: boolean;
   };
   security: {
     pinEnabled: boolean;

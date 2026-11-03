@@ -4,6 +4,7 @@ import { auth } from './firebase';
 import { callFunction } from './functions';
 import { withPin } from './pin';
 import type { Role } from '../types/models';
+import type { AccountingSettings } from '../../functions/src/accounting.logic';
 
 export interface ManagedUser {
   uid: string;
@@ -68,6 +69,7 @@ export interface SettingsPatch {
   offline?: { localReader?: boolean; shadowRead?: boolean };
   learning?: { shareDerived: boolean; termsVersion?: string };
   fiscal?: { tedVerification: 'off' | 'advisory' | 'required' };
+  accounting?: AccountingSettings;
   approvalPolicy?: Partial<{
     mode: 'single' | 'levels';
     autoApproveBelow: number | null;

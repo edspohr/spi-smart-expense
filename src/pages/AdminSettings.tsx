@@ -11,6 +11,7 @@ import { tenant } from '../lib/tenant';
 import ApprovalPolicyCard from '../components/ApprovalPolicyCard';
 import OfflineReaderCard from '../components/OfflineReaderCard';
 import FiscalCard from '../components/FiscalCard';
+import AccountingCard from '../components/AccountingCard';
 import { country } from '../lib/country';
 import LearningConsentCard from '../components/LearningConsentCard';
 
@@ -288,6 +289,7 @@ export default function AdminSettings() {
 
         <OfflineReaderCard />
         {country.code === 'CL' && <FiscalCard />}
+        <AccountingCard />
         <LearningConsentCard />
       </div>
     </Layout>

@@ -52,7 +52,8 @@
     "bulkUpload": true,
     "reports": true,
     "reconciliation": false,
-    "balances": true
+    "balances": true,
+    "accounting": true
   },
   "security": {
     "pinEnabled": false

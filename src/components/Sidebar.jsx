@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import {
   PieChart, LayoutDashboard, FolderOpen, CheckCircle,
-  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell, Users, Settings, ClipboardCheck
+  FileText, UserCircle, Receipt, LogOut, Wallet, Download, Layers, GitCompare, Bell, Users, Settings, ClipboardCheck, BookOpenCheck
 } from 'lucide-react';
 import InstallButton from './InstallButton';
 import { useTenantSettings } from '../context/SettingsContext';
@@ -96,6 +96,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <Link to="/admin/reconciliation" className={linkClass('/admin/reconciliation')} aria-current={ariaCurrent('/admin/reconciliation')} onClick={() => setIsOpen(false)}>
                 <GitCompare className={`w-4 h-4 mr-3 ${isActive('/admin/reconciliation') ? 'text-brand-500' : 'text-chrome-subtle'}`} aria-hidden="true" />
                 Conciliación
+                </Link>
+                )}
+                {modules.accounting && (
+                <Link to="/admin/accounting" className={linkClass('/admin/accounting')} aria-current={ariaCurrent('/admin/accounting')} onClick={() => setIsOpen(false)}>
+                <BookOpenCheck className={`w-4 h-4 mr-3 ${isActive('/admin/accounting') ? 'text-brand-500' : 'text-chrome-subtle'}`} aria-hidden="true" />
+                Contabilidad
                 </Link>
                 )}
             </>

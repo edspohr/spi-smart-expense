@@ -38,4 +38,13 @@ describe('mergeSettings', () => {
     expect(mergeSettings({ fiscal: { tedVerification: 'maybe' } }).fiscal.tedVerification).toBe('off');
     expect(mergeSettings({}).fiscal.tedVerification).toBe('off');
   });
+
+  it('keeps the accounting export off with an empty mapping unless configured', () => {
+    expect(DEFAULT_SETTINGS.accounting.categoryAccounts).toEqual({});
+    const merged = mergeSettings({ modules: { accounting: true }, accounting: { liabilityAccount: '2-1', vatRate: 0.19, categoryAccounts: { VARIOS: '6-9' } } });
+    expect(merged.modules.accounting).toBe(true);
+    expect(merged.accounting.liabilityAccount).toBe('2-1');
+    expect(merged.accounting.categoryAccounts).toEqual({ VARIOS: '6-9' });
+    expect(mergeSettings({}).accounting).toEqual(DEFAULT_SETTINGS.accounting);
+  });
 });
