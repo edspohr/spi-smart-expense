@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CloudOff, Loader2, Mountain, Plane, RefreshCw } from 'lucide-react';
+import { CheckCircle2, CloudOff, Loader2, Mountain, Plane, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/useAuth';
 import { useTenantSettings } from '../context/SettingsContext';
@@ -9,10 +9,13 @@ import { isSimulatingOffline, setSimulateOffline } from '../lib/connectivity';
 import { isSuperadmin } from '../lib/roles';
 import ReaderNotice from './ReaderNotice';
 import { tenant } from '../lib/tenant';
+import { isStandalone } from '../lib/install';
 import { ago, fieldReadyCopy as copy } from '../lib/fieldReadyCopy';
 
-// "Listo para terreno" (Ola 8): status of the offline kit and the button to
-// prepare it; plus "Simular sin señal" for demos (demo tenant, superadmins).
+// Offline mode (Ola 8) in Mi Espacio: one quiet line. The installed app
+// prepares the kit by itself (Layout.jsx), so this only shows the state and
+// lets the person force a check; plus "Simular sin señal" for demos (demo
+// tenant, superadmins).
 export default function FieldReadyCard() {
   const { currentUser, userRole } = useAuth() as unknown as { currentUser: { uid: string } | null; userRole: string | null };
   const { offline } = useTenantSettings();
@@ -39,8 +42,9 @@ export default function FieldReadyCard() {
 
   const ready = Boolean(status.readyAt && status.engines && (cached ?? true));
   const canSimulate = Boolean(tenant.landing?.demo) || isSuperadmin(userRole);
+  const Icon = ready ? CheckCircle2 : copy.icon === 'plane' ? Plane : Mountain;
 
-  const prepare = async () => {
+  const verify = async () => {
     try {
       const next = await prepareForField(currentUser.uid, setStep);
       setStatus(next);
@@ -59,56 +63,44 @@ export default function FieldReadyCard() {
     toast(next ? 'Sin señal simulada: la app se comporta como en una faena sin cobertura.' : 'Señal restablecida: las rendiciones guardadas se enviarán solas.');
   };
 
+  const line = step
+    ? step
+    : ready
+      ? `${copy.readyTitle} · actualizado ${ago(status.readyAt)}`
+      : isStandalone() ? copy.pendingInstalled : copy.pendingBrowser;
+
   return (
-    <section id="listo-sin-senal" aria-labelledby="field-ready-title" className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${ready ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-          {copy.icon === 'plane' ? <Plane className="h-5 w-5" aria-hidden="true" /> : <Mountain className="h-5 w-5" aria-hidden="true" />}
-        </span>
+    <section id="listo-sin-senal" aria-labelledby="field-ready-title" className="rounded-2xl border border-gray-100 bg-white px-5 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Icon className={`h-4 w-4 shrink-0 ${ready ? 'text-emerald-600' : 'text-gray-400'}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <h2 id="field-ready-title" className="font-semibold text-gray-900">
-            {ready ? copy.readyTitle : copy.prepareTitle}
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-600">
-            {ready
-              ? `${copy.readyBody} Actualizado ${ago(status.readyAt)}.`
-              : copy.prepareBody}
+          <h2 id="field-ready-title" className="text-sm font-medium text-gray-900">Modo sin conexión</h2>
+          <p className="text-xs text-gray-500" title={ready ? copy.readyBody : undefined}>
+            {step && <Loader2 className="mr-1 inline h-3 w-3 animate-spin align-[-2px]" aria-hidden="true" />}
+            {line}
           </p>
-          {ready && (
-            <p className="mt-1 text-xs text-gray-500">
-              {status.projects} centros de costo · {status.dictionary} comercios conocidos
-            </p>
-          )}
-          {step && (
-            <p className="mt-2 inline-flex items-center gap-2 text-xs text-gray-600">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> {step}
-            </p>
-          )}
         </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={prepare}
+          onClick={verify}
           disabled={!online || step !== null}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50 focus-ring"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50 focus-ring"
         >
-          <RefreshCw className="h-4 w-4" aria-hidden="true" />
-          {ready ? 'Actualizar' : copy.prepareButton}
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+          {ready ? 'Verificar ahora' : 'Preparar ahora'}
         </button>
         {canSimulate && (
           <button
             type="button"
             onClick={toggleSimulation}
             aria-pressed={simulated}
-            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ring-1 focus-ring ${simulated ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white text-gray-700 ring-gray-300 hover:bg-gray-50'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ring-1 focus-ring ${simulated ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-gray-600 ring-gray-200 hover:bg-gray-50'}`}
           >
-            <CloudOff className="h-4 w-4" aria-hidden="true" />
+            <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
             {simulated ? 'Volver a tener señal' : 'Simular sin señal'}
           </button>
         )}
       </div>
-      {!online && !simulated && <p className="mt-2 text-xs text-gray-500">Sin conexión: podrás actualizar cuando vuelva la señal.</p>}
       <ReaderNotice />
     </section>
   );

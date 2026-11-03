@@ -536,7 +536,7 @@ o una página 404 simple con enlace al inicio.
 
 ## TD-030 — "Listo para terreno" solo vive en Mi Espacio
 
-**Status:** Resuelta (2026-11-03). Mi Resumen muestra el estado y enlaza a Mi Espacio (`FieldReadyStatus`), y la app instalada prepara el kit sola la primera vez que se abre con sesión (`shouldAutoPrepare` en `src/lib/fieldReady.ts`, llamado desde `Layout.jsx`), con un aviso al terminar. En una pestaña del navegador sigue siendo manual. Queda abierto solo que el menú llame "Notificaciones" a Mi Espacio.
+**Status:** Resuelta (2026-11-03). La app instalada prepara el kit sola la primera vez que se abre con sesión (`shouldAutoPrepare` en `src/lib/fieldReady.ts`, llamado desde `Layout.jsx`), con un solo aviso breve al terminar. Como ya no hay que descubrirla, se quitó la franja de Mi Resumen y la tarjeta de Mi Espacio quedó en una línea discreta ("Modo sin conexión", con "Verificar ahora"). En una pestaña del navegador se prepara con ese botón.
 
 **Severity:** Low (UX)  
 **Impact:** Medium · **Effort:** Low  
