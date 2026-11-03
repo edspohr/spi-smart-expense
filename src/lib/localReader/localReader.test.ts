@@ -70,6 +70,19 @@ describe('barcode parsers', () => {
       issuerName: 'COMBUSTIBLES DEL NORTE SPA', folio: '4815162', date: '2026-10-20', total: 68400,
       firstItem: 'COMBUSTIBLE 95 OCTANOS', receiverTaxId: '66666666-6',
     });
+    // Ola 10: the full TED envelope must round-trip so the signature
+    // verification can hash the exact bytes that were signed.
+    expect(b.rawTed).toBe(TED);
+  });
+
+  it('preserves the TED envelope even when the barcode payload has leading noise', () => {
+    const noisy = `   ${TED}\x00\x00`;
+    expect(parseTed(noisy)?.rawTed).toBe(TED);
+  });
+
+  it('leaves rawTed unset on a DIAN QR', () => {
+    const dian = parseDianQr('NumFac: X\nNitFac: 900373115\nFecFac: 2026-10-18')!;
+    expect(dian.rawTed).toBeUndefined();
   });
 
   it('reads a DIAN QR and a URL-only QR', () => {

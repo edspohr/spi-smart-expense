@@ -42,11 +42,19 @@ async function toPixels(image: Blob): Promise<Pixels> {
   return ctx.getImageData(0, 0, width, height);
 }
 
+/**
+ * A TED keeps one char per scanned byte: its signatures cover those exact
+ * bytes (ISO-8859-1), which a transcoded `text` may no longer reproduce.
+ */
+function scannedText(r: { text: string; bytes: Uint8Array }): string {
+  return r.text.includes('<TED') ? String.fromCharCode(...r.bytes) : r.text;
+}
+
 export async function decodeTaxBarcode(image: Blob): Promise<BarcodeData | null> {
   const { readBarcodes } = await loadReader();
   const pixels = await toPixels(image);
   return scanTaxBarcode(pixels, async (img) => {
     const results = await readBarcodes(img as ImageData, { formats: ['PDF417', 'QRCode'], tryHarder: true, maxNumberOfSymbols: 4 });
-    return results.map((r) => r.text).filter(Boolean);
+    return results.map(scannedText).filter(Boolean);
   });
 }

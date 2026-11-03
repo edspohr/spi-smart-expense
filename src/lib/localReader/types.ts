@@ -39,6 +39,9 @@ export interface BarcodeData {
   firstItem?: string;
   receiverTaxId?: string;
   cufe?: string;
+  // Full `<TED>...</TED>` XML, kept so Ola 10 can verify FRMT and FRMA
+  // against the SII and issuer public keys. Only set for TED barcodes.
+  rawTed?: string;
 }
 
 export interface LocalReadResult {

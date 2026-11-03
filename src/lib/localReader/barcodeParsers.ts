@@ -41,6 +41,11 @@ export function normalizeRut(raw: string): string {
 /** Parses the XML of a Chilean TED. Returns null if it is not one. */
 export function parseTed(text: string): BarcodeData | null {
   if (!/<TED[\s>]/.test(text) || !/<DD>/.test(text)) return null;
+  // Capture the complete TED block so Ola 10 can verify the signatures
+  // (FRMT over DD, FRMA inside CAF over DA) byte-for-byte against the
+  // issuer and SII public keys. The regex strips noise before and after
+  // the TED envelope but preserves the original byte sequence inside it.
+  const rawTed = text.match(/<TED\b[^>]*>[\s\S]*?<\/TED>/)?.[0];
   const dd = text.match(/<DD>([\s\S]*?)<\/DD>/)?.[1] ?? text;
   // The issuer's legal name travels in the CAF (folio authorisation) inside DD.
   const da = dd.match(/<DA>([\s\S]*?)<\/DA>/)?.[1] ?? '';
@@ -61,6 +66,7 @@ export function parseTed(text: string): BarcodeData | null {
     total: Number.isFinite(total) && total > 0 ? total : undefined,
     firstItem: tag(ddOwn, 'IT1'),
     receiverTaxId: rr ? normalizeRut(rr) : undefined,
+    rawTed,
   };
 }
 
