@@ -47,7 +47,7 @@ Copy `.env.example` to `.env` and populate every `VITE_FIREBASE_*` variable (no 
 
 ## Architecture
 
-Branches (ADR 0019): `main` is what SPI runs; `expense-buddy` carries Olas 10+ for the generic platform and deploys only with `--project demo`. Never deploy `expense-buddy` to `spi-smart-expense`; merge `main` into `expense-buddy`, not the reverse, until SPI is homologated.
+Branches (ADR 0019): `main` is what SPI runs; `expense-buddy` carries Olas 10+ for the generic platform and deploys only with `--project demo`. Never deploy `expense-buddy` to `spi-smart-expense`; merge `main` into `expense-buddy`, not the reverse, until SPI is homologated. Keep `docs/divergencia-ramas.md` current with what each branch has that the other doesn't.
 
 React 19 SPA (Vite + Tailwind CSS). Backend is Firebase (Auth, Firestore, Storage) plus Cloud Functions in `functions/` (TypeScript, Node 22, 2nd gen). Google Gemini extracts receipt data through the `extractReceipt` callable; the API key is a Functions secret and never ships to the browser.
 

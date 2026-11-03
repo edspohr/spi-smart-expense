@@ -1090,8 +1090,9 @@ export default function AdminApprovals() {
                       <p className="mt-1 text-xs text-gray-500">
                         {[e.date, e.projectName, e.category].filter(Boolean).join(' · ')}
                       </p>
-                      {(hasError || e.aiReview?.status === 'mismatch' || badge || viewMode === 'history') && (
+                      {(hasError || e.aiReview?.status === 'mismatch' || badge || e.fiscalVerification || viewMode === 'history') && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
+                          <FiscalBadge verification={e.fiscalVerification} />
                           {hasError && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700">{errorMap.get(e.id)}</span>}
                           {e.aiReview?.status === 'mismatch' && <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800">Revisar: la IA leyó otro valor</span>}
                           {badge && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>{badge.label}</span>}
