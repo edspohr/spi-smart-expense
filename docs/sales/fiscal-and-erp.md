@@ -83,6 +83,9 @@ Solo existe para clientes en Chile.
   cosas.
 - iPhone: no confirmado que Safari acepte el tamaño de clave de los CAF; si
   no, el teléfono muestra "pendiente" y verifica el servidor.
+- La landing del demo ya presenta la función (2026-11-03), con un texto que
+  se ciñe a lo que garantiza: emisor, folio autorizado y monto. Decisión de
+  mantenerla antes de cerrar lo anterior: `docs/pendientes.md`.
 
 ### Cómo decirlo en una propuesta (cuando esté cerrado)
 
@@ -147,4 +150,6 @@ exportar salvo que se pida explícitamente.
 
 Hasta importar con un cliente real, decir "formato de importación de
 Softland/Defontana/SAP B1, ajustado en la puesta en marcha". No decir
-"integración nativa" ni "conexión en línea con el ERP".
+"integración nativa" ni "conexión en línea con el ERP". La landing del demo
+(2026-11-03) sigue esta regla: "el formato se ajusta a su ERP en la
+implementación".

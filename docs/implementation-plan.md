@@ -52,6 +52,11 @@ Las olas 8b-8d profundizan el lector offline antes de seguir (decisión del resp
 fundadores. Los prompts de las olas 9-16 se escriben al iniciar cada una
 (así no quedan obsoletos); cada sección deja el alcance acordado.
 
+**Trabajo transversal fuera de olas:** 2026-11-03, dashboard con tarjetas
+compactas, todas las tablas usables en el teléfono y fin del botón «Recalcular
+Saldos» (`def7cba`, deployado en SPI y en el demo; validación
+`docs/validation/ux-movil-2026-11.md`).
+
 Actualizar esta tabla al cerrar cada ola (estado `Deployada YYYY-MM-DD` +
 commit en `docs/README.md`).
 

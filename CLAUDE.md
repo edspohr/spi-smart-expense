@@ -143,6 +143,7 @@ Server-only collections: `rateLimits` (Gemini quotas), `aggregateLedger` (trigge
 - Tests colocated as `*.test.{js,ts}`; money logic (balances, FX, permissions) must be covered.
 - Every feature must be tenant-configurable and must leave SPI's default behaviour unchanged.
 - Styling: Tailwind with the `brand` palette, `shadow-soft`/`shadow-glass`, Inter font, Framer Motion for transitions.
+- Responsive: the sidebar shows from `md`, so wide tables (5+ columns) switch to a card list below `lg` (`lg:hidden` list + `hidden lg:block` table), narrow ones below `md`. Table and cards share render functions for actions and badges; hide low-value desktop columns with `hidden xl:table-cell` / `2xl:` so actions stay visible. Dashboard KPIs use `StatCard`.
 
 ## Documentation to keep current
 
@@ -150,4 +151,4 @@ Every phase ("Ola") updates, as part of its acceptance criteria: `docs/implement
 
 ## Active implementation plan
 
-See `docs/implementation-plan.md` (plan v4). Olas 0-8 are deployed (Ola 8: automated offline mode, opt-in per tenant). Olas 8b-8d deepen the reader before moving on (shadow mode and per-client learning; cross-client layer with consent; image corpus), then Ola 9 (fleet operations, observability, security baseline) and Olas 10-16 in suggested order (Ola 10, TED verification, was brought forward and is implemented on `ola-10/fiscal-ted`, not deployed; Ola 11, accounting export, is implemented on `ola-11/accounting-export` on top of it, not deployed), without dates (ADR 0014; market research in `docs/research/benchmark-2026-10.md`). Execute olas in order; each is self-contained and independently deployable. Prompts for Olas 9-16 are written when each wave starts. Decisions behind the plan are recorded in `docs/adr/`.
+See `docs/implementation-plan.md` (plan v4). Olas 0-8c are deployed (Ola 8: automated offline mode, opt-in per tenant); Ola 8d is conditional. Olas 10 (TED verification) and 11 (accounting export) were brought forward and live only on the `expense-buddy` branch, deployed to the demo (ADR 0019; differences in `docs/divergencia-ramas.md`). Next come Ola 9 (fleet operations, observability, security baseline) and Olas 12-16 in suggested order, without dates (ADR 0014; market research in `docs/research/benchmark-2026-10.md`). Each ola is self-contained and independently deployable; prompts for later olas are written when each wave starts. Decisions behind the plan are recorded in `docs/adr/`.

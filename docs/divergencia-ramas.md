@@ -17,6 +17,7 @@ que `expense-buddy` gane algo que `main` no tiene, o al revés.
 
 | Fecha | Commit en `main` | Qué |
 |---|---|---|
+| 2026-11-03 | `e24edfb` | Documentación del cambio de abajo: README, plan, backlog, TD-018/TD-026, CLAUDE.md y `docs/validation/ux-movil-2026-11.md`. |
 | 2026-11-03 | `def7cba` | Dashboard con 6 tarjetas compactas orientadas a acción; todas las tablas pasan a tarjetas en móvil; se elimina «Recalcular Saldos (Repair)» y `src/utils/fixBalances.js` (TD-018). Desplegado a SPI (solo hosting) y al demo. |
 
 ## Solo en `expense-buddy`
@@ -55,6 +56,10 @@ que `expense-buddy` gane algo que `main` no tiene, o al revés.
 
 ### Demo
 
+- **Landing del login** (`tenants/demo.json → landing`): destacados y dos
+  funciones nuevas, «Timbre electrónico SII verificado» y «Directo a su
+  contabilidad»; íconos `fiscal` y `accounting` en `LoginLanding.tsx`. SPI no
+  tiene landing, así que no hay nada que homologar ahí.
 - `functions/src/demo.data.ts`: estados de timbre realistas por rendición
   (`demoFiscal`), facturas tipo 33 con IVA separado.
 - `functions/.env.expense-buddy-demo`: `COUNTRY=CL`,

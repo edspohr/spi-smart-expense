@@ -484,6 +484,10 @@ moneda base del tenant (CLP en el demo), así que el fix ya tiene su dato:
 sumar `amountBase ?? amountCOP ?? (currency === base ? amount : rechazar)`.
 En el demo, aprobar el gasto en USD sembrado reproduce el problema.
 
+**Update 2026-11-03:** las tarjetas «Fondos por rendir» y «Por reembolsar»
+del dashboard suman `users.balance`, así que heredan este problema cuando hay
+gastos en moneda extranjera (igual que `/admin/balances`).
+
 ---
 
 # Items registered in Ola 2 (2026-10-25)

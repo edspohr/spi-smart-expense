@@ -81,6 +81,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Balanced journals** (`functions/src/accounting.logic.ts`, shared by the preview and the server): one per approved expense, base currency, VAT split only on recoverable types whose timbre did not fail.
 - **Connectors** (`functions/src/accounting.connectors.ts`): generic CSV, Softland, Defontana and SAP B1 DTW files, each with its declared layout assumptions.
 - **`/admin/accounting`**: preview with blocking issues, export behind the `export` PIN through `buildAccountingExport`, run history in `accountingExports/{id}`; exported expenses are stamped and locked. `modules.accounting` is off for SPI and on for the demo. Decision: ADR 0018; sales scope: `docs/sales/fiscal-and-erp.md`.
+- **Demo landing:** the login page of `expense-buddy-demo` now pitches the timbre check and the accounting export (`tenants/demo.json → landing`), saying the ERP layout is adjusted per client during implementation.
+
+### Dashboard and phones (2026-11-03)
+
+- **Action-first dashboard:** six compact KPI cards (`src/components/StatCard.jsx`) in 2 / 3 / 6 columns: pending to approve (count and amount), oldest pending in days, rendido and aprobado for the period, funds handed out still to justify, and what the company owes people. The two pending cards ignore the period filter; the balance cards read the current `users.balance`.
+- **Every table works on a phone:** below `lg` (or `md` for narrow tables) approvals, balances, my expenses, reports, users, cost centres, reconciliation, user and project details and team activity render as cards with the same actions; on desktop low-value columns appear only from `xl` / `2xl` so the actions column stays visible.
+- **Removed "Recalcular Saldos (Repair)"** and `src/utils/fixBalances.js`: it rewrote balances from the browser with a formula that diverged from `onExpenseWritten`. Automatic drift detection is TD-018. Validation: `docs/validation/ux-movil-2026-11.md`.
 
 ### Roadmap (plan v4, 2026-10-26)
 
@@ -146,7 +153,7 @@ Next: create the learning hub and pass the legal texts to `derived-v1` (owner), 
   - View personal balance and reimbursement status.
   - Track expense history.
 - **Admin Role**:
-  - **Dashboard**: Overview of total project budgets and pending approvals.
+  - **Dashboard**: What needs action first (pending approvals and the oldest one), the period totals and the money held or owed, on any screen size.
   - **Project Management**: Create and manage projects, assign users, and set budgets.
   - **Approval Workflow**: Review, approve, or reject submitted expenses.
   - **User Management**: Manage user roles and balances.
