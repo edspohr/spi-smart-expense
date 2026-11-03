@@ -5,7 +5,7 @@ import { defineString } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { BASE_CURRENCY, FUNCTIONS_REGION } from './common';
-import { needsFiscalCheck, notVerifiable, submittedFacts, verifyTed, type TedKeyProvider } from './tedVerify.logic';
+import { needsFiscalCheck, notVerifiable, pemBase64, submittedFacts, verifyTed, type TedKeyProvider } from './tedVerify.logic';
 
 // Ola 10: authoritative verification of the Chilean TED. Exported only for
 // COUNTRY=CL tenants (index.ts). The device result is provisional; this one
@@ -18,8 +18,7 @@ const KEY_DIR = join(__dirname, '..', 'sii-keys');
 const keys = new Map<string, Promise<CryptoKey | null>>();
 
 async function importPem(pem: string): Promise<CryptoKey> {
-  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
-  const der = Buffer.from(b64, 'base64');
+  const der = Buffer.from(pemBase64(pem), 'base64');
   return globalThis.crypto.subtle.importKey(
     'spki', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, false, ['verify'],
   );

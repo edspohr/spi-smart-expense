@@ -6,12 +6,12 @@
 // nothing extra over its PEM payload — the first verifyTed() with a given
 // IDK imports and caches the CryptoKey.
 //
-// When the registry is empty (no PEMs committed yet, as during Ola 10
-// kickoff), every TED check returns status 'error' with "clave SII no
-// disponible". That is the designed fail-safe: the UI shows "verificación
-// pendiente" and the server retries on sync once keys land.
+// When the registry is empty (no PEMs committed yet), every TED check
+// returns status 'error' with "Clave pública SII no disponible". That is the
+// designed fail-safe: the UI shows "Verificación pendiente", never a failure
+// (docs/runbooks/sii-keys.md).
 
-import type { TedKeyProvider } from '../../../functions/src/tedVerify.logic';
+import { pemBase64, type TedKeyProvider } from '../../../functions/src/tedVerify.logic';
 
 const pemModules = import.meta.glob('../../../functions/sii-keys/*.pem', {
   query: '?raw',
@@ -29,11 +29,7 @@ const keyCache = new Map<string, Promise<CryptoKey | null>>();
 
 async function loadKey(pem: string): Promise<CryptoKey | null> {
   try {
-    const b64 = pem
-      .replace(/-----BEGIN [^-]+-----/g, '')
-      .replace(/-----END [^-]+-----/g, '')
-      .replace(/\s+/g, '');
-    const der = base64ToBytes(b64);
+    const der = base64ToBytes(pemBase64(pem));
     return await globalThis.crypto.subtle.importKey(
       'spki',
       der.buffer as ArrayBuffer,

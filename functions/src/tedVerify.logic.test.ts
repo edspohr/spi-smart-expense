@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { needsFiscalCheck, notVerifiable, submittedFacts, verifyTed, type TedKeyProvider } from './tedVerify.logic';
+import { needsFiscalCheck, notVerifiable, pemBase64, submittedFacts, verifyTed, type TedKeyProvider } from './tedVerify.logic';
 import { makeTedFixture } from '../../src/lib/localReader/__fixtures__/ted/makeTed';
 
 const READER_VERSION = '1.4.0';
@@ -193,5 +193,13 @@ describe('needsFiscalCheck', () => {
     expect(needsFiscalCheck(e, { ...e })).toBe(false);
     expect(needsFiscalCheck(undefined, { ...e, fiscalVerification: { verifiedOn: 'device' } })).toBe(true);
     expect(needsFiscalCheck(undefined, { ...e, fiscalVerification: { verifiedOn: 'server' } })).toBe(false);
+  });
+});
+
+describe('pemBase64', () => {
+  it('ignores a source note above the block and line breaks inside it', () => {
+    const pem = '# SII, mesa de ayuda, 2026-11-10\n-----BEGIN PUBLIC KEY-----\nMIGf\nMA0G\n-----END PUBLIC KEY-----\n';
+    expect(pemBase64(pem)).toBe('MIGfMA0G');
+    expect(() => pemBase64('MIGfMA0G')).toThrow();
   });
 });

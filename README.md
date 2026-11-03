@@ -68,6 +68,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Daily anonymised export** (`exportDerivedData`): legal-entity issuers with their total-label votes and daily accuracy counters; "Ver qué se envía" shows the exact JSON (`previewDerivedData`). Without `LEARNING_HUB_URL` it stays in the tenant's own `learningOutbox`.
 - **Learning hub** (`ingestContribution`, deployed only with `HUB_MODE=true`): Google ID token + sender allowlist + strict schema. `npm run pack:build` turns it into `src/lib/localReader/pack/reader-pack.json`, shipped with every build and used below each client's own learning. Runbook: `docs/runbooks/learning-hub.md`.
 
+### Ola 10 — Chilean electronic stamp verified offline (2026-11-03)
+
+- **TED verification on the device** (`functions/src/tedVerify.logic.ts`, WebCrypto, shared with Functions): SII signature over the CAF (FRMA, key by `IDK`), issuer signature over the document (FRMT, CAF's `RSAPK`), folio inside the authorised range, RUT consistency; amount/date/RUT differences with the submission are warnings. No SII query.
+- **Server is authoritative:** `verifyFiscalDocument` (exported only for `COUNTRY=CL`) re-verifies `rawTed` and overwrites `fiscalVerification`; rules accept a device result only at creation.
+- **Where it shows:** badges in approvals and details, a dashboard anomaly, report filter and Excel/CSV columns, Ajustes card. Setting `settings/tenant.fiscal.tedVerification` (`off` for SPI, `advisory` for the demo, `required`).
+- **SII public keys** go in `functions/sii-keys/<IDK>.pem`; none shipped yet, so real receipts show "Verificación pendiente". Runbook `docs/runbooks/sii-keys.md`; scripts `scripts/fixtures/make-ted-fixture.mjs` and `scripts/sii/verify-ted.mjs`. Decision: ADR 0017; sales scope: `docs/sales/fiscal-and-erp.md`.
+
 ### Roadmap (plan v4, 2026-10-26)
 
 Next: create the learning hub and pass the legal texts to `derived-v1` (owner), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.

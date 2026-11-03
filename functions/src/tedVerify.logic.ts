@@ -77,6 +77,16 @@ function normalizeRut(raw: string): string {
   return m ? `${m[1]}-${m[2]}` : clean;
 }
 
+/**
+ * Base64 body of a PEM public key. Only the lines between BEGIN and END
+ * count, so a source/date note above the block (runbook sii-keys.md) is ok.
+ */
+export function pemBase64(pem: string): string {
+  const m = pem.match(/-----BEGIN [^-]+-----([\s\S]*?)-----END [^-]+-----/);
+  if (!m) throw new Error('PEM sin bloque BEGIN/END');
+  return m[1]!.replace(/\s+/g, '');
+}
+
 /** The result for an expense with no readable TED. */
 export function notVerifiable(
   opts: { readerVersion: string; verifiedOn: FiscalVerification['verifiedOn']; now?: Date },

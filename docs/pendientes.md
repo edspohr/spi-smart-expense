@@ -12,6 +12,22 @@ hacer tú.
 
 ## Abiertos
 
+- [ ] **Claves públicas del SII (Ola 10)**: sin ellas, toda boleta real
+  queda en "Verificación pendiente". Averiguar con el SII (documentación
+  técnica de DTE o mesa de ayuda) o con el proveedor de facturación de un
+  cliente chileno dónde se publican las claves con que el SII firma los CAF
+  y cuál es su `IDK` en producción. Pásame el archivo o el enlace; yo la
+  pruebo y la publico (`docs/runbooks/sii-keys.md`).
+- [ ] **5-10 boletas y facturas chilenas reales con timbre (Ola 10)**:
+  fotos con el teléfono (pueden ser las mismas del corpus de la Ola 8). Con
+  ellas confirmo que la firma verifica tal como se imprime. No anunciar
+  "verificación del timbre SII" a prospectos antes de eso
+  (`docs/sales/fiscal-and-erp.md`).
+- [ ] **Probar el timbre en un iPhone (Ola 10, demo)**: rendir una boleta
+  con timbre y ver si dice "Timbre verificado en el dispositivo" o
+  "Verificación pendiente" (Safari podría no aceptar las claves cortas de
+  los CAF). Requiere la clave del SII.
+
 - [ ] **Revisión legal del lector que aprende (Ola 8b/8c)**: pasar
   `docs/legal/lector-datos-derivados.md` a un abogado (cláusula de datos
   derivados, anexo técnico, aviso a usuarios, consentimiento, cláusula de

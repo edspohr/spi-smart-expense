@@ -666,3 +666,59 @@ motores y el diccionario sí sirven para cualquiera.
 
 **Recommended fix:** Guardar el estado con el `uid` y considerar "listo"
 solo si coincide con la persona conectada.
+
+---
+
+# Items registered in Ola 10 (2026-11-03)
+
+## TD-038 — `required` bloquea solo en el formulario
+
+**Severity:** Medium  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `src/pages/ExpenseForm.jsx`, `functions/src/fiscal.ts`, `firestore.rules`
+
+**Problem:** con `fiscal.tedVerification = 'required'`, el formulario no deja
+enviar un timbre con firma inválida, folio fuera de rango o RUT distinto. Un
+cliente modificado puede escribir el gasto igual (sin `rawTed` o con otro):
+el servidor lo marca (`not_verifiable` o la falla) y aparece como anomalía,
+pero el gasto existe y sigue el flujo de aprobación.
+
+**Recommended fix:** en `required`, que `reviewExpense` no permita aprobar
+un gasto con falla fiscal sin una justificación del aprobador, o que la
+política de aprobación lo mande a un nivel adicional.
+
+---
+
+## TD-039 — Verificación sin claves reales del SII ni boletas reales
+
+**Severity:** High (para vender la función)  
+**Impact:** High · **Effort:** Low (técnico) / depende del responsable  
+**Files:** `functions/sii-keys/`, `functions/src/tedVerify.logic.ts`
+
+**Problem:** no hay ninguna clave pública del SII en el repo, así que toda
+boleta real queda en "Verificación pendiente". La forma de los bytes
+firmados (XML aplanado en ISO-8859-1) y los tamaños de clave salen de la
+documentación conocida, no de una boleta real. Las rendiciones que quedaron
+en `error` no se re-verifican solas al agregar una clave.
+
+**Recommended fix:** conseguir la clave (`docs/runbooks/sii-keys.md` §2),
+probarla con `scripts/sii/verify-ted.mjs` sobre 5-10 boletas reales, sumar
+esas boletas al corpus y escribir un script idempotente con dry-run que
+re-verifique los gastos en `error`.
+
+---
+
+## TD-040 — El servidor no lee el timbre desde la foto
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Medium  
+**Files:** `functions/src/fiscal.ts`
+
+**Problem:** el servidor solo verifica el `rawTed` que mandó el teléfono. Si
+el teléfono no lo decodificó (motores sin descargar, foto torcida, error),
+el servidor escribe `not_verifiable` ("Sin timbre") aunque la boleta lo
+tenga.
+
+**Recommended fix:** decodificar el PDF417 en Functions con `zxing-wasm`
+desde la imagen en Storage cuando falte `rawTed` en un tenant CL con la
+verificación activa.
