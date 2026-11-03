@@ -13,12 +13,16 @@ import ConnectionStatus from './ConnectionStatus';
 import { useLocation } from 'react-router-dom';
 import DemoBar from './DemoBar';
 import { useTenantSettings } from '../context/SettingsContext';
-import { getFieldReady, isFieldReadyStale, prepareForField } from '../lib/fieldReady';
+import { getFieldReady, onMeteredConnection, prepareForField, shouldAutoPrepare } from '../lib/fieldReady';
+import { fieldReadyCopy } from '../lib/fieldReadyCopy';
 import { isOnline } from '../lib/connectivity';
+import { isStandalone } from '../lib/install';
+import { toast } from 'sonner';
 
-// "Listo para terreno" refreshes itself once per session when the person
-// already prepared the device and the kit is older than 12 h (Ola 8).
-let fieldRefreshStarted = false;
+// "Listo para terreno" prepares itself once per session (Ola 8): the first
+// time the installed app opens with a session, and again when the kit is
+// older than 12 h. The first time says so; refreshes are silent.
+let fieldPrepareStarted = false;
 
 export default function Layout({ children, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,12 +32,36 @@ export default function Layout({ children, title }) {
   const { offline } = useTenantSettings();
 
   useEffect(() => {
-    if (!offline.localReader || !currentUser || fieldRefreshStarted || !isOnline()) return undefined;
-    const status = getFieldReady();
-    if (!status.readyAt || !isFieldReadyStale(status)) return undefined;
-    fieldRefreshStarted = true;
-    const t = setTimeout(() => { void prepareForField(currentUser.uid).catch(() => { fieldRefreshStarted = false; }); }, 5000);
-    return () => clearTimeout(t);
+    if (fieldPrepareStarted || !currentUser) return undefined;
+    const mode = shouldAutoPrepare({
+      localReader: offline.localReader,
+      signedIn: true,
+      online: isOnline(),
+      installed: isStandalone(),
+      metered: onMeteredConnection(),
+      status: getFieldReady(),
+    });
+    if (!mode) return undefined;
+    fieldPrepareStarted = true;
+    let fired = false;
+    const t = setTimeout(() => {
+      fired = true;
+      const run = prepareForField(currentUser.uid).then((next) => {
+        if (!next.engines) throw new Error('engines');
+      });
+      if (mode === 'first') {
+        toast.promise(run, {
+          loading: 'Preparando la app para rendir sin señal…',
+          success: fieldReadyCopy.readyToast,
+          error: 'No se pudo preparar la app para rendir sin señal. Se reintentará al abrirla con señal.',
+        });
+      }
+      // Retried on the next open of the app (the flag resets on reload).
+      run.catch(() => {});
+    }, 5000);
+    // Layout remounts on every page: a pending start moves to the next page,
+    // a download already running is left alone.
+    return () => { if (!fired) { clearTimeout(t); fieldPrepareStarted = false; } };
   }, [offline.localReader, currentUser]);
 
   useEffect(() => {

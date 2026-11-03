@@ -536,7 +536,7 @@ o una página 404 simple con enlace al inicio.
 
 ## TD-030 — "Listo para terreno" solo vive en Mi Espacio
 
-**Status:** Parcial (2026-10-26): Mi Resumen muestra el estado y enlaza a Mi Espacio (`FieldReadyStatus`). Falta el aviso tras instalar la app.
+**Status:** Resuelta (2026-11-03). Mi Resumen muestra el estado y enlaza a Mi Espacio (`FieldReadyStatus`), y la app instalada prepara el kit sola la primera vez que se abre con sesión (`shouldAutoPrepare` en `src/lib/fieldReady.ts`, llamado desde `Layout.jsx`), con un aviso al terminar. En una pestaña del navegador sigue siendo manual. Queda abierto solo que el menú llame "Notificaciones" a Mi Espacio.
 
 **Severity:** Low (UX)  
 **Impact:** Medium · **Effort:** Low  

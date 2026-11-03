@@ -33,6 +33,39 @@ export function isFieldReadyStale(status = getFieldReady()): boolean {
   return !status.readyAt || Date.now() - new Date(status.readyAt).getTime() > STALE_MS;
 }
 
+export type AutoPrepare = 'first' | 'refresh' | null;
+
+export interface AutoPrepareContext {
+  localReader: boolean;
+  signedIn: boolean;
+  online: boolean;
+  /** Running as the installed app (display-mode: standalone). */
+  installed: boolean;
+  /** On mobile data or data saver (only Android reports it). */
+  metered: boolean;
+  status: FieldReadyStatus;
+}
+
+/**
+ * Whether to prepare the kit on its own when the app opens. The installed
+ * app prepares it the first time it opens with a session, so installing is
+ * the only step; a browser tab never downloads the ~7 MB unasked. A kit
+ * already prepared refreshes after 12 h wherever it was prepared. The first
+ * download waits for wifi where the phone says it is on mobile data.
+ */
+export function shouldAutoPrepare(ctx: AutoPrepareContext): AutoPrepare {
+  if (!ctx.localReader || !ctx.signedIn || !ctx.online) return null;
+  const { status } = ctx;
+  if (!status.readyAt || !status.engines) return ctx.installed && !ctx.metered ? 'first' : null;
+  return isFieldReadyStale(status) ? 'refresh' : null;
+}
+
+/** Android Chrome's Network Information API; other browsers report nothing. */
+export function onMeteredConnection(): boolean {
+  const c = (navigator as Navigator & { connection?: { type?: string; saveData?: boolean } }).connection;
+  return Boolean(c && (c.saveData || c.type === 'cellular'));
+}
+
 /** True when the reading engines are in the offline cache (service worker). */
 export async function enginesCached(): Promise<boolean> {
   if (typeof caches === 'undefined') return false;

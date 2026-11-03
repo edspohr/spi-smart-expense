@@ -82,6 +82,16 @@ costo y comercios conocidos. Se refresca solo (una vez por sesión, a los
 
 **Cómo probarlo:** Mi Espacio → "Preparar para terreno".
 
+**Actualización 2026-11-03 — descarga automática en la app instalada:** con
+el lector activo, la primera vez que la app instalada se abre con sesión y
+con señal, prepara el kit sola a los 5 s ("Preparando la app para rendir sin
+señal…" → "Listo para terreno: puedes rendir sin señal."). Si Android avisa
+que está en datos móviles o ahorro de datos, espera a la próxima apertura; en
+iPhone no hay esa señal y descarga igual. En una pestaña del navegador no
+descarga nada hasta tocar el botón. Probado en el emulador del demo simulando
+la app instalada: pestaña normal → nada en 7 s; app instalada → los cuatro
+motores en `ocr-assets` y el aviso. ✅ (2026-11-03)
+
 **Estado esperado:** pasa a "Listo para terreno" con "2 centros de costo"
 en el emulador; las cuatro piezas del lector quedan en la caché. ✅
 (2026-10-26, emulador)
