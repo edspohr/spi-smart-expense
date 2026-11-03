@@ -23,6 +23,7 @@ import { flushNewSubmission } from '../lib/offlineSync';
 import { isOnline } from '../lib/connectivity';
 import { useTenantSettings } from '../context/SettingsContext';
 import ReadConfidence from '../components/ReadConfidence';
+import FiscalBadge from '../components/FiscalBadge';
 
 /**
  * Checks a set of existing expenses for a potential duplicate of the given formData.
@@ -140,10 +141,13 @@ function DropzoneSlot({
 
 export default function ExpenseForm() {
   const { currentUser, userRole } = useAuth();
-  const { offline: offlineSettings, ai: aiSettings } = useTenantSettings();
+  const { offline: offlineSettings, ai: aiSettings, fiscal: fiscalSettings } = useTenantSettings();
   // On-device read of the receipt (Ola 8): per-field confidence for the
   // review badges and what was read, sent with the expense for verification.
   const [localRead, setLocalRead] = useState(null);
+  // Ola 10: { rawTed, verification } of the Chilean TED (SII timbre). Only
+  // populated when the tenant is CL and fiscal.tedVerification is not 'off'.
+  const [fiscalRead, setFiscalRead] = useState(null);
   // Shadow read (Ola 8b): the device reads the same photo in the background
   // while Gemini fills the form; never shown, only measured server-side.
   const shadowRef = useRef(null);
@@ -421,6 +425,11 @@ export default function ExpenseForm() {
 
       setProcessingAi(true);
       setLocalRead(null);
+      setFiscalRead(null);
+      // Ola 10: runs beside whichever engine fills the form.
+      const fiscalScan = country.code === 'CL' && fiscalSettings.tedVerification !== 'off'
+          ? import('../lib/localReader/fiscal').then(({ readFiscal }) => readFiscal(files.receipt))
+          : null;
       shadowRef.current = null;
       shadowSeq.current += 1;
       let unconfident = null;
@@ -489,6 +498,7 @@ export default function ExpenseForm() {
           console.error(e);
           toast.error("Error al analizar documentos: " + e.message);
       } finally {
+          if (fiscalScan) await fiscalScan.then(setFiscalRead).catch((err) => console.warn('[fiscal]', err));
           setProcessingAi(false);
       }
   };
@@ -504,6 +514,7 @@ export default function ExpenseForm() {
       setSplitRows([{ projectId: '', amount: '' }]);
       setIsManual(false);
       setLocalRead(null);
+      setFiscalRead(null);
       shadowRef.current = null;
       shadowSeq.current += 1;
   };
@@ -539,6 +550,15 @@ export default function ExpenseForm() {
     const totalAmount = Number(formData.amount);
     if (isNaN(totalAmount) || totalAmount === 0) {
         toast.error("Ingrese un monto válido.");
+        return;
+    }
+
+    // Ola 10: in 'required' mode a verifiably-forged TED cannot be submitted.
+    // 'not_verifiable' (no timbre) and 'error' (keys unavailable) still pass
+    // through — the server reverifies and the UI shows the state.
+    if (fiscalSettings.tedVerification === 'required' && fiscalRead
+        && ['invalid_signature', 'folio_out_of_range', 'issuer_mismatch'].includes(fiscalRead.verification.status)) {
+        toast.error('No se puede enviar: el timbre electrónico no verifica. ' + (fiscalRead.verification.reason ?? ''));
         return;
     }
 
@@ -605,6 +625,18 @@ export default function ExpenseForm() {
         : localRead ? { localRead: localRead.payload }
         : shadow ? { localRead: shadow.localRead, aiRead: shadow.aiRead }
         : {};
+    // Ola 10: provisional result reconciled against the final values (split
+    // parts skip the total); verifyFiscalDocument replaces it on arrival.
+    let fiscalFields = {};
+    if (fiscalRead) {
+        const { reconcileFiscal } = await import('../lib/localReader/fiscal');
+        const final = await reconcileFiscal(fiscalRead, {
+            ...(!isSplitMode && (formData.currency || BASE_CURRENCY) === BASE_CURRENCY ? { amount: totalAmount } : {}),
+            date: formData.date,
+            taxId: formData.taxId || undefined,
+        });
+        fiscalFields = { ...(final.rawTed ? { rawTed: final.rawTed } : {}), fiscalVerification: final.verification };
+    }
     const docs = itemsToSave.map(item => {
         const projectObj = projects.find(p => p.id === item.projectId);
         return {
@@ -641,6 +673,7 @@ export default function ExpenseForm() {
                 ...baseEquivalentFields(formData.currency || BASE_CURRENCY, NEEDS_RATE(formData.currency) ? calculateCOPEquivalent(item.amount, trmState.trm) : null),
                 trmSource: NEEDS_RATE(formData.currency) ? (trmState.source || null) : null,
                 ...readFields,
+                ...fiscalFields,
             },
         };
     });
@@ -782,14 +815,26 @@ export default function ExpenseForm() {
         {step === 'review' && localRead && (
             <div role="status" className={`mb-6 flex items-start gap-3 rounded-xl px-4 py-3 text-sm ring-1 ${localRead.complete ? 'bg-emerald-50 text-emerald-900 ring-emerald-200' : 'bg-amber-50 text-amber-900 ring-amber-200'}`}>
                 <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-                <p>
-                    <strong>{localRead.barcode ? `Leído del ${localRead.barcode.kind === 'dian' ? 'QR DIAN' : 'timbre electrónico'}` : 'Leído en el teléfono'}{localRead.offline ? ', sin conexión' : ''}.</strong>{' '}
-                    {localRead.barcode?.docLabel ? `${localRead.barcode.docLabel}. ` : ''}
-                    {localRead.complete
-                        ? 'Revisa los campos marcados antes de enviar.'
-                        : 'No pudimos leer todo: completa el monto y la fecha si faltan.'}
-                    {localRead.offline ? ' Al volver la señal, la IA verificará la lectura.' : ''}
-                </p>
+                <div className="flex-1">
+                    <p>
+                        <strong>{localRead.barcode ? `Leído del ${localRead.barcode.kind === 'dian' ? 'QR DIAN' : 'timbre electrónico'}` : 'Leído en el teléfono'}{localRead.offline ? ', sin conexión' : ''}.</strong>{' '}
+                        {localRead.barcode?.docLabel ? `${localRead.barcode.docLabel}. ` : ''}
+                        {localRead.complete
+                            ? 'Revisa los campos marcados antes de enviar.'
+                            : 'No pudimos leer todo: completa el monto y la fecha si faltan.'}
+                        {localRead.offline ? ' Al volver la señal, la IA verificará la lectura.' : ''}
+                    </p>
+                    {fiscalRead && (
+                        <div className="mt-2">
+                            <FiscalBadge verification={fiscalRead?.verification} size="md" />
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+        {step === 'review' && !localRead && fiscalRead && (
+            <div className="mb-6">
+                <FiscalBadge verification={fiscalRead?.verification} size="md" />
             </div>
         )}
         {step === 'review' && (

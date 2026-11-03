@@ -10,6 +10,8 @@ import { updateSettings } from '../lib/userAdmin';
 import { tenant } from '../lib/tenant';
 import ApprovalPolicyCard from '../components/ApprovalPolicyCard';
 import OfflineReaderCard from '../components/OfflineReaderCard';
+import FiscalCard from '../components/FiscalCard';
+import { country } from '../lib/country';
 import LearningConsentCard from '../components/LearningConsentCard';
 
 function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
@@ -285,6 +287,7 @@ export default function AdminSettings() {
         </Card>
 
         <OfflineReaderCard />
+        {country.code === 'CL' && <FiscalCard />}
         <LearningConsentCard />
       </div>
     </Layout>

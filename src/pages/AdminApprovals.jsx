@@ -26,6 +26,7 @@ import { useAuth } from '../context/useAuth';
 import { logger } from '../lib/logger';
 import { approveExpense, rejectExpense, deleteExpense } from '../lib/expenseActions';
 import { PinCancelled } from '../lib/pin';
+import FiscalBadge from '../components/FiscalBadge';
 import { BASE_CURRENCY, country, baseEquivalentOf, FX_RATE_LABEL } from '../lib/country';
 
 const STORAGE_KEY = 'spi_approvals_filters_v1';
@@ -1049,6 +1050,7 @@ export default function AdminApprovals() {
                         {e.aiReview?.status === 'mismatch' && (
                           <span title="La boleta se leyó en el teléfono y, al verificarla, la IA leyó otro valor. Revisa la foto antes de aprobar." className="mt-1 mr-1 inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800">Revisar: la IA leyó otro valor</span>
                         )}
+                        <FiscalBadge verification={e.fiscalVerification} className="mt-1 mr-1" />
                         {flowBadge(e) && (
                           <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${flowBadge(e).className}`}>{flowBadge(e).label}</span>
                         )}

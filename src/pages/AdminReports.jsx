@@ -11,6 +11,7 @@ import JSZip from 'jszip';
 import { toast } from 'sonner';
 import { useTenantSettings } from '../context/SettingsContext';
 import { BASE_CURRENCY, baseEquivalentOf, country, FX_RATE_LABEL } from '../lib/country';
+import { fiscalExportCells, matchesFiscalFilter } from '../lib/fiscalStatus';
 import { ensureExportAllowed } from '../lib/pin';
 import { CARD_BRANDS, CARD_BRAND_LABELS, CARD_COMPANIES, CURRENCIES } from '../lib/constants';
 
@@ -27,6 +28,11 @@ const CSV_HEADERS = [
   'Categoría', 'Forma Pago', 'Descripción', 'Monto', 'Moneda',
   FX_RATE_LABEL, `Equivalente ${BASE_CURRENCY}`, `Fuente ${FX_RATE_LABEL}`, 'Estado', 'Motivo Rechazo',
 ];
+
+// Ola 10: fiscal columns exist only for Chilean tenants, so other tenants'
+// files keep their exact layout (Excel's extra column stays last).
+const FISCAL_ON = country.code === 'CL';
+if (FISCAL_ON) CSV_HEADERS.push('Timbre SII', 'Motivo Timbre', 'RUT Timbre', 'Folio Timbre', 'Diferencias Timbre');
 
 // Excel adds one extra column (24 total)
 const XLSX_HEADERS = [...CSV_HEADERS, `Diferencia ${FX_RATE_LABEL}`];
@@ -67,6 +73,7 @@ function expenseToRow(e, forExcel = false, projectsMap = {}) {
     e.trmSource || '',                                 // Fuente TRM
     STATUS_LABELS[e.status] || e.status || '',
     e.rejectionReason || '',
+    ...(FISCAL_ON ? fiscalExportCells(e.fiscalVerification) : []),
   ];
   if (forExcel) {
     let diff = '';
@@ -157,6 +164,7 @@ export default function AdminReports() {
     endDate: '',
     status: '',
     currency: '',
+    fiscal: '',
   });
   const [users, setUsers] = useState([]);
   const [existingEvents, setExistingEvents] = useState([]);
@@ -250,6 +258,7 @@ export default function AdminReports() {
       if (filters.userId)      data = data.filter(e => e.userId === filters.userId);
       if (filters.status)      data = data.filter(e => e.status === filters.status);
       if (filters.currency)    data = data.filter(e => e.currency === filters.currency);
+      if (filters.fiscal)      data = data.filter(e => matchesFiscalFilter(e.fiscalVerification, filters.fiscal));
       if (filters.startDate) {
         const start = new Date(filters.startDate); start.setHours(0, 0, 0, 0);
         data = data.filter(e => e.date && new Date(e.date) >= start);
@@ -663,6 +672,17 @@ export default function AdminReports() {
               <option value="rejected">Rechazado</option>
             </select>
           </div>
+          {FISCAL_ON && (
+          <div>
+            <label className={labelClass}>Timbre SII</label>
+            <select className={inputClass} value={filters.fiscal} onChange={setFilter('fiscal')}>
+              <option value="">Todos</option>
+              <option value="verified">Verificado</option>
+              <option value="failed">Fallido</option>
+              <option value="none">Sin timbre o pendiente</option>
+            </select>
+          </div>
+          )}
 
           <div>
             <label className={labelClass}>Moneda</label>

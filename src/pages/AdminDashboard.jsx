@@ -1,4 +1,5 @@
 import { BASE_CURRENCY, baseAmountOf } from '../lib/country';
+import { isFiscalFailure } from '../lib/fiscalStatus';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -299,6 +300,19 @@ function buildAnomalies(expenses) {
         expense: e,
       });
     }
+  });
+
+  // Ola 10: a timbre that failed verification. Informative: approval is unaffected.
+  nonRejected.forEach(e => {
+    if (!isFiscalFailure(e.fiscalVerification)) return;
+    anomalies.push({
+      id: `fiscal-${e.id}`,
+      type: 'fiscal-failed',
+      priority: 1,
+      date: e.date,
+      description: `${e.userName || 'Usuario'} — ${e.merchant || 'Sin comercio'} — ${e.fiscalVerification.reason || e.fiscalVerification.status}`,
+      expense: e,
+    });
   });
 
   // 2: USD/EUR without conversion rate

@@ -1,9 +1,10 @@
-import { AlertTriangle, ReceiptText, DollarSign, Copy, TrendingUp, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, ReceiptText, DollarSign, Copy, TrendingUp, ChevronRight } from 'lucide-react';
 
 const TYPE_META = {
   'missing-receipt': { Icon: ReceiptText, iconClass: 'text-amber-500', label: 'Sin comprobante' },
   'trm-missing':     { Icon: DollarSign,  iconClass: 'text-red-500',   label: 'Gasto FX sin tasa' },
   'duplicate':       { Icon: Copy,        iconClass: 'text-red-500',   label: 'Posible duplicado' },
+  'fiscal-failed':   { Icon: ShieldAlert, iconClass: 'text-red-500',   label: 'Timbre SII no verifica' },
   'outlier':         { Icon: TrendingUp,  iconClass: 'text-amber-500', label: 'Monto atípico' },
 };
 

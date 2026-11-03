@@ -6,6 +6,7 @@ import FocusableModal from './FocusableModal';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import AuditTimeline from './AuditTimeline';
+import FiscalBadge from './FiscalBadge';
 import { BASE_CURRENCY, baseAmountOf, country } from '../lib/country';
 
 export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
@@ -168,6 +169,13 @@ export default function ExpenseDetailsModal({ isOpen, onClose, expense }) {
                <p className="text-sm text-gray-700 italic">"{expense.description}"</p>
            </div>
            
+           {/* Ola 10: SII timbre verification state. */}
+           {expense.fiscalVerification && (
+             <div className="flex items-center gap-2">
+               <FiscalBadge verification={expense.fiscalVerification} size="md" />
+             </div>
+           )}
+
            {/* Offline read verified by AI with a difference (Ola 8) */}
            {expense.aiReview?.status === 'mismatch' && (
              <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex items-start gap-3">

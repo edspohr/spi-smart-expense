@@ -8,6 +8,7 @@ import { useMyPendingApprovals, type PendingForMe } from '../lib/myApprovals';
 import { approveExpense, rejectExpense } from '../lib/expenseActions';
 import { PinCancelled } from '../lib/pin';
 import { formatCurrency } from '../utils/format';
+import FiscalBadge from '../components/FiscalBadge';
 
 // Approval queue for managers (any role): expenses of their team waiting
 // for them, plus those delegated to them. Finance/admin keep /admin/approvals.
@@ -84,6 +85,7 @@ export default function MyApprovals() {
                       <p className="text-xs text-zinc-500">
                         {e.date} · {e.category} · {e.projectName}
                       </p>
+                      <FiscalBadge verification={e.fiscalVerification} className="mt-1" />
                       {onBehalf && <p className="mt-1 text-xs font-medium text-amber-700">Delegada por {onBehalf}</p>}
                     </div>
                     <div className="text-right">
