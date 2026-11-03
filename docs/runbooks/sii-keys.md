@@ -26,6 +26,29 @@ Opciones, en orden de preferencia:
 3. Un CAF de certificación propio (ambiente de certificación del SII): su
    `IDK` y el formato permiten probar el flujo, no las claves de producción.
 
+4. Calcularla desde boletas reales: el timbre de cada boleta trae el `<DA>`
+   del CAF y su `<FRMA>`. Con 3-4 pares (`DA`, `FRMA`) del mismo `IDK`, de
+   emisores distintos, el módulo RSA del SII sale de un MCD de
+   `firma^e − mensaje_con_relleno_PKCS#1` (e = 65537 o 3). Una quinta
+   boleta lo confirma: una clave equivocada no verifica ninguna firma.
+
+**Lo que dicen los documentos del SII (revisados el 2026-11-03):**
+
+- *Instructivo técnico para la emisión de DTE* (28-10-2021,
+  `sii.cl/factura_electronica/instructivo_emision.pdf`), §1.4: el
+  contribuyente debe verificar el CAF "con la llave pública que el SII
+  publique para esos efectos". **El instructivo no trae la clave ni dice
+  dónde se publica.** §A.2.4 confirma las reglas que ya aplica
+  `tedVerify.logic.ts`: SHA1withRSA PKCS#1, bytes ISO-8859-1 tal como se
+  imprimen, sin blancos ni saltos entre tags, sin tocar el contenido de los
+  elementos.
+- *Manual del ambiente de certificación* (2009,
+  `sii.cl/servicios_online/docs/manual_certificacion.pdf`), §5.1-5.2: trae un
+  timbre completo de ejemplo con un CAF de **certificación (`IDK` 100)** y la
+  firma `FRMT` que resulta. `functions/src/tedVerify.official.test.ts` lo usa:
+  nuestro armado del texto firmado reproduce la firma del SII. El `IDK` de
+  producción no aparece en ninguno de los dos.
+
 Al agregar la clave, anotar en la primera línea del PEM (fuera del bloque) la
 fuente y la fecha, por ejemplo `# SII, <url o contacto>, 2026-11-10`.
 
