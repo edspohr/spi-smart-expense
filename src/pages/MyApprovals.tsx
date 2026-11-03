@@ -76,9 +76,9 @@ export default function MyApprovals() {
               const onBehalf = delegatedFor(e);
               return (
                 <li key={e.id} className="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-zinc-100">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-zinc-800 break-words">
                         {e.userName} · {e.merchant || 'Sin comercio'}
                       </p>
                       <p className="text-xs text-zinc-500">
@@ -86,9 +86,9 @@ export default function MyApprovals() {
                       </p>
                       {onBehalf && <p className="mt-1 text-xs font-medium text-amber-700">Delegada por {onBehalf}</p>}
                     </div>
-                    <div className="text-right">
-                      <p className="text-base font-bold text-zinc-900">{formatCurrency(e.amount, e.currency)}</p>
-                      <button type="button" onClick={() => setDetails(e)} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline focus-ring rounded">
+                    <div className="shrink-0 text-right">
+                      <p className="whitespace-nowrap text-base font-bold text-zinc-900">{formatCurrency(e.amount, e.currency)}</p>
+                      <button type="button" onClick={() => setDetails(e)} className="-mr-2 mt-0.5 inline-flex items-center gap-1 rounded px-2 py-2 text-xs font-semibold text-brand-700 hover:underline focus-ring">
                         <Eye className="h-3.5 w-3.5" aria-hidden="true" /> Ver detalle
                       </button>
                     </div>
@@ -122,10 +122,10 @@ export default function MyApprovals() {
                         aria-label={`Comentario para la rendición de ${e.userName}`}
                       />
                       <div className="flex gap-2">
-                        <button type="button" disabled={busy === e.id} onClick={() => setRejecting(e.id)} className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50 focus-ring disabled:opacity-60">
+                        <button type="button" disabled={busy === e.id} onClick={() => setRejecting(e.id)} className="inline-flex flex-1 items-center justify-center gap-1 sm:flex-none rounded-xl px-3 py-2 text-sm font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50 focus-ring disabled:opacity-60">
                           <XCircle className="h-4 w-4" aria-hidden="true" /> Rechazar
                         </button>
-                        <button type="button" disabled={busy === e.id} onClick={() => approve(e)} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 focus-ring disabled:opacity-60">
+                        <button type="button" disabled={busy === e.id} onClick={() => approve(e)} className="inline-flex flex-1 items-center justify-center gap-1 sm:flex-none rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700 focus-ring disabled:opacity-60">
                           {busy === e.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />} Aprobar
                         </button>
                       </div>

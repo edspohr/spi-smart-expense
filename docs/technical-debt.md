@@ -199,7 +199,7 @@ admin y otro para dashboard) que muestre fallback local y permita "reintentar".
 allocation, currency conversion) no tiene red de seguridad.
 
 **Recommended fix:** Vitest + `@firebase/rules-unit-testing` para arrancar
-emulador. Suites objetivo: `fixBalances` con datasets sintéticos, aprobar →
+emulador. Suites objetivo: reglas de saldos con datasets sintéticos, aprobar →
 verificar balance/project.expenses/movements, currency conversion USD/EUR/COP.
 Cobertura mínima 60% en `src/lib/` y `src/utils/`, 100% de flujos
 aprobar/rechazar/editar.
@@ -287,16 +287,21 @@ alcanzan >200 filas en pantalla.
 
 **Severity:** Medium (integridad)  
 **Impact:** Medium · **Effort:** Medium  
-**File:** `src/utils/fixBalances.js`
+**File:** `functions/src/aggregates.logic.ts` (fórmula del servidor)
 
-**Gap:** El reconciliador existe pero solo corre manual. Si un día una
-transacción falla parcialmente o se hace una escritura por script sin pasar
-por la app, no hay detección.
+**Gap:** No hay detección de drift entre `users.balance` y lo que dicen las
+rendiciones y asignaciones. El reconciliador del navegador
+(`src/utils/fixBalances.js`, botón «Recalcular Saldos (Repair)» en
+`/admin/balances`) se eliminó el 2026-11-03: usaba una fórmula distinta a la
+del trigger (no excluía `isCompanyExpense`) y escribía saldos desde el
+cliente, cuando `onExpenseWritten` es el único que los mantiene (ADR 0010).
 
-**Recommended fix:** Cloud Function `scheduled` (Cloud Scheduler) que corra
-`recalculateAllUserBalances` semanalmente en modo dry-run, compare con
-`user.balance` actual, y dispare notificación (email + Notification bell) si
-detecta drift > 100 COP.
+**Recommended fix:** Cloud Function `scheduled` (Cloud Scheduler) que
+recalcule los saldos con las mismas reglas de `aggregates.logic.ts` en modo
+solo lectura, compare con `user.balance` y dispare notificación (email +
+campana) si detecta drift sobre un umbral en moneda base. Corregir, si hace
+falta, con una migración dry-run en `scripts/migrations/`, nunca desde el
+navegador.
 
 ---
 

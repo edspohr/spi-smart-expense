@@ -193,6 +193,31 @@ export default function AdminProjects() {
 
   if (loading) return <Layout title="Gestión de Proyectos"><TableSkeleton rows={5} cols={5} /></Layout>;
 
+  const filteredProjects = projects.filter(p => {
+      if (!projectSearch) return true;
+      const lower = projectSearch.toLowerCase();
+      return (
+          p.name.toLowerCase().includes(lower) ||
+          (p.code && p.code.toLowerCase().includes(lower)) ||
+          (p.client && p.client.toLowerCase().includes(lower))
+      );
+  });
+
+  // Row actions, shared by the desktop table and the mobile cards.
+  const renderRowActions = (p) => (
+      <button
+          type="button"
+          onClick={() => handleDeleteProject(p.id)}
+          className="text-red-500 hover:text-red-700 p-2 lg:p-1 focus-ring rounded"
+          title="Eliminar Centro de Costo"
+          aria-label="Eliminar centro de costo"
+      >
+          <Trash2 className="w-5 h-5" aria-hidden="true" />
+      </button>
+  );
+
+  const activeBadge = <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Activo</span>;
+
   return (
     <Layout title="Gestión de Centros de Costo">
         {/* Actions Grid */}
@@ -200,13 +225,13 @@ export default function AdminProjects() {
             
             {/* Create Project Section */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                     <h2 className="text-lg font-bold text-gray-800">Crear Nuevo Centro de Costo</h2>
-                    <div className="flex gap-2">
-                        <button 
+                    <div className="flex items-center gap-2">
+                        <button
                             onClick={handleSeedSPI}
                             hidden={DEFAULT_CENTERS.length === 0}
-                            className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1 rounded border border-gray-300"
+                            className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-2 md:py-1 rounded border border-gray-300"
                             title="Cargar centros de costo por defecto"
                         >
                             Cargar centros por defecto
@@ -216,7 +241,7 @@ export default function AdminProjects() {
                             onClick={() => setShowProjectForm(!showProjectForm)}
                             aria-label={showProjectForm ? 'Cancelar creación' : 'Crear nuevo centro de costo'}
                             aria-expanded={showProjectForm}
-                            className="text-brand-600 hover:text-brand-800 focus-ring rounded p-1"
+                            className="text-brand-600 hover:text-brand-800 focus-ring rounded p-2 md:p-1"
                         >
                             {showProjectForm ? 'Cancelar' : <Plus className="w-5 h-5" aria-hidden="true" />}
                         </button>
@@ -358,61 +383,55 @@ export default function AdminProjects() {
                     onChange={e => setProjectSearch(e.target.value)}
                 />
             </div>
-            <div className="overflow-x-auto">
+            {/* Phones and tablets: one card per cost centre */}
+            <ul className="lg:hidden divide-y divide-gray-100">
+                {filteredProjects.map(p => (
+                    <li key={p.id} className="flex items-start gap-3 p-4">
+                        <Link to={`/admin/projects/${p.id}`} className="min-w-0 flex-1 hover:underline">
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="font-semibold text-gray-900 min-w-0 break-words">
+                                    {p.code ? `[${p.code}] ` : ''}{p.name}
+                                </p>
+                                <p className="font-semibold text-gray-900 whitespace-nowrap text-right">{formatCurrency(p.expenses || 0)}</p>
+                            </div>
+                            {p.client && <p className="mt-1 text-xs text-gray-500 truncate">{p.client}</p>}
+                            <div className="mt-2">{activeBadge}</div>
+                        </Link>
+                        <div className="shrink-0 -mr-2">{renderRowActions(p)}</div>
+                    </li>
+                ))}
+                {projects.length === 0 && (
+                    <li className="px-6 py-8 text-center text-gray-500">No hay centros de costo registrados.</li>
+                )}
+            </ul>
+            <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50 border-b">
                             <th className="px-6 py-3 font-medium text-gray-500">Centro de Costo</th>
-                            <th className="px-6 py-3 font-medium text-gray-500">Cliente</th>
+                            <th className="hidden xl:table-cell px-6 py-3 font-medium text-gray-500">Cliente</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Gastado</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Estado</th>
                             <th className="px-6 py-3 font-medium text-gray-500">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {(() => {
-                            // Filter Logic
-                            const filtered = projects.filter(p => {
-                                if (!projectSearch) return true;
-                                const lower = projectSearch.toLowerCase();
-                                return (
-                                    p.name.toLowerCase().includes(lower) ||
-                                    (p.code && p.code.toLowerCase().includes(lower)) ||
-                                    (p.client && p.client.toLowerCase().includes(lower))
-                                );
-                            });
-
-                            return (
-                                <>
-                                    {filtered.map(p => (
-                                        <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-medium">
-                                                <Link to={`/admin/projects/${p.id}`} className="text-brand-600 hover:text-brand-800 hover:underline">
-                                                   <div className="font-medium text-gray-900">
-                                                {p.code ? `[${p.code}] ` : ''}{p.name}
-                                            </div>
-                                            <div className="text-sm text-gray-500">{p.client}</div>
-                                                </Link>
-                                            </td>
-                                            <td className="px-6 py-4 text-gray-600">{p.client}</td>
-                                            <td className="px-6 py-4">{formatCurrency(p.expenses || 0)}</td>
-                                            <td className="px-6 py-4"><span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Activo</span></td>
-                                            <td className="px-6 py-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteProject(p.id)}
-                                                    className="text-red-500 hover:text-red-700 p-1 focus-ring rounded"
-                                                    title="Eliminar Centro de Costo"
-                                                    aria-label="Eliminar centro de costo"
-                                                >
-                                                    <Trash2 className="w-5 h-5" aria-hidden="true" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </>
-                            );
-                        })()}
+                        {filteredProjects.map(p => (
+                            <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium">
+                                    <Link to={`/admin/projects/${p.id}`} className="text-brand-600 hover:text-brand-800 hover:underline">
+                                        <div className="font-medium text-gray-900">
+                                            {p.code ? `[${p.code}] ` : ''}{p.name}
+                                        </div>
+                                        <div className="text-sm text-gray-500">{p.client}</div>
+                                    </Link>
+                                </td>
+                                <td className="hidden xl:table-cell px-6 py-4 text-gray-600">{p.client}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(p.expenses || 0)}</td>
+                                <td className="px-6 py-4">{activeBadge}</td>
+                                <td className="px-6 py-4">{renderRowActions(p)}</td>
+                            </tr>
+                        ))}
                         {projects.length === 0 && (
                             <tr>
                                 <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No hay centros de costo registrados.</td>

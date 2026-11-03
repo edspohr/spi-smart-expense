@@ -2,7 +2,7 @@ import { BASE_CURRENCY, baseAmountOf } from '../lib/country';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import StatCardLarge from '../components/StatCardLarge';
+import StatCard from '../components/StatCard';
 import ProjectCard from '../components/ProjectCard';
 import AnomalyRow from '../components/AnomalyRow';
 import TeamTable from '../components/TeamTable';
@@ -17,9 +17,10 @@ import { Skeleton } from '../components/Skeleton';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { TrendingUp, CheckCircle, Activity, Folder, Clock, FolderOpen, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Hourglass, Wallet, HandCoins, FolderOpen, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+import { useTenantSettings } from '../context/SettingsContext';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -44,6 +45,13 @@ function parseDate(s) {
 // Base-currency value (tenant base); null for foreign expenses without a rate.
 function copEquivalent(exp) {
   return baseAmountOf(exp);
+}
+
+// Whole days since the expense was submitted (createdAt, else its date).
+function daysWaiting(exp, now = Date.now()) {
+  const created = exp.createdAt?.toDate ? exp.createdAt.toDate() : parseDate(exp.createdAt) || parseDate(exp.date);
+  if (!created) return null;
+  return Math.max(0, Math.floor((now - created.getTime()) / 86_400_000));
 }
 
 function median(values) {
@@ -102,14 +110,14 @@ function renderStack(byCurrency) {
     ...Object.keys(byCurrency).filter(c => !order.includes(c)),
   ];
   if (keys.length === 0) {
-    return <span className="text-3xl font-bold text-slate-900">{formatCurrency(0)}</span>;
+    return <span className="text-lg sm:text-2xl font-bold text-slate-900">{formatCurrency(0)}</span>;
   }
   return (
     <div className="flex flex-col leading-tight">
       {keys.map((c, i) => (
         <span key={c} className={i === 0
-          ? 'text-3xl font-bold text-slate-900'
-          : 'text-sm font-semibold text-slate-400 mt-1'}>
+          ? 'text-lg sm:text-2xl font-bold text-slate-900 truncate'
+          : 'text-xs font-semibold text-slate-400 truncate'}>
           {formatCurrency(byCurrency[c], c)}
           <span className="text-xs font-normal ml-1 text-slate-400">{c}</span>
         </span>
@@ -378,6 +386,7 @@ function buildAnomalies(expenses) {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
+  const { modules } = useTenantSettings();
   const [users, setUsers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -463,49 +472,46 @@ export default function AdminDashboard() {
   const stats = useMemo(() => {
     const nonRejected = filteredExpenses.filter(e => e.status !== 'rejected');
     const approved = filteredExpenses.filter(e => e.status === 'approved');
-    const pending = filteredExpenses.filter(e => e.status === 'pending');
-
-    const rendidoByCurrency = sumByCurrency(nonRejected);
-    const aprobadoByCurrency = sumByCurrency(approved);
-    const pendingByCurrency = sumByCurrency(pending);
 
     const rendidoCOP = sumCopEquivalent(nonRejected);
     const aprobadoCOP = sumCopEquivalent(approved);
-    const pendingCOP = sumCopEquivalent(pending);
     // "— aprobado" when denominator is 0 (misleading to show "0% aprobado").
     const approvedPctLabel = rendidoCOP > 0
       ? `${Math.round((aprobadoCOP / rendidoCOP) * 100)}% aprobado`
       : '— aprobado';
 
-    // Promedio por gasto: COP-equivalent mean
-    const copEligible = nonRejected
-      .map(e => copEquivalent(e))
-      .filter(v => v !== null);
-    const avgCOP = copEligible.length > 0
-      ? copEligible.reduce((s, v) => s + v, 0) / copEligible.length
-      : 0;
-
-    // Proyectos activos: unique projectId count; eventos: unique eventName count
-    const projectIds = new Set();
-    const eventNames = new Set();
-    nonRejected.forEach(e => {
-      if (e.projectId) projectIds.add(e.projectId);
-      if (e.eventName) eventNames.add(e.eventName);
-    });
-
     return {
-      rendidoByCurrency,
-      aprobadoByCurrency,
-      pendingByCurrency,
+      rendidoByCurrency: sumByCurrency(nonRejected),
+      aprobadoByCurrency: sumByCurrency(approved),
       approvedPctLabel,
-      pendingCOP,
-      avgCOP,
-      expenseCount: nonRejected.length,
-      projectCount: projectIds.size,
-      eventCount: eventNames.size,
-      pendingCount: pending.length,
+      approvedCount: approved.length,
     };
   }, [filteredExpenses]);
+
+  // The review queue ignores the period filter: an old pending expense is the
+  // one that matters most. Client/project filters still apply.
+  const queue = useMemo(() => {
+    const pending = teamFilteredExpenses.filter(e => e.status === 'pending');
+    const waits = pending.map(e => daysWaiting(e)).filter(v => v !== null);
+    return {
+      count: pending.length,
+      amountCOP: sumCopEquivalent(pending),
+      oldestDays: waits.length > 0 ? Math.max(...waits) : null,
+      over7: waits.filter(d => d > 7).length,
+    };
+  }, [teamFilteredExpenses]);
+
+  // Current balances (not filtered): negative = funds handed out still to be
+  // justified; positive = the company owes the person.
+  const balances = useMemo(() => {
+    let toRender = 0, toRenderPeople = 0, owed = 0, owedPeople = 0;
+    users.forEach(u => {
+      const b = Number(u.balance) || 0;
+      if (b < 0) { toRender += -b; toRenderPeople++; }
+      else if (b > 0) { owed += b; owedPeople++; }
+    });
+    return { toRender, toRenderPeople, owed, owedPeople };
+  }, [users]);
 
   const lineChartData = useMemo(() => buildLineChartData(expenses), [expenses]);
   const lineChartHasEnough = useMemo(
@@ -527,12 +533,11 @@ export default function AdminDashboard() {
           <Skeleton className="h-9 w-40" />
           <Skeleton className="h-9 w-28 ml-auto" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 h-44">
-              <Skeleton className="h-12 w-12 rounded-2xl mb-5" />
-              <Skeleton className="h-3 w-24 mb-3" />
-              <Skeleton className="h-8 w-32" />
+        <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3 mb-8">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 h-28">
+              <Skeleton className="h-3 w-24 mb-4" />
+              <Skeleton className="h-7 w-28" />
             </div>
           ))}
         </div>
@@ -552,12 +557,8 @@ export default function AdminDashboard() {
     );
   }
 
-  // Values for stat cards
-  const rendidoValue = renderStack(stats.rendidoByCurrency);
-  const aprobadoValue = renderStack(stats.aprobadoByCurrency);
-  const promedioValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{formatCurrency(Math.round(stats.avgCOP), BASE_CURRENCY)}</p>;
-  const proyectosValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{stats.projectCount}</p>;
-  const pendingValue = <p className="text-3xl font-bold text-slate-900 leading-tight">{stats.pendingCount}</p>;
+  const days = (n) => `${n} día${n === 1 ? '' : 's'}`;
+  const goBalances = modules.balances ? () => navigate('/admin/balances') : undefined;
 
   return (
     <Layout title="Dashboard">
@@ -569,49 +570,61 @@ export default function AdminDashboard() {
         refreshing={refreshing}
       />
 
-      {/* ─── Stat cards ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
-        <StatCardLarge
-          label="Total rendido"
+      {/* ─── Stat cards: what needs action first, then the period, then money held ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3 mb-8">
+        <StatCard
+          label="Por aprobar"
+          icon={Clock}
+          iconBgClass="bg-amber-50"
+          iconColorClass="text-amber-600"
+          value={String(queue.count)}
+          subtitle={formatCurrency(queue.amountCOP, BASE_CURRENCY)}
+          onClick={() => navigate('/admin/approvals')}
+          ariaLabel="Ver rendiciones por aprobar"
+        />
+        <StatCard
+          label="Más antiguo"
+          icon={Hourglass}
+          iconBgClass={queue.oldestDays > 7 ? 'bg-red-50' : 'bg-slate-50'}
+          iconColorClass={queue.oldestDays > 7 ? 'text-red-600' : 'text-slate-500'}
+          value={queue.oldestDays === null ? '—' : days(queue.oldestDays)}
+          subtitle={queue.count === 0 ? 'Sin pendientes' : queue.over7 > 0 ? `${queue.over7} con más de 7 días` : 'Todo dentro de 7 días'}
+        />
+        <StatCard
+          label="Rendido"
           icon={TrendingUp}
           iconBgClass="bg-brand-50"
           iconColorClass="text-brand-600"
-          value={rendidoValue}
+          value={renderStack(stats.rendidoByCurrency)}
           subtitle={stats.approvedPctLabel}
         />
-        <StatCardLarge
+        <StatCard
           label="Aprobado"
           icon={CheckCircle}
           iconBgClass="bg-green-50"
           iconColorClass="text-green-600"
-          value={aprobadoValue}
-          subtitle={`${formatCurrency(stats.pendingCOP, BASE_CURRENCY)} pendiente por aprobar`}
+          value={renderStack(stats.aprobadoByCurrency)}
+          subtitle={`${stats.approvedCount} ${stats.approvedCount === 1 ? 'rendición' : 'rendiciones'}`}
         />
-        <StatCardLarge
-          label="Promedio por gasto"
-          icon={Activity}
-          iconBgClass="bg-purple-50"
-          iconColorClass="text-purple-600"
-          value={promedioValue}
-          subtitle={`${stats.expenseCount} gasto${stats.expenseCount === 1 ? '' : 's'} registrado${stats.expenseCount === 1 ? '' : 's'}`}
-        />
-        <StatCardLarge
-          label="Proyectos activos"
-          icon={Folder}
+        <StatCard
+          label="Fondos por rendir"
+          icon={Wallet}
           iconBgClass="bg-orange-50"
           iconColorClass="text-orange-600"
-          value={proyectosValue}
-          subtitle={`${stats.eventCount} evento${stats.eventCount === 1 ? '' : 's'}`}
+          value={formatCurrency(balances.toRender, BASE_CURRENCY)}
+          subtitle={`${balances.toRenderPeople} persona${balances.toRenderPeople === 1 ? '' : 's'} con fondos`}
+          onClick={goBalances}
+          ariaLabel="Ver balances"
         />
-        <StatCardLarge
-          label="Gastos por revisar"
-          icon={Clock}
-          iconBgClass="bg-red-50"
-          iconColorClass="text-red-600"
-          value={pendingValue}
-          subtitle={`${formatCurrency(stats.pendingCOP, BASE_CURRENCY)} por aprobar`}
-          onClick={() => navigate('/admin/approvals')}
-          ariaLabel="Ver gastos por revisar"
+        <StatCard
+          label="Por reembolsar"
+          icon={HandCoins}
+          iconBgClass="bg-purple-50"
+          iconColorClass="text-purple-600"
+          value={formatCurrency(balances.owed, BASE_CURRENCY)}
+          subtitle={`${balances.owedPeople} persona${balances.owedPeople === 1 ? '' : 's'} con saldo a favor`}
+          onClick={goBalances}
+          ariaLabel="Ver balances"
         />
       </div>
 

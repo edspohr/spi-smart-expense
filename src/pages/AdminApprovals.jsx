@@ -764,6 +764,82 @@ export default function AdminApprovals() {
   const filtersApplied = activeFilterCount > 0;
   const bulkMode = viewMode === 'pending' ? 'full' : 'export-only';
 
+  // Row actions, shared by the desktop table and the mobile cards.
+  const renderRowActions = (e) => (
+    <div className="flex gap-1.5">
+      <button
+        type="button"
+        onClick={() => { setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }}
+        className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
+        title="Ver detalles"
+        aria-label="Ver detalles"
+      >
+        <Eye className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleViewReceipt(e.receiptUrl || e.imageUrl)}
+        className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
+        title="Ver comprobante"
+        aria-label="Ver comprobante"
+      >
+        <FileText className="w-5 h-5" />
+      </button>
+      {viewMode === 'pending' && (
+        <>
+          <button
+            type="button"
+            onClick={() => setEditExpense(e)}
+            className="text-amber-500 hover:text-amber-700 p-1.5 hover:bg-amber-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition"
+            title="Editar"
+            aria-label="Editar rendición"
+          >
+            <Pencil className="w-5 h-5" />
+          </button>
+          {canUserApprove(permissions, e) ? (
+            <button
+              type="button"
+              onClick={() => handleApprove(e)}
+              className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition"
+              title="Aprobar"
+              aria-label="Aprobar"
+            >
+              <CheckCircle className="w-5 h-5" />
+            </button>
+          ) : (
+            <span
+              className="text-gray-300 p-1.5 cursor-not-allowed"
+              title={`Requiere aprobador ${country.name} (${BASE_CURRENCY})`}
+              aria-label={`Requiere aprobador ${country.name}`}
+            >
+              <Lock className="w-5 h-5" />
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => openRejectionModal(e)}
+            className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
+            title="Rechazar"
+            aria-label="Rechazar"
+          >
+            <XCircle className="w-5 h-5" />
+          </button>
+          {permissions.canDelete && (
+            <button
+              type="button"
+              onClick={() => handleDeleteExpense(e)}
+              className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
+              title="Eliminar"
+              aria-label="Eliminar"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <Layout title="Aprobaciones Pendientes">
       {/* Top-right export / shortcuts bar */}
@@ -780,7 +856,7 @@ export default function AdminApprovals() {
             Atajos (?)
           </button>
         )}
-        <div className="flex gap-2 items-end">
+        <div className="flex flex-wrap justify-end gap-2 items-end">
           <div>
             <label className="block text-xs text-gray-500 font-bold mb-1" htmlFor="export-start">Desde</label>
             <input
@@ -982,7 +1058,58 @@ export default function AdminApprovals() {
             />
           )
         ) : (
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <>
+          {/* Phones and tablets: one card per expense */}
+          <ul className="lg:hidden divide-y divide-gray-100">
+            {visibleExpenses.map((e) => {
+              const isSelected = selectedIds.has(e.id);
+              const hasError = errorMap.has(e.id);
+              const badge = flowBadge(e);
+              return (
+                <li key={e.id} className={`p-4 ${isSelected ? 'bg-brand-50/50' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(e.id)}
+                      className="mt-1 w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      aria-label={`Seleccionar rendición de ${e.userName || 'usuario'}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-800 truncate">{e.userName || 'N/A'}</p>
+                          <p className="text-sm text-gray-600 truncate">{e.merchant || '—'}</p>
+                        </div>
+                        <p className="font-semibold text-gray-900 whitespace-nowrap text-right">
+                          {formatCurrency(Number(e.amount) || 0, e.currency || BASE_CURRENCY)}
+                          {e.currency && e.currency !== BASE_CURRENCY && <span className="block text-xs font-normal text-slate-400">{e.currency}</span>}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {[e.date, e.projectName, e.category].filter(Boolean).join(' · ')}
+                      </p>
+                      {(hasError || e.aiReview?.status === 'mismatch' || badge || viewMode === 'history') && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {hasError && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700">{errorMap.get(e.id)}</span>}
+                          {e.aiReview?.status === 'mismatch' && <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800">Revisar: la IA leyó otro valor</span>}
+                          {badge && <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>{badge.label}</span>}
+                          {viewMode === 'history' && (
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${e.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {e.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {viewMode === 'history' && e.rejectionReason && <p className="text-xs text-red-500 mt-1 italic">"{e.rejectionReason}"</p>}
+                      <div className="mt-2 -ml-1.5">{renderRowActions(e)}</div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden lg:block overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b sticky top-0 z-10">
                 <tr>
@@ -998,11 +1125,11 @@ export default function AdminApprovals() {
                   </th>
                   <DataGridHeader label="Fecha" sortable sortKey="date" sortState={currentSort} onSortChange={handleSortChange} />
                   <DataGridHeader label="Usuario" sortable sortKey="userName" sortState={currentSort} onSortChange={handleSortChange} />
-                  <DataGridHeader label="Evento" sortable sortKey="eventName" sortState={currentSort} onSortChange={handleSortChange} />
+                  <DataGridHeader label="Evento" sortable sortKey="eventName" sortState={currentSort} onSortChange={handleSortChange} className="hidden 2xl:table-cell" />
                   <DataGridHeader label="Comercio" sortable sortKey="merchant" sortState={currentSort} onSortChange={handleSortChange} />
-                  <DataGridHeader label="Proyecto" sortable sortKey="projectName" sortState={currentSort} onSortChange={handleSortChange} />
-                  <DataGridHeader label="Categoría" sortable sortKey="category" sortState={currentSort} onSortChange={handleSortChange} />
-                  <DataGridHeader label="Empresa" sortable sortKey="cardCompany" sortState={currentSort} onSortChange={handleSortChange} />
+                  <DataGridHeader label="Proyecto" sortable sortKey="projectName" sortState={currentSort} onSortChange={handleSortChange} className="hidden xl:table-cell" />
+                  <DataGridHeader label="Categoría" sortable sortKey="category" sortState={currentSort} onSortChange={handleSortChange} className="hidden 2xl:table-cell" />
+                  <DataGridHeader label="Empresa" sortable sortKey="cardCompany" sortState={currentSort} onSortChange={handleSortChange} className="hidden 2xl:table-cell" />
                   <DataGridHeader label="Monto" sortable sortKey="amount" sortState={currentSort} onSortChange={handleSortChange} align="right" />
                   {viewMode === 'history' && <DataGridHeader label="Estado" />}
                   <DataGridHeader label="Acciones" />
@@ -1043,9 +1170,10 @@ export default function AdminApprovals() {
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-600 align-top whitespace-nowrap">{e.date}</td>
                       <td className="px-4 py-4 font-medium text-gray-800 align-top whitespace-nowrap">{e.userName || 'N/A'}</td>
-                      <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[130px] truncate">{e.eventName || '—'}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-4 text-sm text-gray-600 align-top max-w-[130px] truncate">{e.eventName || '—'}</td>
                       <td className="px-4 py-4 text-sm text-gray-600 align-top max-w-[180px]">
                         <div className="truncate">{e.merchant || '—'}</div>
+                        <div className="xl:hidden truncate text-xs text-gray-400">{e.projectName || 'N/A'}</div>
                         {e.aiReview?.status === 'mismatch' && (
                           <span title="La boleta se leyó en el teléfono y, al verificarla, la IA leyó otro valor. Revisa la foto antes de aprobar." className="mt-1 mr-1 inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800">Revisar: la IA leyó otro valor</span>
                         )}
@@ -1053,14 +1181,14 @@ export default function AdminApprovals() {
                           <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${flowBadge(e).className}`}>{flowBadge(e).label}</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 align-top">
+                      <td className="hidden xl:table-cell px-4 py-4 align-top">
                         <div className="flex flex-col">
                           <span className="text-gray-600 text-sm font-medium">{e.projectName || 'N/A'}</span>
                           {e.description && <span className="text-xs text-gray-400 truncate max-w-xs">{e.description}</span>}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-xs text-gray-500 align-top whitespace-nowrap">{e.category || '—'}</td>
-                      <td className="px-4 py-4 text-sm text-gray-500 align-top whitespace-nowrap">{e.cardCompany || '-'}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-4 text-xs text-gray-500 align-top whitespace-nowrap">{e.category || '—'}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-4 text-sm text-gray-500 align-top whitespace-nowrap">{e.cardCompany || '-'}</td>
                       <td className="px-4 py-4 font-semibold text-right align-top whitespace-nowrap">
                         {formatCurrency(Number(e.amount) || 0, e.currency || BASE_CURRENCY)}
                         {e.currency && e.currency !== BASE_CURRENCY && <span className="text-xs font-normal text-slate-400 ml-1">{e.currency}</span>}
@@ -1074,78 +1202,7 @@ export default function AdminApprovals() {
                         </td>
                       )}
                       <td className="px-4 py-4 align-top">
-                        <div className="flex gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => { setSelectedExpenseForDetails(e); setDetailsModalOpen(true); }}
-                            className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
-                            title="Ver detalles"
-                            aria-label="Ver detalles"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleViewReceipt(e.receiptUrl || e.imageUrl)}
-                            className="text-brand-600 hover:text-brand-800 p-1.5 hover:bg-brand-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition"
-                            title="Ver comprobante"
-                            aria-label="Ver comprobante"
-                          >
-                            <FileText className="w-5 h-5" />
-                          </button>
-                          {viewMode === 'pending' && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => setEditExpense(e)}
-                                className="text-amber-500 hover:text-amber-700 p-1.5 hover:bg-amber-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition"
-                                title="Editar"
-                                aria-label="Editar rendición"
-                              >
-                                <Pencil className="w-5 h-5" />
-                              </button>
-                              {canUserApprove(permissions, e) ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleApprove(e)}
-                                  className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition"
-                                  title="Aprobar"
-                                  aria-label="Aprobar"
-                                >
-                                  <CheckCircle className="w-5 h-5" />
-                                </button>
-                              ) : (
-                                <span
-                                  className="text-gray-300 p-1.5 cursor-not-allowed"
-                                  title={`Requiere aprobador ${country.name} (${BASE_CURRENCY})`}
-                                  aria-label={`Requiere aprobador ${country.name}`}
-                                >
-                                  <Lock className="w-5 h-5" />
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => openRejectionModal(e)}
-                                className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
-                                title="Rechazar"
-                                aria-label="Rechazar"
-                              >
-                                <XCircle className="w-5 h-5" />
-                              </button>
-                              {permissions.canDelete && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteExpense(e)}
-                                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition"
-                                  title="Eliminar"
-                                  aria-label="Eliminar"
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
+                        {renderRowActions(e)}
                       </td>
                     </Motion.tr>
                   );
@@ -1153,6 +1210,7 @@ export default function AdminApprovals() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

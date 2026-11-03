@@ -3,17 +3,14 @@ import Layout from '../components/Layout';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { formatCurrency } from '../utils/format';
-import { Wallet, ArrowRight, RefreshCw, Users } from 'lucide-react';
+import { Wallet, ArrowRight, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { recalculateAllUserBalances } from '../utils/fixBalances';
-import { toast } from 'sonner';
 import TableSkeleton from '../components/TableSkeleton';
 import EmptyState from '../components/EmptyState';
 
 export default function AdminBalances() {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [repairing, setRepairing] = useState(false);
 
   useEffect(() => {
     fetchPros();
@@ -32,50 +29,55 @@ export default function AdminBalances() {
       }
   }
 
-  const handleRepairBalances = async () => {
-      if (!confirm("Esto recalculará todos los saldos basándose en el historial. ¿Continuar?")) return;
-      setRepairing(true);
-      try {
-          await recalculateAllUserBalances();
-          toast.success("Saldos recalculados exitosamente.");
-          await fetchPros(); // Refresh UI
-      } catch (e) {
-          console.error("Repair error:", e);
-          toast.error("Error al recalcular.");
-      } finally {
-          setRepairing(false);
-      }
-  };
+  const statusBadge = (balance) => (balance || 0) < 0 ? (
+      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Por Rendir (Fondos)</span>
+  ) : (balance || 0) > 0 ? (
+      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Saldo a Favor</span>
+  ) : (
+      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Saludable (0)</span>
+  );
 
   if (loading) return <Layout title="Balances de Profesionales"><TableSkeleton rows={5} cols={4} /></Layout>;
 
   return (
     <Layout title="Balances de Profesionales">
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2 justify-between items-center">
             <h3 className="font-bold text-gray-700">Estado de Cuentas Corrientes</h3>
-            <div className="flex gap-2">
-                <button
-                    type="button"
-                    onClick={handleRepairBalances}
-                    disabled={repairing}
-                    className="text-sm bg-orange-100 text-orange-700 px-3 py-2 rounded hover:bg-orange-200 flex items-center font-bold disabled:opacity-50 focus-ring"
-                >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${repairing ? 'animate-spin' : ''}`} aria-hidden="true" />
-                    {repairing ? 'Reparando...' : 'Recalcular Saldos (Repair)'}
-                </button>
-                <Link to="/admin/projects" className="text-sm text-brand-600 hover:text-brand-800 flex items-center px-3 py-2">
-                    Ir a Cargar Saldos <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-            </div>
+            <Link to="/admin/projects" className="text-sm text-brand-600 hover:text-brand-800 flex items-center py-2">
+                Ir a Cargar Saldos <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
         </div>
-        
-        <div className="overflow-x-auto">
+
+        {/* Phones: one row per person, name and balance side by side */}
+        <ul className="md:hidden divide-y divide-gray-100">
+            {professionals.map(u => (
+                <li key={u.id}>
+                    <Link to={`/admin/users/${u.id}`} className="flex items-center gap-3 p-4 hover:bg-gray-50">
+                        <div className="w-9 h-9 shrink-0 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-xs">
+                            {u.displayName?.substring(0,2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-800 truncate">{u.displayName} {u.code ? `[${u.code}]` : ''}</p>
+                            <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                            <p className={`font-mono font-semibold ${u.balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{formatCurrency(u.balance || 0)}</p>
+                            <div className="mt-1">{statusBadge(u.balance)}</div>
+                        </div>
+                    </Link>
+                </li>
+            ))}
+            {professionals.length === 0 && (
+                <li><EmptyState icon={Users} title="Sin profesionales" description="No hay profesionales registrados en el sistema." /></li>
+            )}
+        </ul>
+
+        <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
                 <thead>
                     <tr className="bg-white border-b">
                         <th className="px-6 py-4 font-medium text-gray-500">Usuario</th>
-                        <th className="px-6 py-4 font-medium text-gray-500">Email</th>
                         <th className="px-6 py-4 font-medium text-gray-500">Saldo Disponible (Presupuesto)</th>
                         <th className="px-6 py-4 font-medium text-gray-500">Estado</th>
                     </tr>
@@ -84,15 +86,17 @@ export default function AdminBalances() {
                     {professionals.map(u => (
                         <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
                             <td className="px-6 py-4 font-medium text-gray-800 flex items-center">
-                                <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mr-3 font-bold text-xs">
+                                <div className="w-8 h-8 shrink-0 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mr-3 font-bold text-xs">
                                     {u.displayName?.substring(0,2).toUpperCase()}
                                 </div>
-                                <Link to={`/admin/users/${u.id}`} className="hover:text-brand-600 hover:underline font-bold">
-                                    {u.displayName} {u.code ? `[${u.code}]` : ''} <span className="text-gray-400 font-normal text-xs ml-1">({u.email})</span>
-                                </Link>
+                                <div className="min-w-0">
+                                    <Link to={`/admin/users/${u.id}`} className="hover:text-brand-600 hover:underline font-bold">
+                                        {u.displayName} {u.code ? `[${u.code}]` : ''}
+                                    </Link>
+                                    <p className="text-gray-400 font-normal text-xs truncate">{u.email}</p>
+                                </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-600 hidden">{u.email}</td> {/* Hidden email col as it affects layout if too long, integrated in name */}
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">
                                     <Wallet className="w-4 h-4 text-gray-400 mr-2" />
                                     <span className={`font-mono font-semibold ${u.balance < 0 ? 'text-red-500' : 'text-green-600'}`}>
@@ -101,19 +105,13 @@ export default function AdminBalances() {
                                 </div>
                             </td>
                             <td className="px-6 py-4">
-                                {(u.balance || 0) < 0 ? (
-                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Por Rendir (Fondos)</span>
-                                ) : (u.balance || 0) > 0 ? (
-                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">Saldo a Favor</span>
-                                ) : (
-                                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">Saludable (0)</span>
-                                )}
+                                {statusBadge(u.balance)}
                             </td>
                         </tr>
                     ))}
                     {professionals.length === 0 && (
                         <tr>
-                            <td colSpan="4" className="px-6 py-0">
+                            <td colSpan="3" className="px-6 py-0">
                                 <EmptyState
                                     icon={Users}
                                     title="Sin profesionales"

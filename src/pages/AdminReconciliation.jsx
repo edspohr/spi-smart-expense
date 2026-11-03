@@ -110,6 +110,33 @@ function autoDetectColumns(headers) {
   };
 }
 
+// ── Result row view (shared by the table and the mobile cards) ────────────────
+function rowView(r) {
+  const meta = STATUS_META[r.status];
+  const isMissing = r.type === 'expense';
+  const expense = isMissing ? r.expense : r.matched;
+  return {
+    meta,
+    expense,
+    date: isMissing ? r.expense.date : r.bankRow.date,
+    amount: isMissing
+      ? formatCurrency(Number(r.expense.amount) || 0, r.expense.currency || 'COP')
+      : formatCurrency(r.bankRow.amount, BASE_CURRENCY),
+    bankMerchant: isMissing ? (r.expense.merchant || '—') : (r.bankRow.merchant || '—'),
+    appMerchant: expense?.merchant || (isMissing ? r.expense.merchant : '—'),
+  };
+}
+
+function renderStatusBadge(meta) {
+  const { Icon } = meta;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${meta.bg} ${meta.text} ${meta.border}`}>
+      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+      {meta.label}
+    </span>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminReconciliation() {
   const [step, setStep] = useState('upload');   // upload | map | results
@@ -233,7 +260,7 @@ export default function AdminReconciliation() {
           <div
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
-            className="border-2 border-dashed border-brand-300 rounded-2xl p-12 text-center hover:border-brand-500 transition-colors cursor-pointer bg-brand-50/30"
+            className="border-2 border-dashed border-brand-300 rounded-2xl p-8 sm:p-12 text-center hover:border-brand-500 transition-colors cursor-pointer bg-brand-50/30"
             onClick={() => document.getElementById('recon-file').click()}
           >
             <FileSpreadsheet className="w-12 h-12 text-brand-400 mx-auto mb-4" />
@@ -308,7 +335,7 @@ export default function AdminReconciliation() {
               </button>
             ))}
             <button type="button" onClick={handleExport}
-              className="ml-auto flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+              className="sm:ml-auto flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
               <Download className="w-4 h-4" /> Exportar
             </button>
             <button type="button" onClick={() => { setStep('upload'); setResults([]); }}
@@ -317,9 +344,37 @@ export default function AdminReconciliation() {
             </button>
           </div>
 
-          {/* Results table */}
+          {/* Results: cards on phones and tablets, table from lg up */}
           <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
+            <ul className="lg:hidden divide-y divide-gray-100">
+              {filtered.map((r, i) => {
+                const v = rowView(r);
+                return (
+                  <li key={i} className={`p-4 ${v.meta.bg}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 font-semibold text-gray-800 truncate">{v.bankMerchant}</p>
+                      <p className="font-mono font-medium text-gray-900 whitespace-nowrap text-right">{v.amount}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {[v.date, v.expense?.userName, v.expense?.projectName].filter(Boolean).join(' · ')}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {renderStatusBadge(v.meta)}
+                      {v.appMerchant && v.appMerchant !== '—' && (
+                        <span className="min-w-0 text-xs text-gray-600 truncate">
+                          {v.appMerchant}
+                          {v.expense?.invoiceNumber && <span className="ml-1 text-gray-400">#{v.expense.invoiceNumber}</span>}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+              {filtered.length === 0 && (
+                <li className="px-4 py-10 text-center text-sm text-gray-400">Sin resultados para este filtro.</li>
+              )}
+            </ul>
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
@@ -329,42 +384,26 @@ export default function AdminReconciliation() {
                     <th className="px-4 py-3 font-semibold text-gray-500">Comercio Extracto</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Coincidencia en la app</th>
                     <th className="px-4 py-3 font-semibold text-gray-500">Usuario</th>
-                    <th className="px-4 py-3 font-semibold text-gray-500">Proyecto</th>
+                    <th className="hidden xl:table-cell px-4 py-3 font-semibold text-gray-500">Proyecto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.map((r, i) => {
-                    const meta = STATUS_META[r.status];
-                    const { Icon } = meta;
-                    const isMissing = r.type === 'expense';
-                    const expense = isMissing ? r.expense : r.matched;
+                    const v = rowView(r);
                     return (
-                      <tr key={i} className={`${meta.bg} hover:brightness-[0.98] transition`}>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${meta.bg} ${meta.text} ${meta.border}`}>
-                            <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                            {meta.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                          {isMissing ? r.expense.date : r.bankRow.date}
-                        </td>
-                        <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">
-                          {isMissing
-                            ? formatCurrency(Number(r.expense.amount) || 0, r.expense.currency || 'COP')
-                            : formatCurrency(r.bankRow.amount, BASE_CURRENCY)}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">
-                          {isMissing ? (r.expense.merchant || '—') : (r.bankRow.merchant || '—')}
-                        </td>
+                      <tr key={i} className={`${v.meta.bg} hover:brightness-[0.98] transition`}>
+                        <td className="px-4 py-3">{renderStatusBadge(v.meta)}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{v.date}</td>
+                        <td className="px-4 py-3 font-mono font-medium whitespace-nowrap">{v.amount}</td>
+                        <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">{v.bankMerchant}</td>
                         <td className="px-4 py-3 text-gray-700 max-w-[180px] truncate">
-                          {expense?.merchant || (isMissing ? r.expense.merchant : '—')}
-                          {expense?.invoiceNumber && (
-                            <span className="ml-1 text-xs text-gray-400">#{expense.invoiceNumber}</span>
+                          {v.appMerchant}
+                          {v.expense?.invoiceNumber && (
+                            <span className="ml-1 text-xs text-gray-400">#{v.expense.invoiceNumber}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{expense?.userName || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[140px] truncate">{expense?.projectName || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{v.expense?.userName || '—'}</td>
+                        <td className="hidden xl:table-cell px-4 py-3 text-gray-600 max-w-[140px] truncate">{v.expense?.projectName || '—'}</td>
                       </tr>
                     );
                   })}
