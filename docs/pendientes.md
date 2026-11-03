@@ -23,13 +23,10 @@ hacer tú.
   ellas confirmo que la firma verifica tal como se imprime. No anunciar
   "verificación del timbre SII" a prospectos antes de eso
   (`docs/sales/fiscal-and-erp.md`).
-- [ ] **Decidir si la landing del demo anuncia ya el timbre SII**: desde el
-  2026-11-03 `expense-buddy-demo.web.app` lo muestra como función ("Timbre
-  electrónico SII verificado", con la redacción de `docs/sales/`). Mientras no
-  estén las claves y las boletas reales, una boleta real de un prospecto
-  quedaría en "Verificación pendiente". Mantenerlo o sacarlo es tu decisión:
-  basta con quitar la entrada `fiscal` y el destacado en
-  `tenants/demo.json → landing`.
+- [x] **Decidir si la landing del demo anuncia ya el timbre SII**
+  (2026-11-03): se mantiene. La landing del demo lo muestra desde ese día,
+  aunque las claves SII y las boletas reales siguen pendientes (arriba);
+  hasta entonces una boleta real queda en "Verificación pendiente".
 - [ ] **Decidir TD-026 (saldos en moneda base)**: hoy `users.balance` y
   `projects.expenses` suman montos de distintas monedas (los gastos en USD de
   SPI se suman como si fueran pesos). Corregirlo cambia los saldos que ve

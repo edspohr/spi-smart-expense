@@ -84,8 +84,8 @@ Solo existe para clientes en Chile.
 - iPhone: no confirmado que Safari acepte el tamaño de clave de los CAF; si
   no, el teléfono muestra "pendiente" y verifica el servidor.
 - La landing del demo ya presenta la función (2026-11-03), con un texto que
-  se ciñe a lo que garantiza: emisor, folio autorizado y monto. Decisión de
-  mantenerla antes de cerrar lo anterior: `docs/pendientes.md`.
+  se ciñe a lo que garantiza: emisor, folio autorizado y monto. El
+  responsable decidió mantenerla antes de cerrar lo anterior (2026-11-03).
 
 ### Cómo decirlo en una propuesta (cuando esté cerrado)
 
