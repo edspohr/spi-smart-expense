@@ -45,3 +45,4 @@ nombre en kebab-case en español.
 | [0015](0015-lector-local-en-el-dispositivo.md) | Lector de boletas en el dispositivo (zxing-wasm + tesseract.js, motores propios) | Aceptada | 8 |
 | [0016](0016-lector-que-aprende-general-y-por-cliente.md) | Lector que aprende: modo sombra, capa del cliente y capa general | Aceptada | 8b-8d |
 | [0017](0017-timbre-electronico-sii-offline.md) | Verificación del timbre electrónico (TED) sin conexión | Aceptada | 10 |
+| [0018](0018-exportador-contable-y-conectores-erp.md) | Exportador contable y conectores ERP | Aceptada | 11 |

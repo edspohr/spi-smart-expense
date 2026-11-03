@@ -75,6 +75,13 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Where it shows:** badges in approvals and details, a dashboard anomaly, report filter and Excel/CSV columns, Ajustes card. Setting `settings/tenant.fiscal.tedVerification` (`off` for SPI, `advisory` for the demo, `required`).
 - **SII public keys** go in `functions/sii-keys/<IDK>.pem`; none shipped yet, so real receipts show "Verificación pendiente". Runbook `docs/runbooks/sii-keys.md`; scripts `scripts/fixtures/make-ted-fixture.mjs` and `scripts/sii/verify-ted.mjs`. Decision: ADR 0017; sales scope: `docs/sales/fiscal-and-erp.md`.
 
+### Ola 11 — Accounting export (2026-11-03)
+
+- **Mapping** in Ajustes (`settings/tenant.accounting`): liability, company-card and VAT accounts, VAT rate, recoverable document types, cost-centre source, one expense account per category.
+- **Balanced journals** (`functions/src/accounting.logic.ts`, shared by the preview and the server): one per approved expense, base currency, VAT split only on recoverable types whose timbre did not fail.
+- **Connectors** (`functions/src/accounting.connectors.ts`): generic CSV, Softland, Defontana and SAP B1 DTW files, each with its declared layout assumptions.
+- **`/admin/accounting`**: preview with blocking issues, export behind the `export` PIN through `buildAccountingExport`, run history in `accountingExports/{id}`; exported expenses are stamped and locked. `modules.accounting` is off for SPI and on for the demo. Decision: ADR 0018; sales scope: `docs/sales/fiscal-and-erp.md`.
+
 ### Roadmap (plan v4, 2026-10-26)
 
 Next: create the learning hub and pass the legal texts to `derived-v1` (owner), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.

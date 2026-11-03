@@ -41,7 +41,7 @@ sugerido, no fechas.**
 | 8d | Lector que aprende III: corpus de imágenes con consentimiento separado y modelo propio | Transparente (opt-in) | Condicional (volumen + clientes que acepten) |
 | 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
 | 10 | Documentos tributarios Chile: timbre electrónico verificado sin conexión (sin consulta al SII) | Transparente (add-on apagado) | Implementada 2026-11-03 en `ola-10/fiscal-ted`, sin desplegar; faltan claves reales del SII |
-| 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Pendiente |
+| 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Implementada 2026-11-03 en `ola-11/accounting-export`, sin desplegar; formatos ERP por confirmar con un cliente |
 | 12 | Fondos por rendir, viáticos, kilometraje, políticas y nómina de pago | Transparente (opt-in) | Pendiente |
 | 13 | Canales conversacionales: WhatsApp + email | Transparente (opt-in) | Pendiente |
 | 14 | Enterprise: SSO, paquete de seguridad, roles finos | Transparente (opt-in) | Pendiente |
@@ -1146,6 +1146,42 @@ a failed signature), runbook for SII keys, docs/sales/fiscal-and-erp.md.
 
 **Dependencies:** Ola 9 (backups antes de migrar agregados).
 **Impacto en SPI:** Transparente (add-on).
+
+### Resultado (2026-11-03)
+
+- TD-026 **no** se cerró: el exportador calcula la moneda base de cada
+  rendición y no lee los agregados (ADR 0018 §9). Cerrarla cambia saldos de
+  SPI y pide migración: decisión pendiente del responsable.
+- `functions/src/accounting.logic.ts`: un asiento cuadrado por rendición,
+  IVA solo en tipos recuperables con timbre válido; mismo código en la vista
+  previa y en el servidor.
+- `ErpConnector` con CSV genérico, Softland, Defontana y SAP B1 (DTW), cada
+  uno con sus supuestos declarados.
+- `buildAccountingExport` + `accountingExports/{id}` + marca
+  `accountingExport` en cada rendición; las exportadas quedan cerradas
+  (reglas, reabrir, borrar).
+- Mapeo en Ajustes (`settings/tenant.accounting`) y página
+  `/admin/accounting` con vista previa e historial; `modules.accounting`
+  apagado en SPI, encendido en el demo.
+- Validación: `docs/validation/ola-11.md`.
+
+### Prompt 11 (paste into Claude Code)
+
+```
+Implement Ola 11 of docs/implementation-plan.md: accounting export. Per-tenant
+mapping in settings/tenant.accounting (only via adminUpdateSettings):
+liability, company-card and VAT accounts, VAT rate, recoverable document
+types, cost-centre source, category → expense account. Pure, tested journal
+builder (functions/src/accounting.logic.ts): one balanced journal per
+approved expense in base currency, VAT split only on recoverable types whose
+TED did not fail. ErpConnector interface with generic CSV, Softland,
+Defontana and SAP B1 DTW files; document every unconfirmed column layout as
+an assumption. Server callable writes accountingExports/{id} and stamps each
+expense; exported expenses are locked; PIN action 'export';
+modules.accounting off for SPI, on for demo. Preview page with blocking
+issues and run history. Rules + tests, ADR, docs/validation/ola-11.md, sales
+doc section. Do not change SPI's balances (TD-026 is a separate decision).
+```
 
 ---
 

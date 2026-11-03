@@ -98,5 +98,53 @@ boletas duplicadas", "verifica el Registro de Compras".
 
 ## 2. Exportación contable
 
-Pendiente (Ola 11). Esta sección se completa con los formatos, su contenido
-exacto y los supuestos de cada ERP.
+### Qué hace
+
+Finanzas elige un período (y opcionalmente un centro de costo) y descarga
+las rendiciones aprobadas como asientos contables listos para importar en su
+ERP. Cada rendición es un asiento cuadrado, en la moneda base:
+
+- **Debe** a la cuenta de gasto de su categoría (neto de IVA si corresponde).
+- **Debe** a IVA crédito fiscal, solo en facturas (u otro tipo que el
+  cliente indique) cuyo timbre no falló.
+- **Haber** a la cuenta por pagar al personal, o a la cuenta de la tarjeta
+  corporativa si fue un gasto con tarjeta de la empresa.
+
+Cada línea lleva centro de costo, RUT y nombre del proveedor, tipo y folio
+del documento, quién rindió y el estado del timbre SII.
+
+Antes de exportar hay una vista previa con los asientos y lo que falta
+configurar; no se puede exportar mientras falte una cuenta. Cada exportación
+queda registrada (quién, cuándo, qué rendiciones, total y una huella del
+archivo) y se puede volver a descargar. Una rendición exportada queda
+cerrada: no se edita, no se reabre y no se borra en la app, y no se vuelve a
+exportar salvo que se pida explícitamente.
+
+### Formatos
+
+| Formato | Archivo | Estado |
+|---------|---------|--------|
+| CSV genérico | Un CSV con una fila por línea, separado por punto y coma, que Excel abre directo | Listo |
+| Softland ERP | Archivo plano de comprobantes | Columnas por confirmar con el importador del cliente |
+| Defontana | CSV de comprobantes (centro de negocio, ficha) | Orden de la plantilla por confirmar; CSV, no .xlsx |
+| SAP Business One | Plantillas de Data Transfer Workbench (cabecera y líneas) | Nombres de campo estándar por confirmar con la versión del cliente |
+
+### Qué no hace
+
+- **No se conecta por API** a ningún ERP: se descarga un archivo y se
+  importa en el ERP. SAP B1 Service Layer y la API de Defontana son trabajo
+  futuro.
+- No agrupa varias rendiciones en un solo asiento por período.
+- No maneja cuentas distintas por persona ni ajustes por rendición.
+- No "descontabiliza": una corrección posterior se hace en el ERP.
+
+### Cómo decirlo en una propuesta
+
+> Exportación de las rendiciones aprobadas como asientos contables cuadrados
+> con IVA, centro de costo y proveedor, en CSV o en el formato de
+> importación de Softland, Defontana o SAP Business One, con registro de cada
+> exportación y sin doble contabilización.
+
+Hasta importar con un cliente real, decir "formato de importación de
+Softland/Defontana/SAP B1, ajustado en la puesta en marcha". No decir
+"integración nativa" ni "conexión en línea con el ERP".

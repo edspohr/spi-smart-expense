@@ -23,6 +23,16 @@ hacer tú.
   ellas confirmo que la firma verifica tal como se imprime. No anunciar
   "verificación del timbre SII" a prospectos antes de eso
   (`docs/sales/fiscal-and-erp.md`).
+- [ ] **Decidir TD-026 (saldos en moneda base)**: hoy `users.balance` y
+  `projects.expenses` suman montos de distintas monedas (los gastos en USD de
+  SPI se suman como si fueran pesos). Corregirlo cambia los saldos que ve
+  SPI y exige recalcular producción con un script con dry-run. El exportador
+  contable no lo necesita. Dime si lo hacemos y cuándo avisar a SPI.
+- [ ] **Confirmar un formato contable con un cliente chileno (Ola 11)**:
+  pedir la plantilla de importación de comprobantes de su ERP (Softland,
+  Defontana o SAP B1) o probar a importar un archivo de
+  `/admin/accounting` en su ambiente de prueba. Hasta entonces, en propuestas
+  decir "formato de importación ajustado en la puesta en marcha".
 - [ ] **Probar el timbre en un iPhone (Ola 10, demo)**: rendir una boleta
   con timbre y ver si dice "Timbre verificado en el dispositivo" o
   "Verificación pendiente" (Safari podría no aceptar las claves cortas de

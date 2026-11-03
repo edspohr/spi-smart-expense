@@ -469,6 +469,11 @@ dry-run para corregir los acumulados históricos.
 (`functions/src/aggregates.logic.ts`, ADR 0010), así que el fix es un cambio
 en esa función pura más la migración de recálculo.
 
+**Update 2026-11-03 (Ola 11):** no se cerró. El exportador contable calcula
+la moneda base de cada rendición y no depende de estos campos (ADR 0018). El
+fix cambia los saldos de SPI (gastos en USD) y requiere la migración en
+producción, así que espera la decisión del responsable.
+
 **Update 2026-10-25 (Ola 7):** los gastos nuevos guardan `amountBase` en la
 moneda base del tenant (CLP en el demo), así que el fix ya tiene su dato:
 sumar `amountBase ?? amountCOP ?? (currency === base ? amount : rechazar)`.
@@ -722,3 +727,40 @@ tenga.
 **Recommended fix:** decodificar el PDF417 en Functions con `zxing-wasm`
 desde la imagen en Storage cuando falte `rawTed` en un tenant CL con la
 verificación activa.
+
+---
+
+# Items registered in Ola 11 (2026-11-03)
+
+## TD-041 — Exportación contable grande no es atómica
+
+**Severity:** Low  
+**Impact:** Medium · **Effort:** Low  
+**Files:** `functions/src/accounting.ts`
+
+**Problem:** cada rendición suma dos escrituras (marca + movimiento); sobre
+~225 rendiciones la exportación se escribe en varios lotes. Si falla uno, el
+registro `accountingExports` existe y parte de las rendiciones queda sin
+marcar: la próxima exportación las volvería a incluir.
+
+**Recommended fix:** escribir el registro con `status: 'writing'`, pasar a
+`done` al final y, en la página, ofrecer "completar" una exportación que
+quedó en `writing` (vuelve a marcar sus `expenseIds`). No se probó con más de
+13 rendiciones.
+
+---
+
+## TD-042 — Formatos Softland, Defontana y SAP B1 sin importar en un ERP real
+
+**Severity:** Medium (para vender)  
+**Impact:** High · **Effort:** Low  
+**Files:** `functions/src/accounting.connectors.ts`
+
+**Problem:** los tres formatos salen de material público y llevan sus
+supuestos declarados (ADR 0018). Ninguno se importó en una instalación
+real.
+
+**Recommended fix:** con el primer cliente, importar un período chico en su
+ambiente de prueba, ajustar columnas y fijar el formato confirmado en una
+prueba del conector.
+
