@@ -133,6 +133,7 @@ Server-only collections: `rateLimits` (Gemini quotas), `aggregateLedger` (trigge
 - Tests colocated as `*.test.{js,ts}`; money logic (balances, FX, permissions) must be covered.
 - Every feature must be tenant-configurable and must leave SPI's default behaviour unchanged.
 - Styling: Tailwind with the `brand` palette, `shadow-soft`/`shadow-glass`, Inter font, Framer Motion for transitions.
+- Responsive: the sidebar shows from `md`, so wide tables (5+ columns) switch to a card list below `lg` (`lg:hidden` list + `hidden lg:block` table), narrow ones below `md`. Table and cards share render functions for actions and badges; hide low-value desktop columns with `hidden xl:table-cell` / `2xl:` so actions stay visible. Dashboard KPIs use `StatCard`.
 
 ## Documentation to keep current
 

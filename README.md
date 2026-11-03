@@ -68,6 +68,12 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 - **Daily anonymised export** (`exportDerivedData`): legal-entity issuers with their total-label votes and daily accuracy counters; "Ver qué se envía" shows the exact JSON (`previewDerivedData`). Without `LEARNING_HUB_URL` it stays in the tenant's own `learningOutbox`.
 - **Learning hub** (`ingestContribution`, deployed only with `HUB_MODE=true`): Google ID token + sender allowlist + strict schema. `npm run pack:build` turns it into `src/lib/localReader/pack/reader-pack.json`, shipped with every build and used below each client's own learning. Runbook: `docs/runbooks/learning-hub.md`.
 
+### Dashboard and phones (2026-11-03)
+
+- **Action-first dashboard:** six compact KPI cards (`src/components/StatCard.jsx`) in 2 / 3 / 6 columns: pending to approve (count and amount), oldest pending in days, rendido and aprobado for the period, funds handed out still to justify, and what the company owes people. The two pending cards ignore the period filter; the balance cards read the current `users.balance`.
+- **Every table works on a phone:** below `lg` (or `md` for narrow tables) approvals, balances, my expenses, reports, users, cost centres, reconciliation, user and project details and team activity render as cards with the same actions; on desktop low-value columns appear only from `xl` / `2xl` so the actions column stays visible.
+- **Removed "Recalcular Saldos (Repair)"** and `src/utils/fixBalances.js`: it rewrote balances from the browser with a formula that diverged from `onExpenseWritten`. Automatic drift detection is TD-018. Validation: `docs/validation/ux-movil-2026-11.md`.
+
 ### Roadmap (plan v4, 2026-10-26)
 
 Next: create the learning hub and pass the legal texts to `derived-v1` (owner), then Ola 9 (fleet operations, observability and security baseline) and, in suggested order without dates: SII validation, accounting integration (Softland/Defontana/SAP B1), advances/per diem/mileage/policies, WhatsApp + email, enterprise (SSO), Colombia DIAN + card-statement reconciliation, quality and scale. Details: `docs/implementation-plan.md`, decision: `docs/adr/0014-roadmap-post-benchmark-offline-primero.md`, market research: `docs/research/benchmark-2026-10.md`.
@@ -132,7 +138,7 @@ Next: create the learning hub and pass the legal texts to `derived-v1` (owner), 
   - View personal balance and reimbursement status.
   - Track expense history.
 - **Admin Role**:
-  - **Dashboard**: Overview of total project budgets and pending approvals.
+  - **Dashboard**: What needs action first (pending approvals and the oldest one), the period totals and the money held or owed, on any screen size.
   - **Project Management**: Create and manage projects, assign users, and set budgets.
   - **Approval Workflow**: Review, approve, or reject submitted expenses.
   - **User Management**: Manage user roles and balances.
