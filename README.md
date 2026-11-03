@@ -44,7 +44,7 @@ SPI Smart Expense is becoming the first tenant of **Expense Buddy**, a multi-cli
 
 - **On-device receipt reading** (`src/lib/localReader/`): Chilean electronic stamp (PDF417 TED) and Colombian DIAN QR decoded exactly with `zxing-wasm`; paper receipts read with `tesseract.js` (Spanish) plus pure TypeScript rules (total, date, RUT/NIT with check digit, invoice number, payment, merchant). Per-field confidence badges in the form; nothing is submitted without the person confirming.
 - **Tenant merchant dictionary** (`getMerchantDictionary` callable): tax id → merchant and category from approved expenses, cached on the phone.
-- **"Listo para terreno"** in Mi Espacio: downloads the engines (~7 MB, served from `/ocr/<version>/`), the dictionary and the data the form needs into the offline caches.
+- **"Listo para terreno"** in Mi Espacio: downloads the engines (~7 MB, served from `/ocr/<version>/`), the dictionary and the data the form needs into the offline caches. Since 2026-11-03 the installed app prepares it by itself the first time it opens with a session (waiting for wifi where Android reports mobile data); a browser tab never downloads it unasked.
 - **AI verification on sync** (`verifyLocalRead` trigger): Gemini re-reads every receipt read on the device, flags differences in amount/date/tax id (`aiReview`) and logs anonymous accuracy (`ocrEval`) shown in Ajustes → Lectura sin conexión.
 - **"Simular sin señal"** for demos (demo tenant and superadmins).
 - Opt-in per tenant: `settings/tenant.offline.localReader` and `ai.localFirst` (both off; the demo has the reader on). Accuracy corpus test in CI (`localReader.corpus.test.ts`). Decision: ADR 0015.
