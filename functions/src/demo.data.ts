@@ -86,31 +86,37 @@ export const DEMO_SETTINGS = {
   ai: { localFirst: false },
 };
 
-type Extra = { description?: string; category?: string; rejectionReason?: string };
+/**
+ * Ola 10 timbre per row: a verified boleta (39) unless set. 'factura' is a
+ * verified factura (33, recoverable VAT in the accounting export); 'none' has
+ * no TED (TAG tolls, paper tickets, app receipts) and the server marks it.
+ */
+type Ted = 'boleta' | 'factura' | 'none' | 'mismatch' | 'invalid' | 'folio';
+type Extra = { description?: string; category?: string; rejectionReason?: string; ted?: Ted };
 // [uid, projectId, daysAgo, category, merchant, taxId, city, amount, status, extra]
 type Row = [string, string, number, string, string, string, string, number, 'pending' | 'approved' | 'rejected', Extra?];
 const EXPENSES: Row[] = [
   ['demo-nicolas', 'demo-psa', 1, 'COMBUSTIBLE', 'Copec Ruta 5 Norte', '99.520.000-7', 'Copiapó', 68_400, 'pending'],
-  ['demo-nicolas', 'demo-psa', 1, 'ALIMENTACIÓN', 'Restaurante El Minero', '76.354.771-K', 'Diego de Almagro', 32_900, 'pending'],
-  ['demo-matias', 'demo-psa', 2, 'MATERIALES Y HERRAMIENTAS', 'Sodimac Antofagasta', '96.792.430-K', 'Antofagasta', 186_490, 'pending'],
-  ['demo-matias', 'demo-psa', 3, 'ALOJAMIENTO', 'Hotel Desierto Florido', '76.112.983-4', 'Copiapó', 1_240_000, 'pending', { description: '4 noches cuadrilla montaje' }],
-  ['demo-javiera', 'demo-sela', 2, 'TRANSPORTE TERRESTRE', 'Cabify', '76.341.213-3', 'Santiago', 18_700, 'pending'],
-  ['demo-javiera', 'demo-sela', 4, 'PEAJES Y TAG', 'Autopista del Itata', '96.977.920-K', 'Chillán', 7_400, 'pending'],
-  ['demo-javiera', 'demo-sela', 6, 'EPP Y SEGURIDAD', 'Prosegur Equipamiento', '76.019.236-2', 'Los Ángeles', 94_500, 'pending'],
+  ['demo-nicolas', 'demo-psa', 1, 'ALIMENTACIÓN', 'Restaurante El Minero', '76.354.771-K', 'Diego de Almagro', 32_900, 'pending', { ted: 'mismatch' }],
+  ['demo-matias', 'demo-psa', 2, 'MATERIALES Y HERRAMIENTAS', 'Sodimac Antofagasta', '96.792.430-K', 'Antofagasta', 186_490, 'pending', { ted: 'invalid' }],
+  ['demo-matias', 'demo-psa', 3, 'ALOJAMIENTO', 'Hotel Desierto Florido', '76.112.983-4', 'Copiapó', 1_240_000, 'pending', { description: '4 noches cuadrilla montaje', ted: 'folio' }],
+  ['demo-javiera', 'demo-sela', 2, 'TRANSPORTE TERRESTRE', 'Cabify', '76.341.213-3', 'Santiago', 18_700, 'pending', { ted: 'none' }],
+  ['demo-javiera', 'demo-sela', 4, 'PEAJES Y TAG', 'Autopista del Itata', '96.977.920-K', 'Chillán', 7_400, 'pending', { ted: 'none' }],
+  ['demo-javiera', 'demo-sela', 6, 'EPP Y SEGURIDAD', 'Prosegur Equipamiento', '76.019.236-2', 'Los Ángeles', 94_500, 'pending', { ted: 'factura' }],
   ['demo-diego', 'demo-psa', 5, 'PASAJES AÉREOS', 'LATAM Airlines', '89.862.200-2', 'Santiago', 214_600, 'pending', { description: 'SCL–CPO ida y vuelta, visita de obra' }],
   ['demo-paula', 'demo-sela', 7, 'GASTOS DE REPRESENTACIÓN', 'Restaurante Lo de Arriba', '76.205.884-1', 'Los Ángeles', 156_000, 'pending'],
   ['demo-ignacio', 'demo-adm', 3, 'TELEFONÍA E INTERNET', 'Entel PCS', '96.806.980-2', 'Santiago', 29_990, 'pending'],
   ['demo-nicolas', 'demo-psa', 9, 'COMBUSTIBLE', 'Shell Caldera', '96.687.020-7', 'Caldera', 74_200, 'approved'],
   ['demo-nicolas', 'demo-psa', 11, 'ALIMENTACIÓN', 'Colaciones Don Pepe', '77.001.552-0', 'Copiapó', 48_000, 'approved'],
-  ['demo-matias', 'demo-psa', 12, 'ESTACIONAMIENTOS', 'Estacionamientos Saba', '96.854.430-6', 'Antofagasta', 6_500, 'approved'],
-  ['demo-matias', 'demo-ml220', 15, 'MATERIALES Y HERRAMIENTAS', 'Ferretería Industrial Norte', '76.488.120-3', 'Calama', 312_800, 'approved'],
-  ['demo-javiera', 'demo-sela', 13, 'ALOJAMIENTO', 'Hotel Mundo Nuevo', '76.903.114-8', 'Los Ángeles', 389_000, 'approved'],
-  ['demo-diego', 'demo-psa', 16, 'ARRIENDO', 'Arriendo Camionetas del Norte', '76.611.270-9', 'Copiapó', 1_650_000, 'approved', { category: 'TRANSPORTE TERRESTRE', description: 'Arriendo 4x4 por 15 días' }],
+  ['demo-matias', 'demo-psa', 12, 'ESTACIONAMIENTOS', 'Estacionamientos Saba', '96.854.430-6', 'Antofagasta', 6_500, 'approved', { ted: 'none' }],
+  ['demo-matias', 'demo-ml220', 15, 'MATERIALES Y HERRAMIENTAS', 'Ferretería Industrial Norte', '76.488.120-3', 'Calama', 312_800, 'approved', { ted: 'factura' }],
+  ['demo-javiera', 'demo-sela', 13, 'ALOJAMIENTO', 'Hotel Mundo Nuevo', '76.903.114-8', 'Los Ángeles', 389_000, 'approved', { ted: 'factura' }],
+  ['demo-diego', 'demo-psa', 16, 'ARRIENDO', 'Arriendo Camionetas del Norte', '76.611.270-9', 'Copiapó', 1_650_000, 'approved', { category: 'TRANSPORTE TERRESTRE', description: 'Arriendo 4x4 por 15 días', ted: 'factura' }],
   ['demo-paula', 'demo-sela', 18, 'PASAJES AÉREOS', 'Sky Airline', '88.417.000-1', 'Santiago', 98_300, 'approved'],
   ['demo-ignacio', 'demo-adm', 20, 'VARIOS', 'Correos de Chile', '60.503.000-9', 'Santiago', 12_600, 'approved'],
   ['demo-nicolas', 'demo-psa', 22, 'ALIMENTACIÓN', 'Supermercado Unimarc', '76.012.676-4', 'Diego de Almagro', 87_350, 'rejected', { rejectionReason: 'Compra de supermercado sin detalle de colaciones; adjunta la boleta desglosada.' }],
-  ['demo-matias', 'demo-ml220', 25, 'COMBUSTIBLE', 'Aramco Calama', '79.588.870-5', 'Calama', 91_000, 'rejected', { rejectionReason: 'La boleta no es legible. Sube una foto más nítida.' }],
-  ['demo-javiera', 'demo-sela', 27, 'PEAJES Y TAG', 'Ruta del Bosque', '96.965.880-1', 'Los Ángeles', 5_800, 'approved'],
+  ['demo-matias', 'demo-ml220', 25, 'COMBUSTIBLE', 'Aramco Calama', '79.588.870-5', 'Calama', 91_000, 'rejected', { rejectionReason: 'La boleta no es legible. Sube una foto más nítida.', ted: 'none' }],
+  ['demo-javiera', 'demo-sela', 27, 'PEAJES Y TAG', 'Ruta del Bosque', '96.965.880-1', 'Los Ángeles', 5_800, 'approved', { ted: 'none' }],
   ['demo-diego', 'demo-psa', 29, 'GASTOS DE REPRESENTACIÓN', 'Café Altiplano', '76.430.091-5', 'Copiapó', 23_400, 'approved'],
   ['demo-paula', 'demo-sela', 31, 'TELEFONÍA E INTERNET', 'Starlink Chile', '77.501.882-K', 'Los Ángeles', 47_990, 'approved'],
   ['demo-ignacio', 'demo-adm', 34, 'MATERIALES Y HERRAMIENTAS', 'Librería Nacional', '76.081.540-1', 'Santiago', 8_900, 'approved'],
@@ -137,24 +143,25 @@ export async function wipeDemoData(db: Firestore, settleMs = 25_000): Promise<vo
 }
 
 /**
- * Ola 10: finished server results for the first expenses, so the demo shows
- * each state without shipping a test key. verifyFiscalDocument leaves a
- * server result alone on create; clients cannot write one (firestore.rules).
+ * Ola 10: finished server results, so the demo shows each state without
+ * shipping a test key. verifyFiscalDocument leaves a server result alone on
+ * create; clients cannot write one (firestore.rules). 'none' writes nothing,
+ * so the server marks it "Sin timbre" as it would a real paper ticket.
  */
-function demoFiscal(n: number, taxId: string | null, date: string): Record<string, unknown> {
-  const states: Record<number, Record<string, unknown>> = {
-    1: { status: 'verified' },
-    2: { status: 'verified', mismatches: [{ field: 'amount', ted: '45900', submitted: '49500' }] },
-    3: { status: 'invalid_signature', reason: 'Firma del emisor (FRMT) inválida' },
-    4: { status: 'folio_out_of_range', reason: 'Folio 5120 fuera del rango autorizado 1-5000' },
+export function demoFiscal(ted: Ted, n: number, taxId: string | null, amount: number, date: string): Record<string, unknown> {
+  const states: Record<Exclude<Ted, 'none'>, Record<string, unknown>> = {
+    boleta: { status: 'verified' },
+    factura: { status: 'verified', docType: '33' },
+    mismatch: { status: 'verified', mismatches: [{ field: 'amount', ted: String(amount - 3_600), submitted: String(amount) }] },
+    invalid: { status: 'invalid_signature', reason: 'Firma del emisor (FRMT) inválida' },
+    folio: { status: 'folio_out_of_range', reason: 'Folio 5120 fuera del rango autorizado 1-5000' },
   };
-  const state = states[n];
-  if (!state) return {};
+  if (ted === 'none') return {};
   return {
     fiscalVerification: {
       scheme: 'cl_ted', issuerRut: taxId, docType: '39', folio: String(4000 + n),
       cafRange: { desde: 1, hasta: 5000, fechaAutorizacion: '2026-01-05' }, cafKeyId: '100',
-      verifiedAt: `${date}T12:00:00.000Z`, verifiedOn: 'server', readerVersion: 'demo', ...state,
+      verifiedAt: `${date}T12:00:00.000Z`, verifiedOn: 'server', readerVersion: 'demo', ...states[ted],
     },
   };
 }
@@ -211,10 +218,11 @@ export async function seedDemoData(db: Firestore, now = new Date()): Promise<{ p
     const created = daysAgo(ago, 9 + (n % 8));
     const reviewer = status === 'pending' ? {} : { reviewedAt: daysAgo(Math.max(ago - 1, 0), 17).toISOString(), reviewedByUid: 'demo-rodrigo', reviewedByName: 'Rodrigo Pizarro' };
     n += 1;
+    const ted = extra.ted ?? 'boleta';
     await db.doc(`expenses/demo-exp-${String(n).padStart(2, '0')}`).set({
       userId: uid, userName: person.name, projectId, projectName: pr.name,
       eventName: pr.code, category: extra.category ?? category, date: created.toISOString().slice(0, 10), time: null,
-      merchant, taxId, invoiceNumber: `${['BE', 'FE'][n % 2]}-${100000 + n * 137}`, city, address: null, phone: null,
+      merchant, taxId, invoiceNumber: `${ted === 'factura' ? 'FE' : 'BE'}-${100000 + n * 137}`, city, address: null, phone: null,
       paymentMethod: n % 3 === 0 ? 'Debit Card' : 'Credit Card', cardBrand: n % 3 === 0 ? null : ['visa', 'mastercard'][n % 2],
       cardCompany: 'Andes Energía SpA', cardLast4: n % 3 === 0 ? null : String(4000 + n * 37).slice(-4),
       description: extra.description ?? `${category.toLowerCase()} — ${pr.name}`,
@@ -222,7 +230,7 @@ export async function seedDemoData(db: Firestore, now = new Date()): Promise<{ p
       receiptUrl: null, voucherUrl: null, status, createdAt: created.toISOString(),
       isCompanyExpense: false, splitGroupId: null, trm: null, trmSource: null,
       ...(extra.rejectionReason ? { rejectionReason: extra.rejectionReason } : {}),
-      ...demoFiscal(n, taxId, created.toISOString().slice(0, 10)),
+      ...demoFiscal(ted, n, taxId, amount, created.toISOString().slice(0, 10)),
       ...reviewer,
     });
   }
