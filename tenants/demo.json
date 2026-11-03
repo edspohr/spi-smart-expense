@@ -111,7 +111,7 @@
       {
         "icon": "offline",
         "title": "Funciona sin señal",
-        "text": "En faena o en ruta, los registros se guardan sin señal y se sincronizan cuando se abre la aplicación con conexión."
+        "text": "En faena o en ruta, la app lee la boleta en el mismo teléfono, sin señal, y guarda la rendición hasta que haya conexión."
       },
       {
         "icon": "phone",
@@ -190,7 +190,7 @@
       "steps": [
         {
           "title": "Rinda igual, sin señal",
-          "text": "Abra la app, tome la foto de la boleta y complete el gasto. La lectura con IA necesita conexión, así que sin señal se ingresan el monto y el comercio a mano."
+          "text": "Tome la foto de la boleta y la app la lee en el mismo teléfono. Del timbre electrónico saca RUT, folio, fecha y monto exactos, y revisa que el timbre sea auténtico. Si la boleta no tiene timbre, lee el texto y marca lo que conviene revisar. Usted confirma y envía."
         },
         {
           "title": "Queda guardada en el teléfono",
@@ -198,14 +198,14 @@
         },
         {
           "title": "Se sincroniza al abrir la app con conexión",
-          "text": "Cuando se abre la app con conexión, la rendición se envía con sus fotos y la app lo confirma. La jefatura la recibe para aprobar."
+          "text": "Cuando se abre la app con conexión, la rendición se envía con sus fotos, el servidor vuelve a verificar el timbre y la app lo confirma. La jefatura la recibe para aprobar."
         },
         {
           "title": "Nada se pierde ni se duplica",
-          "text": "Si algo impide el envío, la rendición queda en Mi Espacio para reintentar o descartar. Cada rendición tiene un identificador propio: aunque se reintente varias veces, llega una sola vez."
+          "text": "Si algo impide el envío, la rendición queda guardada en la app para reintentar o descartar. Cada rendición tiene un identificador propio: aunque se reintente varias veces, llega una sola vez."
         }
       ],
-      "note": "Para usarla sin señal, la app debe haberse abierto con conexión al menos una vez en ese teléfono. Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
+      "note": "Para usarla sin señal, abra la app con conexión una vez y toque «Preparar para terreno» (Mi Resumen lo indica): así el lector queda descargado en el teléfono. Los envíos pendientes salen mientras la app está abierta; no se envían en segundo plano con la app cerrada."
     },
     "cta": {
       "title": "¿Lo quiere en su empresa?",
