@@ -55,7 +55,30 @@ export const DEMO_SETTINGS = {
     staleReminders: false,
     staleDays: 5,
   },
-  modules: { bulkUpload: true, reports: true, reconciliation: false, balances: true },
+  modules: { bulkUpload: true, reports: true, reconciliation: false, balances: true, accounting: true },
+  // Ola 11: an example chart of accounts (not advice; every client brings its own).
+  accounting: {
+    liabilityAccount: '2-1-05-001',
+    companyCardAccount: '2-1-01-010',
+    vatAccount: '1-1-05-001',
+    vatRate: 0.19,
+    recoverableDocTypes: ['33'],
+    costCentreSource: 'projectCode',
+    categoryAccounts: {
+      'ALIMENTACIÓN': '6-1-02-001',
+      'ALOJAMIENTO': '6-1-02-002',
+      'TRANSPORTE TERRESTRE': '6-1-03-001',
+      'PASAJES AÉREOS': '6-1-03-002',
+      'COMBUSTIBLE': '6-1-01-001',
+      'PEAJES Y TAG': '6-1-01-002',
+      'ESTACIONAMIENTOS': '6-1-01-003',
+      'MATERIALES Y HERRAMIENTAS': '6-1-04-001',
+      'EPP Y SEGURIDAD': '6-1-04-002',
+      'TELEFONÍA E INTERNET': '6-1-05-001',
+      'GASTOS DE REPRESENTACIÓN': '6-1-06-001',
+      'VARIOS': '6-1-09-001',
+    },
+  },
   // Ola 10: timbre verification is informative in the demo.
   fiscal: { tedVerification: 'advisory' },
   // Ola 8: the demo shows on-device reading and "Listo para terreno".
@@ -94,7 +117,7 @@ const EXPENSES: Row[] = [
 ];
 
 // Collections a visitor can fill; the reset clears them before reseeding.
-const WIPED = ['expenses', 'allocations', 'notifications', 'mailQueue', 'rateLimits', 'aggregateLedger', 'pinLog', 'userPins', 'projects', 'invoices'];
+const WIPED = ['accountingExports', 'expenses', 'allocations', 'notifications', 'mailQueue', 'rateLimits', 'aggregateLedger', 'pinLog', 'userPins', 'projects', 'invoices'];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

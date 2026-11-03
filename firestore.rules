@@ -124,7 +124,7 @@ service cloud.firestore {
         && validExpense(incoming())
         && validFiscal(incoming())
         && incoming().get('status', 'pending') == 'pending'
-        && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid', 'aiReview'])
+        && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid', 'aiReview', 'accountingExport'])
         && (incoming().userId == request.auth.uid || isAdmin() || isAssistant());
 
       allow update: if isActive()
@@ -139,10 +139,19 @@ service cloud.firestore {
         && unchanged('aiRead')
         && unchanged('rawTed')
         && unchanged('fiscalVerification')
+        // Ola 11: only buildAccountingExport stamps it, and an exported
+        // expense keeps the fields that went into its journal.
+        && unchanged('accountingExport')
+        && (resource.data.get('accountingExport', null) == null || keepsJournalFields())
         && (canReviewCurrent()
             || (resource.data.userId == request.auth.uid
                 && resource.data.get('status', 'pending') == 'pending'
                 && unchanged('userId')));
+
+      function keepsJournalFields() {
+        return !changedKeys().hasAny(['amount', 'currency', 'amountBase', 'amountCOP', 'trm', 'date', 'category',
+          'projectId', 'taxId', 'invoiceNumber', 'merchant', 'isCompanyExpense', 'userId']);
+      }
 
       // Owners delete their own pending expenses directly; any other delete
       // goes through the deleteExpense callable so the PIN can be enforced.
@@ -196,5 +205,15 @@ service cloud.firestore {
     // local outbox used while no learning hub is configured (server-only).
     match /consentLog/{entry} { allow read: if isSuperadmin(); allow write: if false; }
     match /learningOutbox/{day} { allow read: if isSuperadmin(); allow write: if false; }
+    // Ola 11: accounting export runs and their files, written by
+    // buildAccountingExport only.
+    match /accountingExports/{exportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /files/{fileId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
   }
 }

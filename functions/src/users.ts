@@ -3,6 +3,7 @@ import { getAuth, type UserRecord } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { TENANT_ID, nowIso, requireAuth } from './common';
+import { parseAccountingSettings } from './accounting.logic';
 import { DERIVED_TERMS_VERSION } from './learning.logic';
 import type { Role } from './claims.logic';
 import { loadPinPolicy, requirePinFor } from './pin';
@@ -195,7 +196,7 @@ export const adminDeleteUser = onCall(async (req) => {
 
 // Runtime tenant settings live in settings/tenant (rules: superadmin write,
 // any active user read). Only whitelisted keys are accepted.
-const MODULE_KEYS = ['bulkUpload', 'reports', 'reconciliation', 'balances'] as const;
+const MODULE_KEYS = ['bulkUpload', 'reports', 'reconciliation', 'balances', 'accounting'] as const;
 
 export const adminUpdateSettings = onCall(async (req) => {
   const { actor } = requireSuperadmin(req);
@@ -272,6 +273,12 @@ export const adminUpdateSettings = onCall(async (req) => {
     }
     update['fiscal.tedVerification'] = mode;
   }
+  // Ola 11: accounting mapping, replaced as a whole so removed categories go.
+  let accounting: ReturnType<typeof parseAccountingSettings> | null = null;
+  if (input.accounting !== undefined) {
+    if (!input.accounting || typeof input.accounting !== 'object') throw new HttpsError('invalid-argument', 'Mapeo contable no válido.');
+    accounting = parseAccountingSettings(input.accounting);
+  }
   if (input.approvalPolicy !== undefined) {
     const ap = input.approvalPolicy ?? {};
     if (ap.mode !== undefined) {
@@ -318,7 +325,7 @@ export const adminUpdateSettings = onCall(async (req) => {
     }
     consentEntry = { at, action: share ? 'grant' : 'revoke', termsVersion: DERIVED_TERMS_VERSION, byUid: actor.uid, byName: actor.name };
   }
-  if (Object.keys(update).length === 0) throw new HttpsError('invalid-argument', 'No hay cambios.');
+  if (Object.keys(update).length === 0 && !accounting) throw new HttpsError('invalid-argument', 'No hay cambios.');
   // Changing settings needs the PIN only while it is already enforced.
   await requirePinFor(req, 'settings', { policy: await loadPinPolicy() });
 
@@ -334,7 +341,12 @@ export const adminUpdateSettings = onCall(async (req) => {
     });
     node[keys[keys.length - 1] as string] = value;
   }
-  await getFirestore().doc('settings/tenant').set(nested, { merge: true });
+  const ref = getFirestore().doc('settings/tenant');
+  const batch = getFirestore().batch();
+  batch.set(ref, nested, { merge: true });
+  // update() replaces the whole map; set(merge) would keep stale categories.
+  if (accounting) batch.update(ref, { accounting });
+  await batch.commit();
   if (consentEntry) await getFirestore().collection('consentLog').add(consentEntry);
   return { ok: true };
 });

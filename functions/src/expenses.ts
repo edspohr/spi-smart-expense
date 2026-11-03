@@ -80,6 +80,7 @@ export const reviewExpense = onCall(async (req) => {
     const flow = expense.approvalFlow as ApprovalFlow | undefined;
     if (action === 'approve' && from === 'rejected') throw new HttpsError('failed-precondition', 'La rendición ya fue rechazada.');
     if (action === 'reject' && from === 'approved') throw new HttpsError('failed-precondition', 'La rendición ya fue aprobada.');
+    if (action === 'reopen' && expense.accountingExport) throw new HttpsError('failed-precondition', 'La rendición ya fue exportada a contabilidad.');
     if (from === TARGET[action]) return { noop: true as const, expense, from, to: from, partial: false };
 
     const movements = ref.collection('movements');
@@ -158,6 +159,7 @@ export const deleteExpense = onCall(async (req) => {
   if (!isAdminRole(claims.role) && !isOwnPending) {
     throw new HttpsError('permission-denied', 'No tienes permiso para eliminar esta rendición.');
   }
+  if (expense.accountingExport) throw new HttpsError('failed-precondition', 'La rendición ya fue exportada a contabilidad.');
   if (!isOwnPending) await requirePinFor(req, 'delete', { ref: expenseId });
   await ref.delete();
   return { ok: true, noop: false };

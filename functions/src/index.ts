@@ -38,6 +38,8 @@ export { getMerchantDictionary, verifyLocalRead } from './offline';
 // Ola 8c: daily anonymised contribution to the learning hub (only with the
 // tenant's consent; to learningOutbox while LEARNING_HUB_URL is empty).
 export { exportDerivedData, previewDerivedData } from './learning';
+// Ola 11: accounting export; refuses unless settings/tenant.modules.accounting.
+export { buildAccountingExport } from './accounting';
 
 // Ola 10: Chilean tenants only, so other tenants deploy nothing new.
 export const verifyFiscalDocument = process.env.COUNTRY === 'CL' ? fiscal.verifyFiscalDocument : undefined;

@@ -287,6 +287,43 @@ describe('fiscal verification (Ola 10)', () => {
   });
 });
 
+describe('accounting export (Ola 11)', () => {
+  const stamp = { exportId: 'run-1', exportedAt: '2026-11-03T10:00:00Z', connector: 'generic-csv' };
+
+  it('only the server stamps an expense as exported', async () => {
+    await assertFails(setDoc(doc(pro(), 'expenses', 'a-1'), expense({ accountingExport: stamp })));
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'expenses', 'a-2'), expense({ status: 'approved' }));
+      await setDoc(doc(c.firestore(), 'expenses', 'a-3'), expense({ status: 'approved', accountingExport: stamp }));
+    });
+    await assertFails(updateDoc(doc(admin(), 'expenses', 'a-2'), { accountingExport: stamp }));
+    await assertFails(updateDoc(doc(admin(), 'expenses', 'a-3'), { accountingExport: { ...stamp, exportId: 'otro' } }));
+  });
+
+  it('keeps the journal fields of an exported expense', async () => {
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'expenses', 'a-4'), expense({ status: 'approved', accountingExport: stamp }));
+      await setDoc(doc(c.firestore(), 'expenses', 'a-5'), expense({ status: 'approved' }));
+    });
+    await assertFails(updateDoc(doc(admin(), 'expenses', 'a-4'), { amount: 1 }));
+    await assertFails(updateDoc(doc(admin(), 'expenses', 'a-4'), { category: 'OTRA' }));
+    await assertSucceeds(updateDoc(doc(admin(), 'expenses', 'a-4'), { description: 'nota' }));
+    await assertSucceeds(updateDoc(doc(admin(), 'expenses', 'a-5'), { amount: 1 }));
+  });
+
+  it('lets admins read export runs and nobody write them', async () => {
+    await env.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), 'accountingExports', 'run-1'), { count: 1 });
+      await setDoc(doc(c.firestore(), 'accountingExports', 'run-1', 'files', '0'), { name: 'a.csv', content: 'x' });
+    });
+    await assertSucceeds(getDoc(doc(admin(), 'accountingExports', 'run-1')));
+    await assertSucceeds(getDoc(doc(admin(), 'accountingExports', 'run-1', 'files', '0')));
+    await assertFails(getDoc(doc(pro(), 'accountingExports', 'run-1')));
+    await assertFails(setDoc(doc(admin(), 'accountingExports', 'run-2'), { count: 1 }));
+    await assertFails(setDoc(doc(admin(), 'accountingExports', 'run-1', 'files', '1'), { content: 'x' }));
+  });
+});
+
 describe('approval flow (Ola 5)', () => {
   it('lets the current approver read, and nobody forge the flow', async () => {
     const boss = () => ctx('boss-1', { role: 'professional' });
