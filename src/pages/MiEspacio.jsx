@@ -75,11 +75,11 @@ export default function MiEspacio() {
   return (
     <Layout title="Mi Espacio">
       <div className="max-w-2xl mx-auto space-y-6">
-        <FieldReadyCard />
         <OfflineQueueCard />
         <PinSecurityCard />
         <PushCard />
         <ApprovalPrefsCard />
+        <FieldReadyCard />
 
         {/* Header row */}
         <div className="flex items-center justify-between">

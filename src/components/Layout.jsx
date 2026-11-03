@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 // "Listo para terreno" prepares itself once per session (Ola 8): the first
 // time the installed app opens with a session, and again when the kit is
-// older than 12 h. The first time says so; refreshes are silent.
+// older than 12 h. Only the first success is announced, briefly.
 let fieldPrepareStarted = false;
 
 export default function Layout({ children, title }) {
@@ -49,15 +49,9 @@ export default function Layout({ children, title }) {
       const run = prepareForField(currentUser.uid).then((next) => {
         if (!next.engines) throw new Error('engines');
       });
-      if (mode === 'first') {
-        toast.promise(run, {
-          loading: 'Preparando la app para rendir sin señal…',
-          success: fieldReadyCopy.readyToast,
-          error: 'No se pudo preparar la app para rendir sin señal. Se reintentará al abrirla con señal.',
-        });
-      }
-      // Retried on the next open of the app (the flag resets on reload).
-      run.catch(() => {});
+      // One quiet confirmation the first time; failures stay silent and are
+      // retried on the next open of the app (the flag resets on reload).
+      run.then(() => { if (mode === 'first') toast.success(fieldReadyCopy.readyToast); }).catch(() => {});
     }, 5000);
     // Layout remounts on every page: a pending start moves to the next page,
     // a download already running is left alone.

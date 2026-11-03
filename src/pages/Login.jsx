@@ -127,8 +127,10 @@ export default function Login() {
       // Keep email if typed
   };
 
+  // The landing frame sets a light text colour (ink chrome); the card is
+  // white, so it pins its own dark text or the inputs turn white on white.
   const card = (
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+      <div className="bg-white text-gray-900 p-8 rounded-lg shadow-md w-full max-w-md text-center">
         {/* With a landing the hero already shows the brand on phones, so the card logo is desktop-only there. */}
         <div className={`${tenant.landing ? 'hidden lg:flex standalone:flex' : 'flex'} justify-center mb-6`}>
             <img src={tenant.branding.logo} alt={tenant.name} className="h-24 w-auto" />
@@ -149,7 +151,7 @@ export default function Login() {
                     <input 
                         type="text" 
                         required
-                        className="w-full border border-gray-300 rounded p-2"
+                        className="w-full border border-gray-300 rounded p-2 bg-white text-gray-900 placeholder:text-gray-400"
                         value={displayName}
                         onChange={e => setDisplayName(e.target.value)}
                         placeholder="Ej: Juan Pérez"
@@ -162,7 +164,7 @@ export default function Login() {
                 <input 
                     type="email" 
                     required
-                    className="w-full border border-gray-300 rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-900 placeholder:text-gray-400"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder={tenant.branding.emailPlaceholder}
@@ -174,7 +176,7 @@ export default function Login() {
                 <input 
                     type="password" 
                     required
-                    className="w-full border border-gray-300 rounded p-2"
+                    className="w-full border border-gray-300 rounded p-2 bg-white text-gray-900 placeholder:text-gray-400"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••"
@@ -187,7 +189,7 @@ export default function Login() {
                     <input 
                         type="password" 
                         required
-                        className="w-full border border-gray-300 rounded p-2"
+                        className="w-full border border-gray-300 rounded p-2 bg-white text-gray-900 placeholder:text-gray-400"
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
                         placeholder="••••••"

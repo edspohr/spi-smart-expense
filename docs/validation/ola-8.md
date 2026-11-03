@@ -92,6 +92,14 @@ descarga nada hasta tocar el botón. Probado en el emulador del demo simulando
 la app instalada: pestaña normal → nada en 7 s; app instalada → los cuatro
 motores en `ocr-assets` y el aviso. ✅ (2026-11-03)
 
+**Actualización 2026-11-03 — discreto:** el aviso de "Preparando…" se quitó;
+solo queda una confirmación breve la primera vez y las fallas son
+silenciosas. Mi Resumen ya no muestra la franja "Listo para terreno". En Mi
+Espacio (menú "Notificaciones") la tarjeta es una línea al final: "Modo sin
+conexión · Listo para terreno · actualizado hace X", con "Verificar ahora"
+(o "Preparar ahora" si falta) y, en el demo, "Simular sin señal". ✅
+(emulador del demo)
+
 **Estado esperado:** pasa a "Listo para terreno" con "2 centros de costo"
 en el emulador; las cuatro piezas del lector quedan en la caché. ✅
 (2026-10-26, emulador)
