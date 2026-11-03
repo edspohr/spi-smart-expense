@@ -56,6 +56,9 @@ describe('validateContribution', () => {
   it('rejects anything beyond the exact schema', () => {
     expect(validateContribution(ok)).toBeNull();
     expect(validateContribution({ ...ok, tenant: 'spi' })).toBe('unexpected top-level field');
+    // Ola 10: fiscal evidence never leaves a tenant.
+    expect(validateContribution({ ...ok, fiscalVerification: { status: 'verified' } })).toBe('unexpected top-level field');
+    expect(validateContribution({ ...ok, rawTed: '<TED/>' })).toBe('unexpected top-level field');
     expect(validateContribution({ ...ok, envId: 'spi-smart-expense' })).toBe('bad envId');
     expect(validateContribution({ ...ok, issuers: [{ issuer: '12345678-5', labels: { TOTAL: 1 } }] })).toBe('issuer is not a legal entity');
     expect(validateContribution({ ...ok, issuers: [{ issuer: '99520000-7', labels: { TOTAL: 1 }, name: 'COPEC' }] })).toBe('unexpected issuer field');

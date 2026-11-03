@@ -1,3 +1,4 @@
+import type { FiscalVerification } from '../../functions/src/tedVerify.logic';
 // Firestore document shapes. Dates are ISO-8601 strings (the app never
 // stores Firestore Timestamps). Fields marked optional are absent on older
 // documents; code must treat them as nullable.
@@ -69,6 +70,15 @@ export interface AllocationDoc {
   type?: AllocationType;
 }
 
+// Ola 10: trazabilidad fiscal. Only `cl_ted` for now; `co_dian` is reserved
+// for Ola 15.
+export type {
+  FiscalScheme,
+  FiscalVerification,
+  FiscalVerificationMismatch,
+  FiscalVerificationStatus,
+} from '../../functions/src/tedVerify.logic';
+
 export interface ExpenseDoc {
   userId: string;
   userName: string;
@@ -104,6 +114,9 @@ export interface ExpenseDoc {
   reviewedAt?: string;
   reviewedByUid?: string | null;
   reviewedByName?: string | null;
+  /** Raw `<TED>` scanned on the device; immutable, the server re-verifies it. */
+  rawTed?: string;
+  fiscalVerification?: FiscalVerification;
 }
 
 export interface MovementDoc {
