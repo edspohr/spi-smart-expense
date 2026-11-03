@@ -30,4 +30,12 @@ describe('mergeSettings', () => {
     expect(merged.offline.localReader).toBe(true);
     expect(merged.ai.localFirst).toBe(false);
   });
+
+  it('keeps TED verification off by default and rejects unknown modes', () => {
+    expect(DEFAULT_SETTINGS.fiscal.tedVerification).toBe('off');
+    expect(mergeSettings({ fiscal: { tedVerification: 'advisory' } }).fiscal.tedVerification).toBe('advisory');
+    expect(mergeSettings({ fiscal: { tedVerification: 'required' } }).fiscal.tedVerification).toBe('required');
+    expect(mergeSettings({ fiscal: { tedVerification: 'maybe' } }).fiscal.tedVerification).toBe('off');
+    expect(mergeSettings({}).fiscal.tedVerification).toBe('off');
+  });
 });

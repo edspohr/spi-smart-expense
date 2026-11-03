@@ -36,6 +36,9 @@ export const DEFAULT_APPROVAL_POLICY: ApprovalPolicy = {
   staleDays: 7,
 };
 
+/** Ola 10: Chilean TED signature verification mode. Off by default. */
+export type TedVerificationMode = 'off' | 'advisory' | 'required';
+
 export interface TenantSettings {
   approvalPolicy: ApprovalPolicy;
   security: { pinEnabled: boolean; pinApprovalThreshold: number | null; pinActions: Record<PinAction, boolean> };
@@ -51,6 +54,8 @@ export interface TenantSettings {
     acceptedAt: string | null;
     acceptedByName: string | null;
   };
+  /** Ola 10: offline SII timbre verification for Chilean DTEs. */
+  fiscal: { tedVerification: TedVerificationMode };
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -75,6 +80,7 @@ export const DEFAULT_SETTINGS: TenantSettings = {
   ai: { dailyLimitUser: null, dailyLimitTenant: null, localFirst: false },
   offline: { localReader: false, shadowRead: false },
   learning: { shareDerived: false, termsVersion: null, acceptedAt: null, acceptedByName: null },
+  fiscal: { tedVerification: tenant.fiscal?.tedVerification ?? 'off' },
 };
 
 export function mergeSettings(doc: Record<string, unknown> | undefined | null): TenantSettings {
@@ -85,6 +91,7 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
   const modules = (doc.modules ?? {}) as Partial<TenantSettings['modules']>;
   const ai = (doc.ai ?? {}) as Partial<TenantSettings['ai']>;
   const learning = (doc.learning ?? {}) as Record<string, unknown>;
+  const fiscal = (doc.fiscal ?? {}) as Record<string, unknown>;
   const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
   const int = (v: unknown) => (Number.isInteger(v) ? (v as number) : null);
   const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
@@ -120,6 +127,13 @@ export function mergeSettings(doc: Record<string, unknown> | undefined | null): 
       termsVersion: typeof learning.termsVersion === 'string' ? learning.termsVersion : null,
       acceptedAt: typeof learning.acceptedAt === 'string' ? learning.acceptedAt : null,
       acceptedByName: typeof learning.acceptedByName === 'string' ? learning.acceptedByName : null,
+    },
+    fiscal: {
+      tedVerification: fiscal.tedVerification === 'required'
+        ? 'required'
+        : fiscal.tedVerification === 'advisory' || fiscal.tedVerification === 'off'
+          ? fiscal.tedVerification
+          : DEFAULT_SETTINGS.fiscal.tedVerification,
     },
     updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : undefined,
     updatedByName: typeof doc.updatedByName === 'string' ? doc.updatedByName : undefined,

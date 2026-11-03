@@ -264,6 +264,29 @@ describe('notifications and server-only collections', () => {
   });
 });
 
+describe('fiscal verification (Ola 10)', () => {
+  const device = { scheme: 'cl_ted', status: 'verified', verifiedOn: 'device' };
+
+  it('accepts a provisional device result and the scanned TED at creation', async () => {
+    await assertSucceeds(setDoc(doc(pro(), 'expenses', 'f-1'), expense({ rawTed: '<TED/>', fiscalVerification: device })));
+  });
+
+  it('rejects a claimed server result, unknown shapes and oversized TEDs', async () => {
+    await assertFails(setDoc(doc(pro(), 'expenses', 'f-2'), expense({ fiscalVerification: { ...device, verifiedOn: 'server' } })));
+    await assertFails(setDoc(doc(pro(), 'expenses', 'f-3'), expense({ fiscalVerification: { ...device, status: 'trust-me' } })));
+    await assertFails(setDoc(doc(pro(), 'expenses', 'f-4'), expense({ fiscalVerification: 'verified' })));
+    await assertFails(setDoc(doc(pro(), 'expenses', 'f-5'), expense({ rawTed: 'x'.repeat(4097) })));
+  });
+
+  it('freezes both fields after creation, for owners and admins', async () => {
+    await assertSucceeds(setDoc(doc(pro(), 'expenses', 'f-6'), expense({ rawTed: '<TED/>', fiscalVerification: { ...device, status: 'error' } })));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'f-6'), { fiscalVerification: device }));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'f-6'), { rawTed: '<TED>otro</TED>' }));
+    await assertFails(updateDoc(doc(pro(), 'expenses', 'own-pending'), { fiscalVerification: device }));
+    await assertSucceeds(updateDoc(doc(pro(), 'expenses', 'f-6'), { merchant: 'Otra' }));
+  });
+});
+
 describe('approval flow (Ola 5)', () => {
   it('lets the current approver read, and nobody forge the flow', async () => {
     const boss = () => ctx('boss-1', { role: 'professional' });

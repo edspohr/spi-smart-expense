@@ -5,6 +5,7 @@ import { FUNCTIONS_REGION } from './common';
 import { makeEmailSender } from './notify';
 import * as demo from './demo';
 import * as hub from './hub';
+import * as fiscal from './fiscal';
 
 initializeApp();
 
@@ -37,6 +38,9 @@ export { getMerchantDictionary, verifyLocalRead } from './offline';
 // Ola 8c: daily anonymised contribution to the learning hub (only with the
 // tenant's consent; to learningOutbox while LEARNING_HUB_URL is empty).
 export { exportDerivedData, previewDerivedData } from './learning';
+
+// Ola 10: Chilean tenants only, so other tenants deploy nothing new.
+export const verifyFiscalDocument = process.env.COUNTRY === 'CL' ? fiscal.verifyFiscalDocument : undefined;
 
 // Learning hub only (HUB_MODE=true, central Growth Buddies project): never
 // deployed to client projects. docs/runbooks/learning-hub.md.

@@ -45,6 +45,9 @@
     "googleLogin": false,
     "selfSignup": false
   },
+  "fiscal": {
+    "tedVerification": "advisory"
+  },
   "modules": {
     "bulkUpload": true,
     "reports": true,

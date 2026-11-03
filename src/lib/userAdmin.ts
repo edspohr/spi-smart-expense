@@ -67,6 +67,7 @@ export interface SettingsPatch {
   ai?: { dailyLimitUser?: number; dailyLimitTenant?: number; localFirst?: boolean };
   offline?: { localReader?: boolean; shadowRead?: boolean };
   learning?: { shareDerived: boolean; termsVersion?: string };
+  fiscal?: { tedVerification: 'off' | 'advisory' | 'required' };
   approvalPolicy?: Partial<{
     mode: 'single' | 'levels';
     autoApproveBelow: number | null;

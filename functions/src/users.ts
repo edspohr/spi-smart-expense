@@ -263,6 +263,15 @@ export const adminUpdateSettings = onCall(async (req) => {
       update[`offline.${key}`] = value;
     }
   }
+  // Ola 10: Chilean TED signature verification mode.
+  if (input.fiscal !== undefined) {
+    const mode = (input.fiscal as Record<string, unknown>).tedVerification;
+    if (mode === undefined) throw new HttpsError('invalid-argument', 'Falta tedVerification.');
+    if (!['off', 'advisory', 'required'].includes(mode as string)) {
+      throw new HttpsError('invalid-argument', 'Modo de verificación de timbre no válido.');
+    }
+    update['fiscal.tedVerification'] = mode;
+  }
   if (input.approvalPolicy !== undefined) {
     const ap = input.approvalPolicy ?? {};
     if (ap.mode !== undefined) {

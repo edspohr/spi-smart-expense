@@ -108,6 +108,8 @@ export interface TenantConfig {
   categories?: string[];
   /** Ola 8: wording of "Listo para terreno" — 'field' (default) or 'travel' (trade fairs, flights). */
   offline?: { context?: 'field' | 'travel' };
+  /** Ola 10: default TED verification mode until settings/tenant sets one. */
+  fiscal?: { tedVerification?: 'off' | 'advisory' | 'required' };
   modules: {
     bulkUpload: boolean;
     reports: boolean;

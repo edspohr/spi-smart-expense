@@ -56,6 +56,8 @@ export const DEMO_SETTINGS = {
     staleDays: 5,
   },
   modules: { bulkUpload: true, reports: true, reconciliation: false, balances: true },
+  // Ola 10: timbre verification is informative in the demo.
+  fiscal: { tedVerification: 'advisory' },
   // Ola 8: the demo shows on-device reading and "Listo para terreno".
   offline: { localReader: true, shadowRead: true },
   ai: { localFirst: false },
@@ -109,6 +111,29 @@ export async function wipeDemoData(db: Firestore, settleMs = 25_000): Promise<vo
   for (const p of PEOPLE) {
     await db.doc(`users/${p.uid}`).set({ balance: 0, delegation: null, fcmTokens: [], hasPin: false, pinDisabled: false, notificationPrefs: null }, { merge: true });
   }
+}
+
+/**
+ * Ola 10: finished server results for the first expenses, so the demo shows
+ * each state without shipping a test key. verifyFiscalDocument leaves a
+ * server result alone on create; clients cannot write one (firestore.rules).
+ */
+function demoFiscal(n: number, taxId: string | null, date: string): Record<string, unknown> {
+  const states: Record<number, Record<string, unknown>> = {
+    1: { status: 'verified' },
+    2: { status: 'verified', mismatches: [{ field: 'amount', ted: '45900', submitted: '49500' }] },
+    3: { status: 'invalid_signature', reason: 'Firma del emisor (FRMT) inválida' },
+    4: { status: 'folio_out_of_range', reason: 'Folio 5120 fuera del rango autorizado 1-5000' },
+  };
+  const state = states[n];
+  if (!state) return {};
+  return {
+    fiscalVerification: {
+      scheme: 'cl_ted', issuerRut: taxId, docType: '39', folio: String(4000 + n),
+      cafRange: { desde: 1, hasta: 5000, fechaAutorizacion: '2026-01-05' }, cafKeyId: '100',
+      verifiedAt: `${date}T12:00:00.000Z`, verifiedOn: 'server', readerVersion: 'demo', ...state,
+    },
+  };
 }
 
 /** Writes settings, user profiles, projects, allocations and expenses. */
@@ -174,6 +199,7 @@ export async function seedDemoData(db: Firestore, now = new Date()): Promise<{ p
       receiptUrl: null, voucherUrl: null, status, createdAt: created.toISOString(),
       isCompanyExpense: false, splitGroupId: null, trm: null, trmSource: null,
       ...(extra.rejectionReason ? { rejectionReason: extra.rejectionReason } : {}),
+      ...demoFiscal(n, taxId, created.toISOString().slice(0, 10)),
       ...reviewer,
     });
   }

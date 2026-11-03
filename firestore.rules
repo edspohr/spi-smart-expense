@@ -45,6 +45,17 @@ service cloud.firestore {
         && (!('isCompanyExpense' in d) || d.isCompanyExpense is bool);
     }
 
+    // Ola 10: the client may only attach a provisional device result and the
+    // scanned TED at creation; verifyFiscalDocument replaces the result.
+    function validFiscal(d) {
+      return (!('rawTed' in d) || (d.rawTed is string && d.rawTed.size() <= 4096))
+        && (!('fiscalVerification' in d)
+            || (d.fiscalVerification is map
+                && d.fiscalVerification.scheme == 'cl_ted'
+                && d.fiscalVerification.verifiedOn == 'device'
+                && d.fiscalVerification.status in ['verified', 'invalid_signature', 'folio_out_of_range', 'issuer_mismatch', 'not_verifiable', 'error']));
+    }
+
     // Base currency of the tenant comes from the claims (COP for SPI).
     function baseCurrency() { return claims().get('baseCurrency', 'COP'); }
     function isColombiaExpense() { return resource.data.get('currency', baseCurrency()) == baseCurrency(); }
@@ -111,6 +122,7 @@ service cloud.firestore {
 
       allow create: if isActive()
         && validExpense(incoming())
+        && validFiscal(incoming())
         && incoming().get('status', 'pending') == 'pending'
         && !incoming().keys().hasAny(['approvalFlow', 'pendingApproverUids', 'reviewedAt', 'reviewedByUid', 'aiReview'])
         && (incoming().userId == request.auth.uid || isAdmin() || isAssistant());
@@ -125,6 +137,8 @@ service cloud.firestore {
         // Device and AI reads are measurements of the original photo (Ola 8b).
         && unchanged('localRead')
         && unchanged('aiRead')
+        && unchanged('rawTed')
+        && unchanged('fiscalVerification')
         && (canReviewCurrent()
             || (resource.data.userId == request.auth.uid
                 && resource.data.get('status', 'pending') == 'pending'
