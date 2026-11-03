@@ -46,3 +46,4 @@ nombre en kebab-case en español.
 | [0016](0016-lector-que-aprende-general-y-por-cliente.md) | Lector que aprende: modo sombra, capa del cliente y capa general | Aceptada | 8b-8d |
 | [0017](0017-timbre-electronico-sii-offline.md) | Verificación del timbre electrónico (TED) sin conexión | Aceptada | 10 |
 | [0018](0018-exportador-contable-y-conectores-erp.md) | Exportador contable y conectores ERP | Aceptada | 11 |
+| [0019](0019-rama-expense-buddy-separada-de-spi.md) | Rama `expense-buddy` separada de lo desplegado en SPI | Aceptada | 10-11 |

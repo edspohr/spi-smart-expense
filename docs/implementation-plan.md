@@ -40,8 +40,8 @@ sugerido, no fechas.**
 | 8c | Lector que aprende II: capa general entre clientes (proyecto central, paquete de lectura versionado) con consentimiento | Transparente (opt-in + cláusula) | Deployada 2026-10-26 (`4d8aad4`) en demo y SPI con el aporte apagado; textos provisionales `derived-v0`; sin proyecto central aún |
 | 8d | Lector que aprende III: corpus de imágenes con consentimiento separado y modelo propio | Transparente (opt-in) | Condicional (volumen + clientes que acepten) |
 | 9 | Operación de flota, observabilidad y seguridad base | Transparente | Pendiente |
-| 10 | Documentos tributarios Chile: timbre electrónico verificado sin conexión (sin consulta al SII) | Transparente (add-on apagado) | Implementada 2026-11-03 en `ola-10/fiscal-ted`, sin desplegar; faltan claves reales del SII |
-| 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Implementada 2026-11-03 en `ola-11/accounting-export`, sin desplegar; formatos ERP por confirmar con un cliente |
+| 10 | Documentos tributarios Chile: timbre electrónico verificado sin conexión (sin consulta al SII) | Transparente (add-on apagado) | Implementada 2026-11-03 en la rama `expense-buddy` (ADR 0019): solo demo, SPI sin cambios hasta homologar; faltan claves reales del SII |
+| 11 | Integración contable: exportador configurable + Softland / Defontana / SAP B1 | Transparente (add-on) | Implementada 2026-11-03 en la rama `expense-buddy` (ADR 0019): solo demo, SPI sin cambios hasta homologar; formatos ERP por confirmar con un cliente |
 | 12 | Fondos por rendir, viáticos, kilometraje, políticas y nómina de pago | Transparente (opt-in) | Pendiente |
 | 13 | Canales conversacionales: WhatsApp + email | Transparente (opt-in) | Pendiente |
 | 14 | Enterprise: SSO, paquete de seguridad, roles finos | Transparente (opt-in) | Pendiente |
